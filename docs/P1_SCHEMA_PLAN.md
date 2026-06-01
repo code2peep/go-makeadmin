@@ -320,6 +320,21 @@ la_system_log_sms
 - 旧岗位接口允许 `code` 为空；P1 新增岗位在空编码时自动生成内部 `code=position_<timestamp>`。
 - `ma_org_unit` 当前模型没有 `duty`、`mobile` 对应字段，P1.16 不扩展 SQL，接口返回保持为空；后续如需要负责人展示，应走 `leader_admin_id` 关联管理员资料。
 
+## P1.17 当前落地
+
+- 新增 `server/makeadmin/repository/admin.go`、`server/makeadmin/service/admin.go` 和 `server/makeadmin/adapter/admin.go`，实现 `ma_admin` 管理员列表、详情、新增、编辑、个人资料更新、软删除和启停。
+- `server/admin/routers/system/admin.go` 接入新适配：检测到 `ma_admin`、`ma_admin_profile`、`ma_admin_role` 和 `ma_admin_org` 表时，管理员管理接口走 `ma_*`，否则旧 `la_system_auth_admin` 兜底。
+- 管理员密码写入使用 P1 bcrypt 策略，不再为新管理员生成旧 MD5+salt。
+- `server/makeadmin/service/admin_test.go` 覆盖管理员新增关系写入、账号唯一性、详情关系映射、系统管理员保护、本人保护和个人密码校验。
+
+## P1.17 已定事项
+
+- 对外接口继续使用旧字段：`deptId`、`postId`、`username`、`nickname`、`avatar`、`role`、`isDisable`、`isMultipoint`。
+- `ma_admin.status=1/0` 对外映射为 `isDisable=0/1`。
+- 旧接口单角色字段 `role` 暂映射到 `ma_admin_role` 的第一条角色；多角色能力先由底层表预留，后续再改前端交互。
+- 旧接口单岗位字段 `postId` 暂映射到 `ma_admin_org.position_id` 的主组织关系；多岗位能力先由底层表预留。
+- P1 模型没有 `sort`、`is_multipoint` 字段，接口返回 `isMultipoint=1` 兼容旧前端，本阶段不扩展 SQL。
+
 ## 已定事项
 
 - `la_* -> ma_*` 只支持一次性迁移。
