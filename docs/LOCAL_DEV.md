@@ -75,7 +75,7 @@ root:@tcp(127.0.0.1:3306)/go_makeadmin?charset=utf8mb4&parseTime=True&loc=Local
 
 - MySQL 服务可连接。
 - 数据库 `go_makeadmin` 已存在。
-- 系统表已存在，当前 P0 蓝本仍是 LikeAdmin 原始 `la_*` 表。
+- 系统表已存在；P1 阶段优先使用 `ma_*` 表，旧 `la_*` 表只作为过渡兜底。
 - 基础管理员、菜单、角色、网站配置等初始化数据已存在。
 
 P0.7 已在当前本机初始化一次性开发库 `go_makeadmin`，用于烟测当前蓝本链路。
@@ -124,26 +124,31 @@ admin/.env.production.example
 
 本地开发时，前端默认请求自身域名下的 `/api`，由 Vite proxy 转发到 `http://127.0.0.1:8000`。如果后端端口变化，调整前端开发环境的 `VITE_API_PROXY_TARGET`。
 
-默认本地烟测账号：
+本地烟测账号：
 
 ```text
+P0 蓝本：
 username: admin
 password: 123456
+
+P1 ma_*：
+username: admin
+password: 由 scripts/init-p1-db.sh 执行时的 ADMIN_PASSWORD 决定
 ```
 
 ## 启动顺序
 
 1. 跑 `./scripts/verify-no-db.sh`，确认无数据库依赖的基础质量。
 2. 准备 MySQL 和 Redis。
-3. 如本机未初始化开发库，按 `docs/DB_INIT_PLAN.md` 创建数据库并导入初始化 SQL。
+3. 如本机未初始化 P1 开发库，执行 `scripts/init-p1-db.sh` 并通过 `ADMIN_PASSWORD` 指定本地管理员密码。
 4. 跑 `./scripts/check-services.sh`。
-5. 跑 `./scripts/check-db-seed.sh`，确认蓝本表和基础数据存在。
+5. 跑 `./scripts/check-p1-seed.sh`，确认 `ma_*` 表和基础数据存在。
 6. 分别启动 `./scripts/dev-api.sh` 和 `./scripts/dev-admin.sh`。
 7. 浏览器打开 `http://127.0.0.1:5173`。
 
 ## 当前限制
 
-- P0 仍保留 LikeAdmin 原始系统表前缀 `la_`，后续 P1 会设计 `makeadmin` 自己的认证、权限、多租户和数据范围模型。
+- P1 已开始接管认证、权限、菜单和设置链路，旧 `la_*` 路径暂时保留为过渡兜底。
 - `sql/install.sql` 是完整蓝本初始化 SQL，不是最终自研 schema。
 - `sql/install.core.sql` 是 P0.9 生成的最小核心初始化 SQL，已剔除文章、C 端用户、渠道、装修等业务演示表。
 - 未导入初始化 SQL 时，后端服务可能启动成功，但登录和菜单接口不能完成业务验证。

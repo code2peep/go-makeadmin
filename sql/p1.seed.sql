@@ -169,8 +169,8 @@ INSERT INTO `ma_setting` (`id`, `tenant_id`, `setting_group`, `setting_key`, `se
 (8, 0, 'storage', 'qiniu', '{"name":"七牛云存储","bucket":"","secretKey":"","accessKey":"","domain":""}', 'json', 0, 'Qiniu storage.', @seed_time, @seed_time),
 (9, 0, 'storage', 'aliyun', '{"name":"阿里云存储","bucket":"","secretKey":"","accessKey":"","domain":""}', 'json', 0, 'Aliyun OSS storage.', @seed_time, @seed_time),
 (10, 0, 'storage', 'qcloud', '{"name":"腾讯云存储","bucket":"","secretKey":"","accessKey":"","domain":"","region":""}', 'json', 0, 'Tencent COS storage.', @seed_time, @seed_time),
-(11, 0, 'protocol', 'service', '', 'string', 1, 'Service protocol.', @seed_time, @seed_time),
-(12, 0, 'protocol', 'privacy', '', 'string', 1, 'Privacy protocol.', @seed_time, @seed_time);
+(11, 0, 'protocol', 'service', '{"name":"","content":""}', 'json', 1, 'Service protocol.', @seed_time, @seed_time),
+(12, 0, 'protocol', 'privacy', '{"name":"","content":""}', 'json', 1, 'Privacy protocol.', @seed_time, @seed_time);
 
 INSERT INTO `ma_dict_type` (`id`, `code`, `name`, `remark`, `status`, `sort`, `create_time`, `update_time`, `delete_time`) VALUES
 (1, 'system_status', '系统状态', 'Framework enabled/disabled status.', 1, 1000, @seed_time, @seed_time, 0),

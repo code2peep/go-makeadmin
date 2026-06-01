@@ -325,8 +325,8 @@ storage.qcloud = {"name":"腾讯云存储","bucket":"","secretKey":"","accessKey
 协议：
 
 ```text
-protocol.service = ""
-protocol.privacy = ""
+protocol.service = {"name":"","content":""}
+protocol.privacy = {"name":"","content":""}
 ```
 
 ## 字典种子
@@ -354,13 +354,13 @@ P1.3 已完成以下事情：
 1. 补齐 `ma_setting`、`ma_dict_type`、`ma_dict_item`、`ma_file`、`ma_file_category`、`ma_codegen_*` 的 SQL 和 Go model 草案。
 2. 把本文件转成 `sql/p1.seed.sql`。
 3. 新增 `sql/p1.schema.sql`。
-4. 用独立验证库 `go_makeadmin_p1_check` 验证 schema 和 seed 可导入。
+4. 用独立库 `go_makeadmin` 验证 schema 和 seed 可导入。
 
 验证命令：
 
 ```bash
 cd /Users/fengrongxin/AI/01-projects/go-makeadmin
-MYSQL_DATABASE=go_makeadmin_p1_check ./scripts/check-p1-seed.sh
+./scripts/check-p1-seed.sh
 ```
 
-验证结果：通过。25 张 `ma_*` 表存在，`admin`、`super_admin`、79 条权限、22 个菜单、12 条设置、4 类字典、14 个字典项和 2 个素材分类均已写入独立验证库。
+验证结果：通过。25 张 `ma_*` 表存在，`admin`、`super_admin`、79 条权限、22 个菜单、12 条设置、4 类字典、14 个字典项和 2 个素材分类均已写入独立库。

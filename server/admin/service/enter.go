@@ -28,5 +28,9 @@ var InitFunctions = []interface{}{
 	system.NewSystemAuthRoleService,
 	system.NewSystemLoginService,
 	system.NewSystemLogsServer,
+	makeadminadapter.NewCopyrightAdapter,
+	makeadminadapter.NewProtocolAdapter,
+	makeadminadapter.NewStorageAdapter,
 	makeadminadapter.NewSystemAdapter,
+	makeadminadapter.NewWebsiteAdapter,
 }

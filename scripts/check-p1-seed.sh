@@ -5,7 +5,7 @@ MYSQL_HOST="${MYSQL_HOST:-127.0.0.1}"
 MYSQL_PORT="${MYSQL_PORT:-3306}"
 MYSQL_USER="${MYSQL_USER:-root}"
 MYSQL_PASSWORD="${MYSQL_PASSWORD-}"
-MYSQL_DATABASE="${MYSQL_DATABASE:-go_makeadmin_p1_check}"
+MYSQL_DATABASE="${MYSQL_DATABASE:-go_makeadmin}"
 
 if [[ ! "$MYSQL_DATABASE" =~ ^[A-Za-z0-9_]+$ ]]; then
     echo "FAIL: MYSQL_DATABASE must contain only letters, numbers, and underscores."
