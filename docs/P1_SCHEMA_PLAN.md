@@ -292,6 +292,20 @@ la_system_log_sms
 - `ma_audit_log.action` 对应旧操作日志 `title`，`ma_audit_log.path` 对应旧 `url`，`ma_audit_log.request_body` 对应旧 `args`。
 - P1.14 不迁移旧 `la_system_log_*` 历史数据，只保证新 P1 链路产生和查询新日志。
 
+## P1.15 当前落地
+
+- 新增 `server/makeadmin/repository/role.go`、`server/makeadmin/service/role.go` 和 `server/makeadmin/adapter/role.go`，实现 `ma_role` 的全部、列表、详情、新增、编辑和软删除。
+- `server/admin/routers/system/role.go` 接入新适配：检测到 `ma_role`、`ma_role_permission` 和 `ma_menu_permission` 表时走 `ma_*`，否则旧 `la_system_auth_role` 兜底。
+- 角色授权继续接收旧接口 `menuIds`，在 P1 内部通过 `ma_menu_permission` 展开为 `ma_role_permission`。
+- `server/makeadmin/service/role_test.go` 覆盖角色新增、重名校验、详情菜单/成员数、系统角色保护、使用中角色保护和 `menuIds` 解析。
+
+## P1.15 已定事项
+
+- 对外接口继续使用旧字段：`name`、`remark`、`sort`、`isDisable`、`menus`、`menuIds`。
+- `ma_role.status=1/0` 对外映射为 `isDisable=0/1`。
+- 旧接口没有角色编码字段，P1 新增角色自动生成内部 `code=role_<timestamp>`。
+- 系统角色 `is_system=1` 不允许通过后台角色删除接口删除。
+
 ## 已定事项
 
 - `la_* -> ma_*` 只支持一次性迁移。
