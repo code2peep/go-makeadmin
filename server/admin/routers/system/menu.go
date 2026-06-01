@@ -14,8 +14,8 @@ import (
 
 var MenuGroup = core.Group("/system", newMenuHandler, regMenu, middleware.TokenAuth())
 
-func newMenuHandler(srv system.ISystemAuthMenuService, makeadminAdapter makeadminadapter.SystemAdapter) *menuHandler {
-	return &menuHandler{srv: srv, makeadminAdapter: makeadminAdapter}
+func newMenuHandler(srv system.ISystemAuthMenuService, makeadminAdapter makeadminadapter.SystemAdapter, makeadminMenu makeadminadapter.MenuAdapter) *menuHandler {
+	return &menuHandler{srv: srv, makeadminAdapter: makeadminAdapter, makeadminMenu: makeadminMenu}
 }
 
 func regMenu(rg *gin.RouterGroup, group *core.GroupBase) error {
@@ -32,6 +32,7 @@ func regMenu(rg *gin.RouterGroup, group *core.GroupBase) error {
 type menuHandler struct {
 	srv              system.ISystemAuthMenuService
 	makeadminAdapter makeadminadapter.SystemAdapter
+	makeadminMenu    makeadminadapter.MenuAdapter
 }
 
 // route 菜单路由
@@ -48,6 +49,11 @@ func (mh menuHandler) route(c *gin.Context) {
 
 // list 菜单列表
 func (mh menuHandler) list(c *gin.Context) {
+	if mh.makeadminMenu.Available(c.Request.Context()) {
+		res, err := mh.makeadminMenu.List(c.Request.Context())
+		response.CheckAndRespWithData(c, res, err)
+		return
+	}
 	res, err := mh.srv.List()
 	response.CheckAndRespWithData(c, res, err)
 }
@@ -56,6 +62,11 @@ func (mh menuHandler) list(c *gin.Context) {
 func (mh menuHandler) detail(c *gin.Context) {
 	var detailReq req.SystemAuthMenuDetailReq
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &detailReq)) {
+		return
+	}
+	if mh.makeadminMenu.Available(c.Request.Context()) {
+		res, err := mh.makeadminMenu.Detail(c.Request.Context(), detailReq.ID)
+		response.CheckAndRespWithData(c, res, err)
 		return
 	}
 	res, err := mh.srv.Detail(detailReq.ID)
@@ -68,6 +79,10 @@ func (mh menuHandler) add(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &addReq)) {
 		return
 	}
+	if mh.makeadminMenu.Available(c.Request.Context()) {
+		response.CheckAndResp(c, mh.makeadminMenu.Add(c.Request.Context(), addReq))
+		return
+	}
 	response.CheckAndResp(c, mh.srv.Add(addReq))
 }
 
@@ -77,6 +92,10 @@ func (mh menuHandler) edit(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &editReq)) {
 		return
 	}
+	if mh.makeadminMenu.Available(c.Request.Context()) {
+		response.CheckAndResp(c, mh.makeadminMenu.Edit(c.Request.Context(), editReq))
+		return
+	}
 	response.CheckAndResp(c, mh.srv.Edit(editReq))
 }
 
@@ -84,6 +103,10 @@ func (mh menuHandler) edit(c *gin.Context) {
 func (mh menuHandler) del(c *gin.Context) {
 	var delReq req.SystemAuthMenuDelReq
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &delReq)) {
+		return
+	}
+	if mh.makeadminMenu.Available(c.Request.Context()) {
+		response.CheckAndResp(c, mh.makeadminMenu.Del(c.Request.Context(), delReq.ID))
 		return
 	}
 	response.CheckAndResp(c, mh.srv.Del(delReq.ID))

@@ -335,6 +335,22 @@ la_system_log_sms
 - 旧接口单岗位字段 `postId` 暂映射到 `ma_admin_org.position_id` 的主组织关系；多岗位能力先由底层表预留。
 - P1 模型没有 `sort`、`is_multipoint` 字段，接口返回 `isMultipoint=1` 兼容旧前端，本阶段不扩展 SQL。
 
+## P1.18 当前落地
+
+- 新增 `server/makeadmin/repository/menu.go`、`server/makeadmin/service/menu.go` 和 `server/makeadmin/adapter/menu.go`，实现 `ma_menu` 菜单列表、详情、新增、编辑和软删除。
+- `server/admin/routers/system/menu.go` 接入新适配：检测到 `ma_menu`、`ma_permission` 和 `ma_menu_permission` 表时，菜单管理接口走 `ma_*`，否则旧 `la_system_auth_menu` 兜底。
+- 菜单 `perms` 写入会 upsert `ma_permission`，并通过 `ma_menu_permission` 绑定到菜单；菜单权限编码按 `module:resource:action` 拆分辅助字段。
+- 菜单权限变更时，会为原来拥有旧权限的角色补写新权限；删除菜单时，会清理不再被菜单引用的角色权限。
+- `server/makeadmin/service/menu_test.go` 覆盖菜单新增、权限重名校验、编辑保留当前权限、子菜单删除保护和旧字段响应映射。
+
+## P1.18 已定事项
+
+- 对外接口继续使用旧字段：`pid`、`menuType`、`menuName`、`menuIcon`、`menuSort`、`perms`、`paths`、`component`、`selected`、`params`、`isCache`、`isShow`、`isDisable`。
+- 旧菜单类型 `M/C/A` 分别映射到 `ma_menu.menu_type=catalog/page/action`。
+- `ma_menu.status=1/0` 对外映射为 `isDisable=0/1`。
+- `params` 暂存在 `ma_menu.meta` 的 `params` 字段中；不扩展菜单 SQL。
+- P1.18 不删除 `ma_permission` 记录本身，只清理菜单绑定和孤立的角色权限引用。
+
 ## 已定事项
 
 - `la_* -> ma_*` 只支持一次性迁移。

@@ -195,7 +195,7 @@ func routeMenuMaps(menus []makeadminsvc.RouteMenu) []map[string]interface{} {
 			"paths":      toLegacyRoutePath(menu, menuByID),
 			"component":  menu.Component,
 			"selected":   strings.Trim(menu.ActivePath, "/"),
-			"params":     "",
+			"params":     makeadminsvc.ParamsFromMenuMeta(menu.Meta),
 			"isCache":    menu.IsCache,
 			"isShow":     uint8(1),
 			"isDisable":  uint8(0),

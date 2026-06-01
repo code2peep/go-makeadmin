@@ -33,6 +33,7 @@ var InitFunctions = []interface{}{
 	makeadminadapter.NewDictAdapter,
 	makeadminadapter.NewFileAdapter,
 	makeadminadapter.NewLogAdapter,
+	makeadminadapter.NewMenuAdapter,
 	makeadminadapter.NewOrgUnitAdapter,
 	makeadminadapter.NewPositionAdapter,
 	makeadminadapter.NewProtocolAdapter,
