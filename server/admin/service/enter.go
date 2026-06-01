@@ -4,6 +4,7 @@ import (
 	"go-makeadmin/admin/service/common"
 	"go-makeadmin/admin/service/setting"
 	"go-makeadmin/admin/service/system"
+	makeadminadapter "go-makeadmin/makeadmin/adapter"
 )
 
 var InitFunctions = []interface{}{
@@ -27,4 +28,5 @@ var InitFunctions = []interface{}{
 	system.NewSystemAuthRoleService,
 	system.NewSystemLoginService,
 	system.NewSystemLogsServer,
+	makeadminadapter.NewSystemAdapter,
 }

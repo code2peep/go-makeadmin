@@ -48,6 +48,8 @@ export default defineConfig(({ mode }) => {
             }
         },
         build: {
+            // Rich text and chart chunks are intentionally split as lazy feature dependencies.
+            chunkSizeWarningLimit: 900,
             rollupOptions: {
                 output: {
                     manualChunks(id) {

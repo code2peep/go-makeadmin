@@ -6,6 +6,8 @@ P0 阶段不连接 zyai 现有业务库做写操作。
 
 当前本机已按 P0.7 初始化一次性开发库 `go_makeadmin`，用于验证登录、菜单、权限和工作台链路。LikeAdmin 原始 SQL 保留在 `sql/install.sql`，当前只作为 P0 蓝本初始化数据，后续 P1 会重新设计 `ma_*` 自研系统表。
 
+P1 阶段已明确：`go-makeadmin` 使用独立数据库，不和 zyai 业务库混用。当前 P1 schema/seed 已在独立验证库 `go_makeadmin_p1_check` 中导入验证；该验证库只用于检查 `ma_*` 表结构和最小种子，不是当前 API 运行库。
+
 ## 默认开发库
 
 当前默认 DSN 指向：
@@ -66,6 +68,15 @@ P1 的系统表草案见：
 
 ```text
 docs/P1_SCHEMA_PLAN.md
+sql/p1.schema.sql
+sql/p1.seed.sql
+```
+
+P1 独立验证库只读检查：
+
+```bash
+cd /Users/fengrongxin/AI/01-projects/go-makeadmin
+MYSQL_DATABASE=go_makeadmin_p1_check ./scripts/check-p1-seed.sh
 ```
 
 业务表由具体项目决定。例如 zyai 迁移时，优先兼容现有业务表：

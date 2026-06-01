@@ -69,6 +69,8 @@
 - P0.14 已将 `vuedraggable` 从 Vue 2 版本升级到 Vue 3 版本，修复网站信息页素材选择器运行时报错。
 - P0.14 已调整布局路由渲染，避免把 `RouterView` 组件直接放进 `keep-alive`。
 - P0.14 已替换 `server/static/backend_backdrop.png`，移除登录页广告图位图里的 LikeAdmin 品牌残留。
+- P0.15 已收窄 ECharts 注册范围，只保留当前核心页面实际使用的折线图、饼图、仪表盘和基础组件。
+- P0.15 已将 Vite chunk warning 阈值调整为 `900KB`，当前富文本和图表 chunk 属于已拆分的懒加载功能依赖。
 
 ## 已验证
 
@@ -296,10 +298,40 @@ curl -fsS http://127.0.0.1:18000/api/static/backend_backdrop.png | shasum -a 256
 
 结果：通过。服务端静态文件和 API 返回内容 checksum 一致，登录页广告图源文件已不再包含 LikeAdmin 字样。
 
+P0.15 构建收尾验证：
+
+```bash
+cd /Users/fengrongxin/AI/01-projects/go-makeadmin
+./scripts/verify-no-db.sh
+```
+
+结果：通过。后端测试、前端 type-check、前端 build、`npm audit` 均通过；构建不再出现大 chunk warning，仅保留已知 `@vueuse/core` Rolldown pure annotation warning。
+
+P0.15 构建体积结果：
+
+```text
+@wangeditor: 781KB
+echarts: 536KB
+element-plus: 499KB
+vue3-video-play: 370KB
+```
+
+说明：`@wangeditor` 只用于网站协议编辑页，`vue3-video-play` 只用于素材视频预览，均为功能页依赖；ECharts 已从约 `823KB` 降至约 `536KB`。
+
+P0.15 浏览器烟测：
+
+```text
+http://127.0.0.1:5173/workbench
+http://127.0.0.1:5173/setting/system/cache
+http://127.0.0.1:5173/setting/website/information
+```
+
+结果：通过。工作台可渲染 `访问量趋势图` 并生成 1 个图表 canvas；系统缓存页可渲染 `命令统计` 和 `内存信息` 并生成 2 个图表 canvas；网站信息页可渲染 `网站名称` 和 `网站图标`；复测期间无新增前端 error。
+
 ## 已知问题
 
 - Vite 8/Rolldown 对 `@vueuse/core` 的 pure annotation 有 warning，不影响当前构建。
-- 构建产物存在大 chunk，后续需要按模块拆分。
+- 富文本、图表、视频播放器仍是较大的功能依赖 chunk，但已按页面能力拆分并低于当前项目 warning 阈值。
 - P0 仍保留 `la_*` 表和部分演示数据，P1 需要重设 `ma_*` 自研系统模型。
 - 原始 `sql/install.sql` 仍保留商城、客服、文章等蓝本业务演示数据，后续需要决定是继续保留作蓝本参考，还是迁入独立 demo SQL。
 
@@ -311,6 +343,6 @@ curl -fsS http://127.0.0.1:18000/api/static/backend_backdrop.png | shasum -a 256
 
 ## 下一步建议
 
-P0.15：审计大 chunk 来源并决定是否拆分，避免在 P1 期间混入构建优化。
-
 P1：设计并实现 `makeadmin` 自己的认证、权限、多租户和数据范围模型。进入 P1 前需要单独确认 schema 边界，因为创建、修改或迁移数据库 schema 属于项目红线。
+
+P1 第一小步建议：只生成 `ma_*` SQL 和 Go model 草案，不自动导入任何数据库；租户能力先预留并默认关闭。

@@ -106,8 +106,111 @@ la_system_log_sms
 4. 再切组织、字典、素材、日志、代码生成。
 5. 删除或冻结 `la_*` 运行路径，只保留迁移脚本和来源文档。
 
+## P1.1 当前落地
+
+- 新增 `docs/P1_AUTH_PERMISSION_MODEL.md`，定义认证、权限、组织、租户预留和日志的 `ma_*` SQL 草案。
+- 新增 `server/model/makeadmin/auth.go`，定义同名 Go model 草案。
+- 本阶段不执行数据库迁移，不接入当前运行链路，不改变 `la_*` 表。
+
+## P1.1 已定事项
+
+- 权限编码先沿用 `module:resource:action`，降低当前菜单和接口权限迁移成本。
+- 租户能力先预留但默认关闭，`tenant_id=0` 表示全局默认上下文。
+- 数据范围先采用组织树相关策略：`all`、`self`、`org`、`org_tree`、`custom_org`。
+
+## P1.2 当前落地
+
+- 新增 `docs/P1_MINIMAL_SEED.md`，定义 `ma_*` 最小种子清单。
+- 最小种子范围包括超级管理员、超级管理员角色、根组织、管理员岗位、全部数据范围、核心菜单、核心权限、网站设置、存储设置、框架级字典和素材基础分类。
+- 本阶段不生成真实密码、不写入数据库、不导入初始化数据。
+
+## P1.2 已定事项
+
+- 超级管理员密码必须在初始化时生成，不在仓库中保存默认密码或 hash。
+- 核心菜单只覆盖 P0 当前可用后台能力，不包含业务演示模块。
+- P1.2 暂保留少量历史双段权限编码，后续切服务时再决定是否统一为三段式并提供兼容映射。
+
+## P1.3 当前落地
+
+- 新增 `server/model/makeadmin/system.go`，补齐 `ma_setting`、`ma_dict_type`、`ma_dict_item`、`ma_file`、`ma_file_category`、`ma_codegen_table`、`ma_codegen_column` Go model 草案。
+- 新增 `sql/p1.schema.sql`，集中定义 25 张 `ma_*` P1 表。
+- 新增 `sql/p1.seed.sql`，集中定义最小初始化种子。
+- 新增 `scripts/check-p1-seed.sh`，用于只读检查 P1 表和种子完整性。
+- 已用独立验证库 `go_makeadmin_p1_check` 导入 `sql/p1.schema.sql` 和 `sql/p1.seed.sql`，并通过 `MYSQL_DATABASE=go_makeadmin_p1_check ./scripts/check-p1-seed.sh`。
+
+## P1.3 已定事项
+
+- go-makeadmin 使用独立数据库，和 zyai 业务库分离；框架完成后再考虑业务迁移。
+- P1 SQL 可以在独立验证库中建表和导入，当前不修改 `server/.env`，不切换运行链路。
+- `ma_setting` 使用 `setting_group`、`setting_key`、`setting_value` 字段，避免使用 MySQL 保留字。
+
+## P1.4 当前落地
+
+- 新增 `server/makeadmin/repository/auth.go`，定义并实现基于 `ma_*` 的只读认证权限 repository 骨架。
+- 新增 `server/makeadmin/service/auth.go`，定义并实现 `BuildIdentityByUsername` 和 `ListRouteMenus` 服务骨架。
+- 新增 `server/makeadmin/service/auth_test.go`，覆盖超级管理员权限通配和普通角色菜单父级补全。
+- P1.4 不接入当前 `system` 登录服务，不写 Redis，不签发 token，不替换 middleware。
+
+## P1.4 已定事项
+
+- P1 采用并行 repository/service 结构，先在 `server/makeadmin` 内实现，再逐步切换现有 `admin/service/system`。
+- 第一阶段只做读取链路：管理员身份、角色权限、菜单路由。
+- 密码校验、登录日志写入、token 缓存和最后登录信息更新留到切换登录链路时处理。
+
+## P1.5 当前落地
+
+- 新增 `docs/P1_PASSWORD_STRATEGY.md`，明确 P1 新账号使用 bcrypt，旧 MD5+salt 只做迁移期兼容校验。
+- 新增 `server/makeadmin/security/password.go`，实现 bcrypt 生成/校验、旧 MD5+salt 校验、安装占位符拒绝。
+- `server/makeadmin/service/auth.go` 新增 `AuthenticateByUsername`，只做账号密码校验和身份构建，不签发 token、不写 Redis、不更新登录信息。
+- `sql/p1.seed.sql` 的超级管理员密码改为安装时 bcrypt 占位符，`password_salt` 对新账号保持空字符串。
+
+## P1.5 已定事项
+
+- P1 新写入账号只使用 bcrypt。
+- `ma_admin.password_salt` 对新账号为空，只为旧 `la_*` MD5+salt 迁移兼容保留。
+- 登录成功后的旧 hash 自动升级需要写库，留到 P1 登录写路径确认后再做。
+
+## P1.6 当前落地
+
+- 新增 `docs/P1_LOGIN_SWITCH_PLAN.md`，定义从旧 `la_*` 登录链路切到 `ma_*` 的顺序。
+- `server/makeadmin/repository/auth.go` 新增 `UpdateAdminLoginInfo` 和 `CreateLoginLog` 写接口。
+- 新增 `server/makeadmin/service/session.go`，提供 token 生成抽象和 Redis session store。
+- `server/makeadmin/service/auth.go` 新增 `Login` 和 `Logout`，完成新框架内部登录闭环：校验密码、签 token、写 Redis session、更新最后登录信息、写 `ma_login_log`。
+- `server/makeadmin/service/auth_test.go` 覆盖登录成功写 session/审计、密码失败写失败日志。
+
+## P1.6 已定事项
+
+- P1 登录应用服务先在 `server/makeadmin` 内闭环，不直接替换当前 `/api/system/login`。
+- 新 Redis session key 使用 `makeadmin:token:*` 和 `makeadmin:token:set:*`，避免和旧 `backstage:*` 缓存结构耦合。
+- 当前不实现旧 MD5+salt 登录成功后的自动升级写回，避免在只读迁移判断尚未完成前改数据。
+
+## P1.7 当前落地
+
+- 新增 `server/makeadmin/adapter/system.go`，把 `makeadmin` 新服务适配到现有后台 API 响应形状。
+- `server/admin/routers/system/login.go` 接入新登录适配：检测到可用 `ma_admin` 时走 `ma_*`，否则旧 `la_*` 兜底。
+- `server/middleware/auth.go` 支持识别 `makeadmin:token:*` session，并基于 `ma_permission` 校验权限。
+- `server/admin/routers/system/admin.go` 的 `/system/admin/self` 支持新 token 分流到 `ma_*`。
+- `server/admin/routers/system/menu.go` 的 `/system/menu/route` 支持新 token 分流到 `ma_*`。
+
+## P1.7 已定事项
+
+- P1 切换采用并行分流，不在当前阶段删除旧 `la_*` 运行路径。
+- `ma_*` token 与旧 `backstage:*` token 隔离，避免缓存结构互相污染。
+- 只有检测到至少一个非占位密码的 `ma_admin` 账号时，登录接口才启用新链路。
+
+## P1.8 当前落地
+
+- 新增 `server/cmd/makeadmin-password`，根据 `MAKEADMIN_PASSWORD` 生成 bcrypt hash。
+- 新增 `scripts/init-p1-db.sh`，用于初始化独立 P1 数据库：创建数据库、生成 admin bcrypt hash、导入 `sql/p1.schema.sql` 和替换后的 `sql/p1.seed.sql`、运行 `check-p1-seed`。
+- 初始化脚本默认不覆盖已有 `ma_*` 表；需要重建时必须显式设置 `INIT_P1_DROP=1`。
+
+## P1.8 已定事项
+
+- P1 初始化不修改 `.env`。
+- P1 初始化不在仓库写入真实密码或 hash。
+- 默认 P1 数据库名为 `go_makeadmin_p1`，可用 `MYSQL_DATABASE` 覆盖。
+
 ## 未定事项
 
-- 是否在 P1 就启用多租户，还是先设计表但关闭入口。
-- 数据范围采用部门树、组织树，还是策略表达式。
-- 权限编码是否保持 `module:resource:action`，或改为更严格的 `domain.resource.action`。
+- `la_* -> ma_*` 是否只支持一次性迁移，还是保留兼容读取期。
+- P1 独立库最终命名沿用 `go_makeadmin`，还是在切换期使用 `go_makeadmin_p1`。
