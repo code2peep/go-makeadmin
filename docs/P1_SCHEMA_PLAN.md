@@ -351,6 +351,20 @@ la_system_log_sms
 - `params` 暂存在 `ma_menu.meta` 的 `params` 字段中；不扩展菜单 SQL。
 - P1.18 不删除 `ma_permission` 记录本身，只清理菜单绑定和孤立的角色权限引用。
 
+## P1.19 当前落地
+
+- 代码生成器 `/gen/*` 接口保留旧 API 字段和模板渲染 DTO，内部持久化切换到 `ma_codegen_table`、`ma_codegen_column`。
+- `server/generator/service/gen/gen.go` 增加 `ma_*` 与旧 `GenTable`、`GenTableColumn` 的双向转换，兼容旧字段 `genTpl`、`genType`、`genPath`、`goField`、`goType`。
+- `server/generator/utils.go` 的库表列表排除条件改为读取 `ma_codegen_table`，不再依赖 `la_gen_table`。
+- `server/generator/service/gen/gen_test.go` 覆盖表和字段转换，避免旧接口字段在后续重构中丢失。
+
+## P1.19 已定事项
+
+- 旧 `genType=0/1` 分别映射为 `ma_codegen_table.generate_type=zip/path`。
+- 旧 `genTpl=crud/tree` 映射到 `ma_codegen_table.template_type`。
+- 旧树表和子表字段 `treePrimary`、`treeParent`、`treeName`、`subTableName`、`subTableFk` 暂存在 `ma_codegen_table.options` JSON 中；不扩展 SQL。
+- 删除代码生成配置时，`ma_codegen_table` 走 `delete_time` 软删除，`ma_codegen_column` 因无软删除字段仍按表配置删除列配置。
+
 ## 已定事项
 
 - `la_* -> ma_*` 只支持一次性迁移。

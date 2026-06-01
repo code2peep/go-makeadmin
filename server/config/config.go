@@ -2,13 +2,13 @@ package config
 
 import (
 	"errors"
-	"flag"
 	"github.com/spf13/viper"
 	"log"
 	"os"
 	"path"
 	"runtime"
 	"strconv"
+	"strings"
 )
 
 var Config = loadConfig(".")
@@ -44,9 +44,7 @@ type envConfig struct {
 
 // loadConfig 加载配置
 func loadConfig(envPath string) envConfig {
-	var cfgPath string
-	flag.StringVar(&cfgPath, "c", "", "config file envPath.")
-	flag.Parse()
+	cfgPath := configPathFromArgs(os.Args[1:])
 	if cfgPath == "" {
 		viper.AddConfigPath(envPath)
 		viper.SetConfigFile(".env")
@@ -117,4 +115,20 @@ func loadConfig(envPath string) envConfig {
 		config.PublicUrl = "http://127.0.0.1:" + strconv.Itoa(config.ServerPort)
 	}
 	return config
+}
+
+func configPathFromArgs(args []string) string {
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if (arg == "-c" || arg == "--c") && i+1 < len(args) {
+			return args[i+1]
+		}
+		if strings.HasPrefix(arg, "-c=") {
+			return strings.TrimPrefix(arg, "-c=")
+		}
+		if strings.HasPrefix(arg, "--c=") {
+			return strings.TrimPrefix(arg, "--c=")
+		}
+	}
+	return ""
 }
