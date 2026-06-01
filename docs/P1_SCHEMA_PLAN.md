@@ -250,6 +250,20 @@ la_system_log_sms
 - 云存储配置只按请求写入 `bucket`、`accessKey`、`secretKey`、`domain`、`region` 字段；仓库种子保持空值。
 - 关闭非当前默认存储时不改动 `storage.default`，避免误关其它已启用存储。
 
+## P1.12 当前落地
+
+- 新增 `server/makeadmin/repository/dict.go` 和 `server/makeadmin/service/dict.go`，实现 `ma_dict_type`、`ma_dict_item` 的列表、详情、新增、编辑和软删除。
+- 新增 `server/makeadmin/adapter/dict.go`，把 `ma_dict_type`、`ma_dict_item` 适配到现有 `/setting/dict/type/*` 和 `/setting/dict/data/*` 响应形状。
+- `server/admin/routers/setting/dict_type.go` 和 `server/admin/routers/setting/dict_data.go` 接入新适配：检测到 `ma_dict_type` 和 `ma_dict_item` 表时走 `ma_*`，否则旧 `la_dict_*` 兜底。
+- `server/makeadmin/service/dict_test.go` 覆盖字典类型唯一性、字典数据按类型编码读取和字典数据值唯一性。
+
+## P1.12 已定事项
+
+- 对外 API 继续使用旧字段名：`dictName`、`dictType`、`typeId`、`name`、`value`，避免前端同步改造。
+- `ma_dict_type.code` 对应旧 `dict_type`，`ma_dict_type.name` 对应旧 `dict_name`。
+- `ma_dict_item.item_label` 对应旧 `name`，`ma_dict_item.item_value` 对应旧 `value`。
+- 字典数据唯一性按 `type_id + item_value` 约束，不继续沿用旧链路的全局 `name` 唯一判断。
+
 ## 已定事项
 
 - `la_* -> ma_*` 只支持一次性迁移。

@@ -100,7 +100,7 @@ type SettingDictDataAddReq struct {
 	TypeId uint   `form:"typeId" binding:"required,gt=0"`           // 类型
 	Name   string `form:"name" binding:"required,max=100"`          // 键
 	Value  string `form:"value" binding:"required,max=200"`         // 值
-	remark string `form:"remark" binding:"max=200"`                 // 备注
+	Remark string `form:"remark" json:"remark" binding:"max=200"`   // 备注
 	Sort   int    `form:"sort" binding:"gte=0"`                     // 排序
 	Status int8   `form:"status,default=-1" binding:"oneof=-1 0 1"` // 状态: 0=停用,1=启用
 }
@@ -111,7 +111,7 @@ type SettingDictDataEditReq struct {
 	TypeId uint   `form:"typeId" binding:"required,gte=0"`          // 类型
 	Name   string `form:"name" binding:"required,max=100"`          // 键
 	Value  string `form:"value" binding:"required,max=200"`         // 值
-	remark string `form:"remark" binding:"max=200"`                 // 备注
+	Remark string `form:"remark" json:"remark" binding:"max=200"`   // 备注
 	Sort   int    `form:"sort" binding:"gte=0"`                     // 排序
 	Status int8   `form:"status,default=-1" binding:"oneof=-1 0 1"` // 状态: 0=停用,1=启用
 }

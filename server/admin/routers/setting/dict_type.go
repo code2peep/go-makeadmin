@@ -7,14 +7,15 @@ import (
 	"go-makeadmin/core"
 	"go-makeadmin/core/request"
 	"go-makeadmin/core/response"
+	makeadminadapter "go-makeadmin/makeadmin/adapter"
 	"go-makeadmin/middleware"
 	"go-makeadmin/util"
 )
 
 var DictTypeGroup = core.Group("/setting", newDictTypeHandler, regDictType, middleware.TokenAuth())
 
-func newDictTypeHandler(srv setting.ISettingDictTypeService) *dictTypeHandler {
-	return &dictTypeHandler{srv: srv}
+func newDictTypeHandler(srv setting.ISettingDictTypeService, makeadminDict makeadminadapter.DictAdapter) *dictTypeHandler {
+	return &dictTypeHandler{srv: srv, makeadminDict: makeadminDict}
 }
 
 func regDictType(rg *gin.RouterGroup, group *core.GroupBase) error {
@@ -29,16 +30,22 @@ func regDictType(rg *gin.RouterGroup, group *core.GroupBase) error {
 }
 
 type dictTypeHandler struct {
-	srv setting.ISettingDictTypeService
+	srv           setting.ISettingDictTypeService
+	makeadminDict makeadminadapter.DictAdapter
 }
 
-//all 字典类型所有
+// all 字典类型所有
 func (dth dictTypeHandler) all(c *gin.Context) {
+	if dth.makeadminDict.Available(c.Request.Context()) {
+		res, err := dth.makeadminDict.TypeAll(c.Request.Context())
+		response.CheckAndRespWithData(c, res, err)
+		return
+	}
 	res, err := dth.srv.All()
 	response.CheckAndRespWithData(c, res, err)
 }
 
-//list 字典类型列表
+// list 字典类型列表
 func (dth dictTypeHandler) list(c *gin.Context) {
 	var page request.PageReq
 	var listReq req.SettingDictTypeListReq
@@ -48,42 +55,64 @@ func (dth dictTypeHandler) list(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &listReq)) {
 		return
 	}
+	if dth.makeadminDict.Available(c.Request.Context()) {
+		res, err := dth.makeadminDict.TypeList(c.Request.Context(), page, listReq)
+		response.CheckAndRespWithData(c, res, err)
+		return
+	}
 	res, err := dth.srv.List(page, listReq)
 	response.CheckAndRespWithData(c, res, err)
 }
 
-//detail 字典类型详情
+// detail 字典类型详情
 func (dth dictTypeHandler) detail(c *gin.Context) {
 	var detailReq req.SettingDictTypeDetailReq
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &detailReq)) {
+		return
+	}
+	if dth.makeadminDict.Available(c.Request.Context()) {
+		res, err := dth.makeadminDict.TypeDetail(c.Request.Context(), detailReq.ID)
+		response.CheckAndRespWithData(c, res, err)
 		return
 	}
 	res, err := dth.srv.Detail(detailReq.ID)
 	response.CheckAndRespWithData(c, res, err)
 }
 
-//detail 字典类型新增
+// add 字典类型新增
 func (dth dictTypeHandler) add(c *gin.Context) {
 	var addReq req.SettingDictTypeAddReq
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &addReq)) {
 		return
 	}
+	if dth.makeadminDict.Available(c.Request.Context()) {
+		response.CheckAndResp(c, dth.makeadminDict.TypeAdd(c.Request.Context(), addReq))
+		return
+	}
 	response.CheckAndResp(c, dth.srv.Add(addReq))
 }
 
-//edit 字典类型编辑
+// edit 字典类型编辑
 func (dth dictTypeHandler) edit(c *gin.Context) {
 	var editReq req.SettingDictTypeEditReq
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &editReq)) {
 		return
 	}
+	if dth.makeadminDict.Available(c.Request.Context()) {
+		response.CheckAndResp(c, dth.makeadminDict.TypeEdit(c.Request.Context(), editReq))
+		return
+	}
 	response.CheckAndResp(c, dth.srv.Edit(editReq))
 }
 
-//del 字典类型删除
+// del 字典类型删除
 func (dth dictTypeHandler) del(c *gin.Context) {
 	var delReq req.SettingDictTypeDelReq
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &delReq)) {
+		return
+	}
+	if dth.makeadminDict.Available(c.Request.Context()) {
+		response.CheckAndResp(c, dth.makeadminDict.TypeDel(c.Request.Context(), delReq))
 		return
 	}
 	response.CheckAndResp(c, dth.srv.Del(delReq))
