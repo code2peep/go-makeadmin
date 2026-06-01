@@ -306,6 +306,20 @@ la_system_log_sms
 - 旧接口没有角色编码字段，P1 新增角色自动生成内部 `code=role_<timestamp>`。
 - 系统角色 `is_system=1` 不允许通过后台角色删除接口删除。
 
+## P1.16 当前落地
+
+- 新增 `server/makeadmin/repository/organization.go`、`server/makeadmin/service/organization.go` 和 `server/makeadmin/adapter/organization.go`，实现 `ma_org_unit`、`ma_position` 的列表、详情、新增、编辑和软删除。
+- `server/admin/routers/system/dept.go` 和 `server/admin/routers/system/post.go` 接入新适配：检测到 `ma_org_unit`、`ma_position` 和 `ma_admin_org` 表时走 `ma_*`，否则旧 `la_system_auth_dept`、`la_system_auth_post` 兜底。
+- `server/makeadmin/service/organization_test.go` 覆盖根组织保护、父级校验、子级/使用中删除保护、岗位编码生成、岗位唯一性和使用中删除保护。
+
+## P1.16 已定事项
+
+- 对外接口继续使用旧字段：部门 `pid`、`name`、`duty`、`mobile`、`sort`、`isStop`，岗位 `code`、`name`、`remarks`、`sort`、`isStop`。
+- `ma_org_unit.status`、`ma_position.status` 对外映射为 `isStop=0/1`。
+- 旧部门接口没有组织编码字段，P1 新增组织自动生成内部 `code=org_<timestamp>`。
+- 旧岗位接口允许 `code` 为空；P1 新增岗位在空编码时自动生成内部 `code=position_<timestamp>`。
+- `ma_org_unit` 当前模型没有 `duty`、`mobile` 对应字段，P1.16 不扩展 SQL，接口返回保持为空；后续如需要负责人展示，应走 `leader_admin_id` 关联管理员资料。
+
 ## 已定事项
 
 - `la_* -> ma_*` 只支持一次性迁移。
