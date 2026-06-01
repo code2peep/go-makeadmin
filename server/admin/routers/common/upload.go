@@ -7,14 +7,15 @@ import (
 	"go-makeadmin/config"
 	"go-makeadmin/core"
 	"go-makeadmin/core/response"
+	makeadminadapter "go-makeadmin/makeadmin/adapter"
 	"go-makeadmin/middleware"
 	"go-makeadmin/util"
 )
 
 var UploadGroup = core.Group("/common", newUploadHandler, regUpload, middleware.TokenAuth())
 
-func newUploadHandler(srv common.IUploadService) *uploadHandler {
-	return &uploadHandler{srv: srv}
+func newUploadHandler(srv common.IUploadService, makeadminFile makeadminadapter.FileAdapter) *uploadHandler {
+	return &uploadHandler{srv: srv, makeadminFile: makeadminFile}
 }
 
 func regUpload(rg *gin.RouterGroup, group *core.GroupBase) error {
@@ -25,10 +26,11 @@ func regUpload(rg *gin.RouterGroup, group *core.GroupBase) error {
 }
 
 type uploadHandler struct {
-	srv common.IUploadService
+	srv           common.IUploadService
+	makeadminFile makeadminadapter.FileAdapter
 }
 
-//uploadImage 上传图片
+// uploadImage 上传图片
 func (uh uploadHandler) uploadImage(c *gin.Context) {
 	var uReq req.CommonUploadImageReq
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyBody(c, &uReq)) {
@@ -38,11 +40,16 @@ func (uh uploadHandler) uploadImage(c *gin.Context) {
 	if response.IsFailWithResp(c, ve) {
 		return
 	}
+	if uh.makeadminFile.Available(c.Request.Context()) {
+		res, err := uh.makeadminFile.UploadImage(c.Request.Context(), file, uReq.Cid, config.AdminConfig.GetAdminId(c))
+		response.CheckAndRespWithData(c, res, err)
+		return
+	}
 	res, err := uh.srv.UploadImage(file, uReq.Cid, config.AdminConfig.GetAdminId(c))
 	response.CheckAndRespWithData(c, res, err)
 }
 
-//uploadVideo 上传视频
+// uploadVideo 上传视频
 func (uh uploadHandler) uploadVideo(c *gin.Context) {
 	var uReq req.CommonUploadImageReq
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyBody(c, &uReq)) {
@@ -50,6 +57,11 @@ func (uh uploadHandler) uploadVideo(c *gin.Context) {
 	}
 	file, ve := util.VerifyUtil.VerifyFile(c, "file")
 	if response.IsFailWithResp(c, ve) {
+		return
+	}
+	if uh.makeadminFile.Available(c.Request.Context()) {
+		res, err := uh.makeadminFile.UploadVideo(c.Request.Context(), file, uReq.Cid, config.AdminConfig.GetAdminId(c))
+		response.CheckAndRespWithData(c, res, err)
 		return
 	}
 	res, err := uh.srv.UploadVideo(file, uReq.Cid, config.AdminConfig.GetAdminId(c))

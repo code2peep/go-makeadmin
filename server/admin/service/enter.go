@@ -30,6 +30,7 @@ var InitFunctions = []interface{}{
 	system.NewSystemLogsServer,
 	makeadminadapter.NewCopyrightAdapter,
 	makeadminadapter.NewDictAdapter,
+	makeadminadapter.NewFileAdapter,
 	makeadminadapter.NewProtocolAdapter,
 	makeadminadapter.NewStorageAdapter,
 	makeadminadapter.NewSystemAdapter,

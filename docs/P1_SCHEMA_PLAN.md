@@ -264,6 +264,20 @@ la_system_log_sms
 - `ma_dict_item.item_label` 对应旧 `name`，`ma_dict_item.item_value` 对应旧 `value`。
 - 字典数据唯一性按 `type_id + item_value` 约束，不继续沿用旧链路的全局 `name` 唯一判断。
 
+## P1.13 当前落地
+
+- 新增 `server/makeadmin/repository/file.go` 和 `server/makeadmin/service/file.go`，实现 `ma_file`、`ma_file_category` 的素材列表、分类、移动、重命名、软删除和上传后元数据写入。
+- 新增 `server/makeadmin/adapter/file.go`，把 `ma_file`、`ma_file_category` 适配到现有 `/common/album/*` 和 `/common/upload/*` 响应形状。
+- `server/admin/routers/common/album.go` 和 `server/admin/routers/common/upload.go` 接入新适配：检测到 `ma_file_category` 与 `ma_file` 表时走 `ma_*`，否则旧 `la_album*` 兜底。
+- `server/makeadmin/service/file_test.go` 覆盖文件新增、移动、分类删除保护和分类编码生成。
+
+## P1.13 已定事项
+
+- 对外 API 继续使用旧素材字段：`cid`、`type`、`name`、`uri`、`path`，避免前端素材组件同步改造。
+- 旧 `type=10/20/30` 分别映射为 `image`、`video`、`file`，当前种子只内置图片和视频根分类。
+- 上传文件的物理存储仍沿用当前 `plugin.StorageDriver`；P1.13 只切换上传成功后的元数据落表。
+- 分类删除会额外阻止删除存在子分类的分类，避免产生孤儿分类。
+
 ## 已定事项
 
 - `la_* -> ma_*` 只支持一次性迁移。

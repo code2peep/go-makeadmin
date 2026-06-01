@@ -7,14 +7,15 @@ import (
 	"go-makeadmin/core"
 	"go-makeadmin/core/request"
 	"go-makeadmin/core/response"
+	makeadminadapter "go-makeadmin/makeadmin/adapter"
 	"go-makeadmin/middleware"
 	"go-makeadmin/util"
 )
 
 var AlbumGroup = core.Group("/common", newAlbumHandler, regAlbum, middleware.TokenAuth())
 
-func newAlbumHandler(srv common.IAlbumService) *albumHandler {
-	return &albumHandler{srv: srv}
+func newAlbumHandler(srv common.IAlbumService, makeadminFile makeadminadapter.FileAdapter) *albumHandler {
+	return &albumHandler{srv: srv, makeadminFile: makeadminFile}
 }
 
 func regAlbum(rg *gin.RouterGroup, group *core.GroupBase) error {
@@ -31,10 +32,11 @@ func regAlbum(rg *gin.RouterGroup, group *core.GroupBase) error {
 }
 
 type albumHandler struct {
-	srv common.IAlbumService
+	srv           common.IAlbumService
+	makeadminFile makeadminadapter.FileAdapter
 }
 
-//albumList 相册文件列表
+// albumList 相册文件列表
 func (ah albumHandler) albumList(c *gin.Context) {
 	var page request.PageReq
 	var listReq req.CommonAlbumListReq
@@ -44,69 +46,103 @@ func (ah albumHandler) albumList(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &listReq)) {
 		return
 	}
+	if ah.makeadminFile.Available(c.Request.Context()) {
+		res, err := ah.makeadminFile.AlbumList(c.Request.Context(), page, listReq)
+		response.CheckAndRespWithData(c, res, err)
+		return
+	}
 	res, err := ah.srv.AlbumList(page, listReq)
 	response.CheckAndRespWithData(c, res, err)
 }
 
-//albumRename 相册文件重命名
+// albumRename 相册文件重命名
 func (ah albumHandler) albumRename(c *gin.Context) {
 	var rnReq req.CommonAlbumRenameReq
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &rnReq)) {
 		return
 	}
+	if ah.makeadminFile.Available(c.Request.Context()) {
+		response.CheckAndResp(c, ah.makeadminFile.AlbumRename(c.Request.Context(), rnReq.ID, rnReq.Name))
+		return
+	}
 	response.CheckAndResp(c, ah.srv.AlbumRename(rnReq.ID, rnReq.Name))
 }
 
-//albumMove 相册文件移动
+// albumMove 相册文件移动
 func (ah albumHandler) albumMove(c *gin.Context) {
 	var mvReq req.CommonAlbumMoveReq
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &mvReq)) {
 		return
 	}
+	if ah.makeadminFile.Available(c.Request.Context()) {
+		response.CheckAndResp(c, ah.makeadminFile.AlbumMove(c.Request.Context(), mvReq.Ids, mvReq.Cid))
+		return
+	}
 	response.CheckAndResp(c, ah.srv.AlbumMove(mvReq.Ids, mvReq.Cid))
 }
 
-//albumDel 相册文件删除
+// albumDel 相册文件删除
 func (ah albumHandler) albumDel(c *gin.Context) {
 	var delReq req.CommonAlbumDelReq
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &delReq)) {
 		return
 	}
+	if ah.makeadminFile.Available(c.Request.Context()) {
+		response.CheckAndResp(c, ah.makeadminFile.AlbumDel(c.Request.Context(), delReq.Ids))
+		return
+	}
 	response.CheckAndResp(c, ah.srv.AlbumDel(delReq.Ids))
 }
 
-//cateList 类目列表
+// cateList 类目列表
 func (ah albumHandler) cateList(c *gin.Context) {
 	var listReq req.CommonCateListReq
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &listReq)) {
+		return
+	}
+	if ah.makeadminFile.Available(c.Request.Context()) {
+		res, err := ah.makeadminFile.CateList(c.Request.Context(), listReq)
+		response.CheckAndRespWithData(c, res, err)
 		return
 	}
 	res, err := ah.srv.CateList(listReq)
 	response.CheckAndRespWithData(c, res, err)
 }
 
-//cateAdd 类目新增
+// cateAdd 类目新增
 func (ah albumHandler) cateAdd(c *gin.Context) {
 	var addReq req.CommonCateAddReq
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &addReq)) {
 		return
 	}
+	if ah.makeadminFile.Available(c.Request.Context()) {
+		response.CheckAndResp(c, ah.makeadminFile.CateAdd(c.Request.Context(), addReq))
+		return
+	}
 	response.CheckAndResp(c, ah.srv.CateAdd(addReq))
 }
 
-//cateRename 类目命名
+// cateRename 类目命名
 func (ah albumHandler) cateRename(c *gin.Context) {
 	var rnReq req.CommonCateRenameReq
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &rnReq)) {
 		return
 	}
+	if ah.makeadminFile.Available(c.Request.Context()) {
+		response.CheckAndResp(c, ah.makeadminFile.CateRename(c.Request.Context(), rnReq.ID, rnReq.Name))
+		return
+	}
 	response.CheckAndResp(c, ah.srv.CateRename(rnReq.ID, rnReq.Name))
 }
 
-//cateDel 类目删除
+// cateDel 类目删除
 func (ah albumHandler) cateDel(c *gin.Context) {
 	var delReq req.CommonCateDelReq
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &delReq)) {
+		return
+	}
+	if ah.makeadminFile.Available(c.Request.Context()) {
+		response.CheckAndResp(c, ah.makeadminFile.CateDel(c.Request.Context(), delReq.ID))
 		return
 	}
 	response.CheckAndResp(c, ah.srv.CateDel(delReq.ID))
