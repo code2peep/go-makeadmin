@@ -278,6 +278,20 @@ la_system_log_sms
 - 上传文件的物理存储仍沿用当前 `plugin.StorageDriver`；P1.13 只切换上传成功后的元数据落表。
 - 分类删除会额外阻止删除存在子分类的分类，避免产生孤儿分类。
 
+## P1.14 当前落地
+
+- `ma_audit_log` 补充 `ip` 字段，匹配现有操作日志查询和返回字段。
+- 新增 `server/makeadmin/repository/log.go`、`server/makeadmin/service/log.go` 和 `server/makeadmin/adapter/log.go`，实现 `ma_login_log`、`ma_audit_log` 的后台日志查询适配。
+- `server/admin/routers/system/log.go` 接入新适配：检测到 `ma_login_log` 与 `ma_audit_log` 表时走 `ma_*`，否则旧 `la_system_log_*` 兜底。
+- `server/middleware/log.go` 在存在 `ma_audit_log` 时写入新操作审计表，否则继续写旧操作日志表。
+- `server/makeadmin/service/log_test.go` 覆盖登录日志和操作审计日志查询过滤参数传递。
+
+## P1.14 已定事项
+
+- `ma_login_log.status` 与 `ma_audit_log.status` 内部保持 `1=成功,0=失败`，对外响应继续映射为旧接口的 `1=成功,2=失败`。
+- `ma_audit_log.action` 对应旧操作日志 `title`，`ma_audit_log.path` 对应旧 `url`，`ma_audit_log.request_body` 对应旧 `args`。
+- P1.14 不迁移旧 `la_system_log_*` 历史数据，只保证新 P1 链路产生和查询新日志。
+
 ## 已定事项
 
 - `la_* -> ma_*` 只支持一次性迁移。

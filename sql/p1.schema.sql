@@ -284,6 +284,7 @@ CREATE TABLE `ma_audit_log` (
   `action` VARCHAR(128) NOT NULL DEFAULT '',
   `method` VARCHAR(16) NOT NULL DEFAULT '',
   `path` VARCHAR(255) NOT NULL DEFAULT '',
+  `ip` VARCHAR(64) NOT NULL DEFAULT '',
   `request_body` TEXT NOT NULL,
   `response_code` INT NOT NULL DEFAULT 0,
   `error` TEXT NOT NULL,

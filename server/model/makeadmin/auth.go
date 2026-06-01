@@ -295,6 +295,7 @@ type AuditLog struct {
 	Action       string `gorm:"size:128;not null;default:'';comment:'action code'"`
 	Method       string `gorm:"size:16;not null;default:'';comment:'http method'"`
 	Path         string `gorm:"size:255;not null;default:'';comment:'request path'"`
+	IP           string `gorm:"column:ip;size:64;not null;default:'';comment:'ip address'"`
 	RequestBody  string `gorm:"type:text;not null;comment:'request body'"`
 	ResponseCode int    `gorm:"not null;default:0;comment:'response code'"`
 	Error        string `gorm:"type:text;not null;comment:'error message'"`

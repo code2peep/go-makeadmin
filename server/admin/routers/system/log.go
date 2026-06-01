@@ -7,14 +7,15 @@ import (
 	"go-makeadmin/core"
 	"go-makeadmin/core/request"
 	"go-makeadmin/core/response"
+	makeadminadapter "go-makeadmin/makeadmin/adapter"
 	"go-makeadmin/middleware"
 	"go-makeadmin/util"
 )
 
 var LogGroup = core.Group("/system", newLogHandler, regLog, middleware.TokenAuth())
 
-func newLogHandler(srv system.ISystemLogsServer) *logHandler {
-	return &logHandler{srv: srv}
+func newLogHandler(srv system.ISystemLogsServer, makeadminLog makeadminadapter.LogAdapter) *logHandler {
+	return &logHandler{srv: srv, makeadminLog: makeadminLog}
 }
 
 func regLog(rg *gin.RouterGroup, group *core.GroupBase) error {
@@ -25,10 +26,11 @@ func regLog(rg *gin.RouterGroup, group *core.GroupBase) error {
 }
 
 type logHandler struct {
-	srv system.ISystemLogsServer
+	srv          system.ISystemLogsServer
+	makeadminLog makeadminadapter.LogAdapter
 }
 
-//operate 操作日志
+// operate 操作日志
 func (lh logHandler) operate(c *gin.Context) {
 	var page request.PageReq
 	var logReq req.SystemLogOperateReq
@@ -38,11 +40,16 @@ func (lh logHandler) operate(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &logReq)) {
 		return
 	}
+	if lh.makeadminLog.Available(c.Request.Context()) {
+		res, err := lh.makeadminLog.Operate(c.Request.Context(), page, logReq)
+		response.CheckAndRespWithData(c, res, err)
+		return
+	}
 	res, err := lh.srv.Operate(page, logReq)
 	response.CheckAndRespWithData(c, res, err)
 }
 
-//login 登录日志
+// login 登录日志
 func (lh logHandler) login(c *gin.Context) {
 	var page request.PageReq
 	var logReq req.SystemLogLoginReq
@@ -50,6 +57,11 @@ func (lh logHandler) login(c *gin.Context) {
 		return
 	}
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &logReq)) {
+		return
+	}
+	if lh.makeadminLog.Available(c.Request.Context()) {
+		res, err := lh.makeadminLog.Login(c.Request.Context(), page, logReq)
+		response.CheckAndRespWithData(c, res, err)
 		return
 	}
 	res, err := lh.srv.Login(page, logReq)

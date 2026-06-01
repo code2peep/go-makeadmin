@@ -4,18 +4,19 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"go.uber.org/zap"
 	"go-makeadmin/config"
 	"go-makeadmin/core"
 	"go-makeadmin/core/response"
+	"go-makeadmin/model/makeadmin"
 	"go-makeadmin/model/system"
 	"go-makeadmin/util"
+	"go.uber.org/zap"
 	"net/url"
 	"strings"
 	"time"
 )
 
-//requestType 请求参数类
+// requestType 请求参数类
 type requestType string
 
 const (
@@ -23,7 +24,7 @@ const (
 	RequestDefault requestType = "default" // 默认数据类型
 )
 
-//RecordLog 记录系统日志信息中间件
+// RecordLog 记录系统日志信息中间件
 func RecordLog(title string, reqTypes ...requestType) gin.HandlerFunc {
 	reqType := RequestDefault
 	if len(reqTypes) > 0 {
@@ -92,11 +93,7 @@ func RecordLog(title string, reqTypes ...requestType) gin.HandlerFunc {
 				urlPath := c.Request.URL.Path
 				ip := c.ClientIP()
 				method := c.HandlerName()
-				err := core.GetDB().Create(&system.SystemLogOperate{
-					AdminId: adminId, Type: reqMethod, Title: title, Ip: ip,
-					Url: urlPath, Method: method, Args: args, Error: errStr, Status: status,
-					StartTime: startTime / 1000, EndTime: endTime / 1000, TaskTime: taskTime,
-				}).Error
+				err := recordOperateLog(c, adminId, reqMethod, title, ip, urlPath, method, args, errStr, status, startTime, endTime, taskTime)
 				response.CheckErr(err, "RecordLog recover Create err")
 				core.Logger.WithOptions(zap.AddCallerSkip(2)).Infof(
 					"RecordLog recover: err=[%+v]", r)
@@ -118,11 +115,51 @@ func RecordLog(title string, reqTypes ...requestType) gin.HandlerFunc {
 		urlPath := c.Request.URL.Path
 		ip := c.ClientIP()
 		method := c.HandlerName()
-		err := core.GetDB().Create(&system.SystemLogOperate{
-			AdminId: adminId, Type: reqMethod, Title: title, Ip: ip,
-			Url: urlPath, Method: method, Args: args, Error: errStr, Status: status,
-			StartTime: startTime / 1000, EndTime: endTime / 1000, TaskTime: taskTime,
-		}).Error
+		err := recordOperateLog(c, adminId, reqMethod, title, ip, urlPath, method, args, errStr, status, startTime, endTime, taskTime)
 		response.CheckErr(err, "RecordLog Create err")
 	}
+}
+
+func recordOperateLog(
+	c *gin.Context,
+	adminID uint,
+	reqMethod string,
+	title string,
+	ip string,
+	urlPath string,
+	handlerName string,
+	args string,
+	errStr string,
+	status uint8,
+	startTime int64,
+	endTime int64,
+	taskTime int64,
+) error {
+	db := core.GetDB()
+	if db.Migrator().HasTable(&makeadmin.AuditLog{}) {
+		auditStatus := uint8(0)
+		if status == 1 {
+			auditStatus = 1
+		}
+		return db.Create(&makeadmin.AuditLog{
+			TenantID:     makeadmin.GlobalTenantID,
+			AdminID:      uint64(adminID),
+			Action:       title,
+			Method:       reqMethod,
+			Path:         urlPath,
+			IP:           ip,
+			RequestBody:  args,
+			ResponseCode: c.Writer.Status(),
+			Error:        errStr,
+			Status:       auditStatus,
+			StartTime:    startTime / 1000,
+			EndTime:      endTime / 1000,
+			DurationMS:   taskTime,
+		}).Error
+	}
+	return db.Create(&system.SystemLogOperate{
+		AdminId: adminID, Type: reqMethod, Title: title, Ip: ip,
+		Url: urlPath, Method: handlerName, Args: args, Error: errStr, Status: status,
+		StartTime: startTime / 1000, EndTime: endTime / 1000, TaskTime: taskTime,
+	}).Error
 }

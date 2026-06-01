@@ -85,6 +85,18 @@ if [ "$failed" -ne 0 ]; then
     exit 1
 fi
 
+audit_ip_column="$(mysql_query "SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='${MYSQL_DATABASE}' AND TABLE_NAME='ma_audit_log' AND COLUMN_NAME='ip';")"
+if [ "$audit_ip_column" -ne 1 ]; then
+    echo "FAIL: ma_audit_log.ip column is missing."
+    failed=1
+else
+    echo "OK: ma_audit_log.ip column exists."
+fi
+
+if [ "$failed" -ne 0 ]; then
+    exit 1
+fi
+
 admin_count="$(mysql_query "SELECT COUNT(*) FROM ma_admin WHERE username='admin' AND is_super=1 AND delete_time=0;")"
 role_count="$(mysql_query "SELECT COUNT(*) FROM ma_role WHERE code='super_admin' AND tenant_id=0 AND delete_time=0;")"
 permission_count="$(mysql_query "SELECT COUNT(*) FROM ma_permission;")"
