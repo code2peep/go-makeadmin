@@ -616,6 +616,37 @@ P2 从 P1 冻结底座继续推进，不再扩大 P1 范围。P2 的重点是把
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有修改 schema、没有读取或修改 `.env`、没有连接真实 zyai 业务库。
 
+## P2.19 当前落地
+
+模块卸载/回滚 dry-run 已建立：
+
+- 新增 `scripts/module-uninstall-plan.py`。
+- 脚本读取 manifest 并复用已有 manifest 校验。
+- 脚本只输出 SQL 预览，不连接数据库、不执行删除。
+- SQL 预览包含 `ma_role_permission`、`ma_menu_permission`、`ma_menu`、`ma_permission` 清理语句。
+- 清理顺序先关联表、后主表。
+- SQL 只使用 manifest 声明的权限 code 和菜单 routeName。
+- 本阶段不删除前端文件、后端代码、runtime 环境变量或 schema。
+
+详见 `docs/P2_MODULE_UNINSTALL_PLAN.md`。
+
+## P2.19 验收标准
+
+- `python3 -m py_compile scripts/check-module-manifests.py scripts/module-registry-plan.py scripts/module-uninstall-plan.py` 通过。
+- `python3 scripts/check-module-manifests.py` 通过。
+- `python3 scripts/module-uninstall-plan.py --manifest examples/demo/manifest.json` 通过，只输出 SQL。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不执行数据库删除、不删除文件、不修改 schema、不修改 `.env`。
+
+## P2.19 验收结果
+
+- 已通过 `python3 -m py_compile scripts/check-module-manifests.py scripts/module-registry-plan.py scripts/module-uninstall-plan.py`。
+- 已通过 `python3 scripts/check-module-manifests.py`。
+- 已通过 `python3 scripts/module-uninstall-plan.py --manifest examples/demo/manifest.json`；生成卸载 SQL 预览，没有执行 SQL。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有执行数据库删除、没有删除文件、没有修改 schema、没有修改 `.env`。
+
 ## 下一步
 
-P2.19：模块卸载/回滚 dry-run 计划。该任务先生成 demo module 注册清理 SQL 预览，不执行写入。
+P2.20：模块卸载 apply 边界设计。该任务定义删除执行器的门禁、备份和本地 smoke 规则，不直接开放删除。
