@@ -423,6 +423,18 @@ la_system_log_sms
 - P0 蓝本 SQL 和旧服务只作为历史资料保留，不再出现在默认启动路径里。
 - 后续做完一个阶段任务后，交付时直接给出下一步任务建议。
 
+## P1.24 当前落地
+
+- 新增 `scripts/check-runtime-residue.sh`，自动扫描 P1 核心运行目录中的旧运行时残留。
+- `scripts/verify-no-db.sh` 已接入运行残留守卫，后续默认验证会先阻止旧 fallback 回流。
+- 代码生成 Go 路由模板移除旧 `admin/service/system` 引用，避免新生成模块继续携带蓝本服务依赖。
+- `docs/P1_RUNTIME_RESIDUE_AUDIT.md` 和 `docs/P1_ACCEPTANCE_CHECKLIST.md` 已记录守卫范围和验收入口。
+
+## P1.24 已定事项
+
+- 守卫脚本只扫描 P1 核心运行目录，不扫描旧蓝本服务、旧模型、旧 SQL 和 P0 历史脚本。
+- 旧 `server/admin/service/*` 与 `server/model/{system,setting,common}` 仍作为参考代码保留，不在本阶段删除。
+
 ## 已定事项
 
 - `la_* -> ma_*` 只支持一次性迁移。

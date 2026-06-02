@@ -43,6 +43,28 @@ P1.20 的目标是明确 `la_*` 残留边界：P1 运行默认值和已接管模
 - P1 初始化脚本可稳定生成完整 `ma_*` 开发库：已完成。
 - 登录、权限、菜单、设置、文件、日志、代码生成的 smoke 覆盖核心写操作：已完成，并在 P1.22 补充公共首页和日志查询。
 - P0 蓝本库不再作为 P1 默认运行库：已完成。
+- P1 运行残留守卫脚本已接入 `verify-no-db`，防止核心运行目录重新引用旧服务、旧模型、旧 token 和 `la_*` 表名。
+
+## 自动守卫
+
+`scripts/check-runtime-residue.sh` 会扫描 P1 核心运行目录：
+
+- `server/admin/routers`
+- `server/middleware`
+- `server/makeadmin`
+- `server/generator`
+
+守卫范围：
+
+- 禁止重新导入旧 `server/admin/service/{system,setting,common}`。
+- 禁止重新导入旧 `server/model/{system,setting,common}`。
+- 禁止重新使用旧 `backstage:*` Redis token key。
+- 禁止路由和中间件重新通过 `.Available()` 分支做运行时 fallback。
+- 禁止 P1 运行目录直接引用 `la_*` 表名。
+- 禁止 P1 运行目录重新使用 `ConfigUtil` 设置 fallback。
+- 禁止配置默认表前缀回到 `la_`。
+
+旧蓝本源码、旧 SQL 和 P0 脚本仍按“允许保留的 `la_*` 残留”规则保留，不在守卫脚本的运行路径扫描范围内。
 
 ## 后续清理条件
 

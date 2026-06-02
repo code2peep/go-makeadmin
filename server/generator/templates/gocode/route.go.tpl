@@ -2,8 +2,6 @@ package {{{ .PackageName }}}
 
 import (
 	"github.com/gin-gonic/gin"
-	"go-makeadmin/admin/schemas/req"
-	"go-makeadmin/admin/service/system"
 	"go-makeadmin/core"
 	"go-makeadmin/core/request"
 	"go-makeadmin/core/response"

@@ -3,6 +3,9 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+echo "==> Runtime residue guard"
+"$ROOT_DIR/scripts/check-runtime-residue.sh"
+
 echo "==> Backend: go test ./..."
 (
     cd "$ROOT_DIR/server"
