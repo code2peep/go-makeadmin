@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Build a dry-run tenant initialization plan.
+"""Build or apply a tenant initialization plan.
 
-This script only reads the source and target tenant rows, then prints a SQL
-preview. It never executes the generated SQL.
+Dry-run mode only reads source and target tenant rows, then prints a SQL
+preview. Apply mode requires explicit local write gates before any database
+write is attempted.
 """
 
 from __future__ import annotations
@@ -17,6 +18,7 @@ from typing import Any
 
 SETTING_GROUPS = ("website", "protocol", "storage")
 SECRET_FIELDS = {"secretKey", "accessKey"}
+WRITE_ENV = "MAKEADMIN_ALLOW_TENANT_INIT_WRITE"
 
 
 class PlanError(RuntimeError):
@@ -24,20 +26,21 @@ class PlanError(RuntimeError):
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Preview tenant initialization SQL without writing database rows.")
+    parser = argparse.ArgumentParser(description="Preview or apply tenant initialization SQL.")
     parser.add_argument("--from-tenant", type=int, default=0, help="source tenant id, default: 0")
     parser.add_argument("--to-tenant", type=int, required=True, help="target tenant id")
+    parser.add_argument("--confirm-to-tenant", type=int, help="required with --apply; must equal --to-tenant")
     parser.add_argument("--mysql-host", default=os.environ.get("MYSQL_HOST", "127.0.0.1"))
     parser.add_argument("--mysql-port", default=os.environ.get("MYSQL_PORT", "3306"))
     parser.add_argument("--mysql-user", default=os.environ.get("MYSQL_USER", "root"))
     parser.add_argument("--mysql-database", default=os.environ.get("MYSQL_DATABASE", "go_makeadmin"))
     parser.add_argument("--copy-secret", action="store_true", help="keep cloud storage accessKey/secretKey in SQL preview")
     parser.add_argument("--sql-only", action="store_true", help="print only SQL preview")
-    parser.add_argument("--apply", action="store_true", help="reserved write mode; currently fails before database access")
+    parser.add_argument("--apply", action="store_true", help=f"write missing rows; requires {WRITE_ENV}=1")
     return parser.parse_args()
 
 
-def mysql_json(args: argparse.Namespace, query: str) -> list[dict[str, Any]]:
+def mysql_run(args: argparse.Namespace, query: str) -> subprocess.CompletedProcess[str]:
     command = [
         "mysql",
         "--host",
@@ -58,12 +61,16 @@ def mysql_json(args: argparse.Namespace, query: str) -> list[dict[str, Any]]:
     if "MYSQL_PASSWORD" in env:
         env["MYSQL_PWD"] = env["MYSQL_PASSWORD"]
     try:
-        result = subprocess.run(command, env=env, check=True, capture_output=True, text=True)
+        return subprocess.run(command, env=env, check=True, capture_output=True, text=True)
     except FileNotFoundError as exc:
         raise PlanError("mysql client is required") from exc
     except subprocess.CalledProcessError as exc:
         stderr = exc.stderr.strip()
         raise PlanError(f"mysql query failed: {stderr}") from exc
+
+
+def mysql_json(args: argparse.Namespace, query: str) -> list[dict[str, Any]]:
+    result = mysql_run(args, query)
     raw = result.stdout.strip()
     if not raw or raw == "null":
         return []
@@ -71,6 +78,48 @@ def mysql_json(args: argparse.Namespace, query: str) -> list[dict[str, Any]]:
     if not isinstance(payload, list):
         raise PlanError(f"mysql JSON result is not an array: {payload!r}")
     return payload
+
+
+def mysql_exec(args: argparse.Namespace, query: str) -> None:
+    mysql_run(args, query)
+
+
+def validate_base_args(args: argparse.Namespace) -> None:
+    if args.from_tenant < 0 or args.to_tenant < 0:
+        raise PlanError("tenant ids must be non-negative")
+    if args.from_tenant == args.to_tenant:
+        raise PlanError("--from-tenant and --to-tenant must be different")
+    if args.apply and args.sql_only:
+        raise PlanError("--sql-only cannot be combined with --apply")
+
+
+def validate_apply_gate(args: argparse.Namespace) -> None:
+    if os.environ.get(WRITE_ENV) != "1":
+        raise PlanError(f"--apply requires {WRITE_ENV}=1; no database access was attempted")
+    if args.confirm_to_tenant is None:
+        raise PlanError("--apply requires --confirm-to-tenant; no database access was attempted")
+    if args.confirm_to_tenant != args.to_tenant:
+        raise PlanError("--confirm-to-tenant must equal --to-tenant; no database access was attempted")
+
+
+def ensure_target_tenant_enabled(args: argparse.Namespace) -> None:
+    rows = mysql_json(
+        args,
+        f"""
+        SELECT COALESCE(JSON_ARRAYAGG(JSON_OBJECT(
+            'id', id,
+            'status', status,
+            'delete_time', delete_time
+        )), JSON_ARRAY())
+        FROM ma_tenant
+        WHERE id = {args.to_tenant};
+        """,
+    )
+    if not rows:
+        raise PlanError(f"target tenant {args.to_tenant} does not exist")
+    row = rows[0]
+    if int(row.get("status") or 0) != 1 or int(row.get("delete_time") or 0) != 0:
+        raise PlanError(f"target tenant {args.to_tenant} is not enabled")
 
 
 def source_settings(args: argparse.Namespace) -> list[dict[str, Any]]:
@@ -214,49 +263,81 @@ def print_plan(args: argparse.Namespace, plan: dict[str, list[dict[str, Any]]]) 
 
 def print_sql(args: argparse.Namespace, plan: dict[str, list[dict[str, Any]]]) -> None:
     print("-- Dry-run SQL preview. Review manually before applying; this script did not execute it.")
-    print(f"SET @tenant_id = {args.to_tenant};")
-    print("SET @now = UNIX_TIMESTAMP();")
-    print()
+    print(build_sql(args, plan))
+
+
+def build_sql(args: argparse.Namespace, plan: dict[str, list[dict[str, Any]]]) -> str:
+    statements = [
+        f"SET @tenant_id = {args.to_tenant};",
+        "SET @now = UNIX_TIMESTAMP();",
+        "START TRANSACTION;",
+    ]
     if plan["settings_insert"]:
-        print("INSERT INTO `ma_setting`")
-        print("(`tenant_id`, `setting_group`, `setting_key`, `setting_value`, `value_type`, `is_public`, `remark`, `create_time`, `update_time`)")
-        print("VALUES")
-        values = []
-        for row in plan["settings_insert"]:
-            values.append(
-                "("
-                "@tenant_id, "
-                f"{sql_quote(row['setting_group'])}, "
-                f"{sql_quote(row['setting_key'])}, "
-                f"{sql_quote(row.get('setting_value', ''))}, "
-                f"{sql_quote(row.get('value_type', 'string'))}, "
-                f"{int(row.get('is_public') or 0)}, "
-                f"{sql_quote(row.get('remark', ''))}, "
-                "@now, @now"
-                ")"
-            )
-        print(",\n".join(values) + ";")
-        print()
+        statements.append(setting_insert_sql(plan["settings_insert"]))
     if plan["categories_insert"]:
-        print("INSERT INTO `ma_file_category`")
-        print("(`tenant_id`, `parent_id`, `code`, `name`, `file_type`, `status`, `sort`, `create_time`, `update_time`, `delete_time`)")
-        print("VALUES")
-        values = []
         for row in plan["categories_insert"]:
-            parent_id_sql = parent_id_expression(row)
-            values.append(
+            statements.extend(category_insert_sql(row))
+    if not plan["settings_insert"] and not plan["categories_insert"]:
+        statements.append("-- No missing tenant initialization rows.")
+    statements.append("COMMIT;")
+    return "\n\n".join(statements)
+
+
+def setting_insert_sql(rows: list[dict[str, Any]]) -> str:
+    values = []
+    for row in rows:
+        values.append(
+            "("
+            "@tenant_id, "
+            f"{sql_quote(row['setting_group'])}, "
+            f"{sql_quote(row['setting_key'])}, "
+            f"{sql_quote(row.get('setting_value', ''))}, "
+            f"{sql_quote(row.get('value_type', 'string'))}, "
+            f"{int(row.get('is_public') or 0)}, "
+            f"{sql_quote(row.get('remark', ''))}, "
+            "@now, @now"
+            ")"
+        )
+    return "\n".join(
+        [
+            "INSERT INTO `ma_setting`",
+            "(`tenant_id`, `setting_group`, `setting_key`, `setting_value`, `value_type`, `is_public`, `remark`, `create_time`, `update_time`)",
+            "VALUES",
+            ",\n".join(values) + ";",
+        ]
+    )
+
+
+def category_insert_sql(row: dict[str, Any]) -> list[str]:
+    statements = [f"SET @parent_id = {parent_id_expression(row)};"]
+    statements.append(
+        "\n".join(
+            [
+                "INSERT INTO `ma_file_category`",
+                "(`tenant_id`, `parent_id`, `code`, `name`, `file_type`, `status`, `sort`, `create_time`, `update_time`, `delete_time`)",
+                "VALUES",
                 "("
                 "@tenant_id, "
-                f"{parent_id_sql}, "
+                "@parent_id, "
                 f"{sql_quote(row['code'])}, "
                 f"{sql_quote(row['name'])}, "
                 f"{sql_quote(row['file_type'])}, "
                 f"{int(row.get('status') or 1)}, "
                 f"{int(row.get('sort') or 0)}, "
                 "@now, @now, 0"
-                ")"
-            )
-        print(",\n".join(values) + ";")
+                ");",
+            ]
+        )
+    )
+    return statements
+
+
+def apply_plan(args: argparse.Namespace, plan: dict[str, list[dict[str, Any]]]) -> None:
+    mysql_exec(args, build_sql(args, plan))
+    print(f"Tenant init apply: from={args.from_tenant} to={args.to_tenant}")
+    print(f"Settings: inserted={len(plan['settings_insert'])} skip_existing={len(plan['settings_skip'])}")
+    print(f"File categories: inserted={len(plan['categories_insert'])} skip_existing={len(plan['categories_skip'])}")
+    print("Transaction: committed")
 
 
 def parent_id_expression(row: dict[str, Any]) -> str:
@@ -279,14 +360,15 @@ def sql_quote(value: Any) -> str:
 
 def main() -> int:
     args = parse_args()
-    if args.from_tenant < 0 or args.to_tenant < 0:
-        raise PlanError("tenant ids must be non-negative")
-    if args.from_tenant == args.to_tenant:
-        raise PlanError("--from-tenant and --to-tenant must be different")
+    validate_base_args(args)
     if args.apply:
-        raise PlanError("--apply is intentionally disabled until DB write approval is granted; no database access was attempted")
+        validate_apply_gate(args)
+        ensure_target_tenant_enabled(args)
     plan = build_plan(args)
-    print_plan(args, plan)
+    if args.apply:
+        apply_plan(args, plan)
+    else:
+        print_plan(args, plan)
     return 0
 
 

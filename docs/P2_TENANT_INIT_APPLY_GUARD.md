@@ -6,7 +6,9 @@
 
 P2.7 只建立租户初始化写入模式的安全门禁和设计边界，不执行数据库写入。
 
-当前 `scripts/tenant-init-plan.py` 已接受 `--apply` 参数，但会在任何数据库访问之前失败：
+P2.8 已在该门禁基础上开放本地受控写入模式；现行写入规则见 `docs/P2_TENANT_INIT_APPLY.md`。
+
+P2.7 当时的 `scripts/tenant-init-plan.py` 已接受 `--apply` 参数，但会在任何数据库访问之前失败：
 
 ```bash
 python3 scripts/tenant-init-plan.py --from-tenant 0 --to-tenant 2 --apply
@@ -20,15 +22,15 @@ FAIL: --apply is intentionally disabled until DB write approval is granted; no d
 
 ## 当前门禁
 
-- `--apply` 只作为预留入口，当前不执行查询、不执行写入。
+- `--apply` 不能裸用，必须通过 P2.8 的环境变量和目标租户确认门禁。
 - dry-run 行为保持不变：不传 `--apply` 时只读取数据库并输出 SQL 预览。
 - 本阶段不引入自动迁移、不创建租户、不创建租户成员。
 - 本阶段不迁移 `ma_file` 元数据和物理上传文件。
 - 本阶段不默认复制 `secretKey` / `accessKey`。
 
-## 后续开放写入的必要条件
+## P2.8 开放写入的必要条件
 
-真正进入 apply/write 实现前，需要单独授权数据库写入，并满足这些门禁：
+apply/write 实现已按这些门禁开放：
 
 - 命令必须同时包含 `--apply` 和 `MAKEADMIN_ALLOW_TENANT_INIT_WRITE=1`。
 - 命令必须包含 `--confirm-to-tenant <id>`，且值必须等于 `--to-tenant`。
@@ -63,7 +65,7 @@ GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh
 ## 不在 P2.7 做
 
 - 不执行租户初始化 SQL。
-- 不开放 `MAKEADMIN_ALLOW_TENANT_INIT_WRITE` 写入路径。
+- 不开放 `MAKEADMIN_ALLOW_TENANT_INIT_WRITE` 写入路径；该路径已在 P2.8 单独开放。
 - 不对真实业务库或生产库做任何操作。
 - 不修改 schema。
 - 不修改 `.env` 或密钥。

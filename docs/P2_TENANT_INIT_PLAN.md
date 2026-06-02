@@ -35,8 +35,8 @@ python3 scripts/tenant-init-plan.py --from-tenant 0 --to-tenant 2 --sql-only
 
 ## 安全规则
 
-- 脚本只查询数据库，不执行输出的 SQL。
-- `--apply` 是 P2.7 预留写入入口，当前会在数据库访问前失败。
+- dry-run 模式只查询数据库，不执行输出的 SQL。
+- `--apply` 写入模式已在 P2.8 开放，必须通过 `docs/P2_TENANT_INIT_APPLY.md` 中的双门禁。
 - `--from-tenant` 和 `--to-tenant` 必须不同。
 - `--to-tenant` 不会被自动创建。
 - 目标租户已存在的 setting key 和文件分类 code 默认跳过。
@@ -68,7 +68,7 @@ SET @now = UNIX_TIMESTAMP();
 ## 不在 P2.6 做
 
 - 不执行 SQL。
-- 不开放 `--apply` 写入模式。
+- P2.6 阶段不开放 `--apply` 写入模式；该路径已在 P2.8 单独开放。
 - 不创建租户或租户成员。
 - 不覆盖目标租户已有配置。
 - 不迁移 `ma_file` 文件元数据。

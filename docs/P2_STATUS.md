@@ -245,6 +245,49 @@ P2 从 P1 冻结底座继续推进，不再扩大 P1 范围。P2 的重点是把
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有执行租户数据写入、schema 变更或 `.env` 修改。
 
+## P2.8 当前落地
+
+租户初始化 apply/write 模式已开放为本地受控写入：
+
+- `scripts/tenant-init-plan.py --apply` 现在支持执行缺失初始化行写入。
+- 写入必须同时满足 `MAKEADMIN_ALLOW_TENANT_INIT_WRITE=1` 和 `--confirm-to-tenant <id>`。
+- 缺少环境变量或确认参数时，脚本会在数据库访问前失败。
+- apply 前会校验目标租户已存在、启用且未软删除。
+- 写入在单个事务中执行。
+- 只插入目标租户缺失的 `ma_setting` 和 `ma_file_category` 行。
+- 已存在 setting key 和文件分类 code 只跳过，不覆盖、不更新。
+- `storage` JSON 配置里的 `secretKey` / `accessKey` 默认清空，除非显式传入 `--copy-secret`。
+- 本阶段不创建租户、不创建租户成员、不迁移 `ma_file` 元数据、不迁移物理上传文件、不修改 schema。
+
+详见 `docs/P2_TENANT_INIT_APPLY.md`。
+
+## P2.8 验收标准
+
+- `python3 -m py_compile scripts/tenant-init-plan.py scripts/p1-smoke.py` 通过。
+- `python3 scripts/tenant-init-plan.py --from-tenant 0 --to-tenant 999999 --apply` 失败，且错误说明没有访问数据库。
+- `MAKEADMIN_ALLOW_TENANT_INIT_WRITE=1 python3 scripts/tenant-init-plan.py --from-tenant 0 --to-tenant 999999 --apply` 失败，且错误说明缺少确认参数。
+- `python3 scripts/tenant-init-plan.py --from-tenant 0 --to-tenant 999999 --sql-only` 继续通过。
+- 对本地 `go_makeadmin` 执行一次临时租户写入 smoke，并清理临时行。
+- `./scripts/verify-no-db.sh` 通过。
+- `./scripts/check-services.sh` 通过。
+- `./scripts/check-p1-seed.sh` 通过。
+- 不修改 schema、不读取或修改 `.env`、不连接真实 zyai 业务库。
+
+## P2.8 验收结果
+
+- 已通过 `python3 -m py_compile scripts/tenant-init-plan.py scripts/p1-smoke.py`。
+- 已通过 `python3 scripts/tenant-init-plan.py --from-tenant 0 --to-tenant 999999 --apply` 失败门禁；失败文案明确没有访问数据库。
+- 已通过 `MAKEADMIN_ALLOW_TENANT_INIT_WRITE=1 python3 scripts/tenant-init-plan.py --from-tenant 0 --to-tenant 999999 --apply` 失败门禁；失败文案明确没有访问数据库。
+- 已通过 `python3 scripts/tenant-init-plan.py --from-tenant 0 --to-tenant 999999 --sql-only`；dry-run SQL 预览继续可用。
+- 已对本地 `go_makeadmin` 临时租户 `990028` 完成写入 smoke：第一次插入 12 条 setting 和 2 条文件分类，第二次插入 0 条并跳过已有 12 条 setting 和 2 条文件分类。
+- 已校验临时租户 storage 密钥字段没有非空复制。
+- 已清理临时租户、setting 和文件分类行，清理后残留计数为 0。
+- 已通过 `bash -n scripts/check-runtime-residue.sh scripts/verify-no-db.sh scripts/check-services.sh scripts/check-p1-seed.sh`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `./scripts/check-services.sh` 和 `./scripts/check-p1-seed.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有修改 schema、没有读取或修改 `.env`、没有连接真实 zyai 业务库。
+
 ## 下一步
 
-P2.8：租户初始化 apply/write 实现与本地写入 smoke。该任务会触及数据库写入红线，进入前需要明确授权。
+P2.9：代码生成器闭环，生成可编译、可挂载、可验证的标准示例模块。
