@@ -24,6 +24,8 @@ SMOKE_MATRIX = [
     ("auth", "POST /system/login", "read", "login returns a token"),
     ("auth", "JWT claims", "read", "login token has sid/adminId/tenantId/iat/exp/iss claims"),
     ("auth", "X-Tenant-ID mismatch", "read", "token request rejects mismatched tenant header"),
+    ("auth", "GET /system/tenant/list", "read", "tenant list exposes default tenant"),
+    ("auth", "POST /system/tenant/switch", "write", "switching to default tenant returns a new token"),
     ("auth", "POST /system/logout", "write", "JWT session state can be deleted"),
     ("auth", "GET /system/admin/self", "read", "token resolves current admin"),
     ("auth", "GET /system/menu/route", "read", "token resolves route menus"),
@@ -300,6 +302,20 @@ def run() -> None:
             expected_code=403,
             label="tenant mismatch guard",
         )
+        tenants = data_list(client.api_json("GET", "/system/tenant/list", label="tenant list"))
+        default_tenant = next((tenant for tenant in tenants if tenant.get("id") == 0), None)
+        if not default_tenant or default_tenant.get("isCurrent") != 1:
+            raise SmokeError(f"tenant list missing current default tenant: {tenants!r}")
+        switch = client.api_json("POST", "/system/tenant/switch", body={"tenantId": 0}, label="tenant switch default")
+        switched_token = switch.get("data", {}).get("token")
+        if not switched_token:
+            raise SmokeError("tenant switch did not return data.token")
+        old_token = client.token
+        client.api_json("POST", "/system/logout", label="logout old token after tenant switch")
+        client.token = str(switched_token)
+        if client.token == old_token:
+            raise SmokeError("tenant switch returned the same token")
+        assert_jwt_claims(client.token)
 
         client.api_json("GET", "/system/admin/self", label="admin self")
         client.api_json("GET", "/system/menu/route", label="menu route")

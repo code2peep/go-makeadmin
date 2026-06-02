@@ -8,6 +8,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 
+	"go-makeadmin/makeadmin/repository"
 	"go-makeadmin/makeadmin/security"
 	"go-makeadmin/model/makeadmin"
 )
@@ -15,6 +16,8 @@ import (
 type fakeAuthRepository struct {
 	admin          makeadmin.Admin
 	profile        makeadmin.AdminProfile
+	tenants        []makeadmin.Tenant
+	tenantMembers  []makeadmin.TenantMember
 	roleIDs        []uint64
 	permissionCode []string
 	dataScopes     []makeadmin.DataScope
@@ -37,6 +40,44 @@ func (repo *fakeAuthRepository) FindAdminByID(context.Context, uint64) (makeadmi
 
 func (repo *fakeAuthRepository) FindAdminProfileByAdminID(context.Context, uint64) (makeadmin.AdminProfile, error) {
 	return repo.profile, nil
+}
+
+func (repo *fakeAuthRepository) FindTenantByID(ctx context.Context, tenantID uint64) (makeadmin.Tenant, error) {
+	for _, tenant := range repo.tenants {
+		if tenant.ID == tenantID && tenant.DeleteTime == 0 {
+			return tenant, nil
+		}
+	}
+	return makeadmin.Tenant{}, gorm.ErrRecordNotFound
+}
+
+func (repo *fakeAuthRepository) FindTenantMember(ctx context.Context, tenantID uint64, adminID uint64) (makeadmin.TenantMember, error) {
+	for _, member := range repo.tenantMembers {
+		if member.TenantID == tenantID && member.AdminID == adminID && member.Status == makeadmin.StatusEnabled && member.DeleteTime == 0 {
+			return member, nil
+		}
+	}
+	return makeadmin.TenantMember{}, gorm.ErrRecordNotFound
+}
+
+func (repo *fakeAuthRepository) ListTenantMembershipsByAdminID(ctx context.Context, adminID uint64) ([]repository.TenantMembership, error) {
+	result := make([]repository.TenantMembership, 0, len(repo.tenantMembers))
+	for _, member := range repo.tenantMembers {
+		if member.AdminID != adminID || member.Status != makeadmin.StatusEnabled || member.DeleteTime != 0 {
+			continue
+		}
+		for _, tenant := range repo.tenants {
+			if tenant.ID == member.TenantID && tenant.Status == makeadmin.StatusEnabled && tenant.DeleteTime == 0 {
+				result = append(result, repository.TenantMembership{
+					TenantID:   tenant.ID,
+					Code:       tenant.Code,
+					Name:       tenant.Name,
+					MemberType: member.MemberType,
+				})
+			}
+		}
+	}
+	return result, nil
 }
 
 func (repo *fakeAuthRepository) ListRoleIDsByAdminID(context.Context, uint64, uint64) ([]uint64, error) {
@@ -198,6 +239,106 @@ func TestBuildIdentityByUsernameResolvesOrgTreeDataScope(t *testing.T) {
 		if identity.DataScope.OrgIDs[i] != id {
 			t.Fatalf("BuildIdentityByUsername() org ids = %#v, want %#v", identity.DataScope.OrgIDs, wantOrgIDs)
 		}
+	}
+}
+
+func TestBuildIdentityByUsernameRejectsTenantWithoutMembership(t *testing.T) {
+	srv := NewAuthService(&fakeAuthRepository{
+		admin: makeadmin.Admin{
+			ID:       7,
+			Username: "operator",
+			Status:   makeadmin.StatusEnabled,
+		},
+		tenants: []makeadmin.Tenant{{ID: 2, Code: "tenant_2", Name: "租户二", Status: makeadmin.StatusEnabled}},
+	})
+
+	_, err := srv.BuildIdentityByUsername(context.Background(), 2, "operator")
+	if !errors.Is(err, ErrTenantForbidden) {
+		t.Fatalf("BuildIdentityByUsername() error = %v, want ErrTenantForbidden", err)
+	}
+}
+
+func TestBuildIdentityByUsernameAllowsTenantMember(t *testing.T) {
+	srv := NewAuthService(&fakeAuthRepository{
+		admin: makeadmin.Admin{
+			ID:       7,
+			Username: "operator",
+			Status:   makeadmin.StatusEnabled,
+		},
+		tenants:       []makeadmin.Tenant{{ID: 2, Code: "tenant_2", Name: "租户二", Status: makeadmin.StatusEnabled}},
+		tenantMembers: []makeadmin.TenantMember{{TenantID: 2, AdminID: 7, MemberType: "owner", Status: makeadmin.StatusEnabled}},
+		roleIDs:       []uint64{20},
+		dataScopes: []makeadmin.DataScope{{
+			ID:        2,
+			TenantID:  2,
+			ScopeType: makeadmin.ScopeTypeSelf,
+			Status:    makeadmin.StatusEnabled,
+		}},
+	})
+
+	identity, err := srv.BuildIdentityByUsername(context.Background(), 2, "operator")
+	if err != nil {
+		t.Fatalf("BuildIdentityByUsername() error = %v", err)
+	}
+	if identity.TenantID != 2 || len(identity.RoleIDs) != 1 || identity.RoleIDs[0] != 20 || !identity.DataScope.Self {
+		t.Fatalf("BuildIdentityByUsername() identity = %#v", identity)
+	}
+}
+
+func TestListTenantsIncludesDefaultAndMemberships(t *testing.T) {
+	srv := NewAuthService(&fakeAuthRepository{
+		tenants: []makeadmin.Tenant{
+			{ID: 2, Code: "tenant_2", Name: "租户二", Status: makeadmin.StatusEnabled},
+			{ID: 3, Code: "tenant_3", Name: "禁用租户", Status: makeadmin.StatusDisabled},
+		},
+		tenantMembers: []makeadmin.TenantMember{
+			{TenantID: 2, AdminID: 7, MemberType: "owner", Status: makeadmin.StatusEnabled},
+			{TenantID: 3, AdminID: 7, MemberType: "member", Status: makeadmin.StatusEnabled},
+		},
+	})
+
+	items, err := srv.ListTenants(context.Background(), 7, 2)
+	if err != nil {
+		t.Fatalf("ListTenants() error = %v", err)
+	}
+	if len(items) != 2 {
+		t.Fatalf("ListTenants() = %#v, want default and one enabled membership", items)
+	}
+	if items[0].ID != 0 || items[0].Code != "default" || items[0].IsCurrent {
+		t.Fatalf("ListTenants() default item = %#v", items[0])
+	}
+	if items[1].ID != 2 || items[1].MemberType != "owner" || !items[1].IsCurrent {
+		t.Fatalf("ListTenants() tenant item = %#v", items[1])
+	}
+}
+
+func TestSwitchTenantIssuesTenantSession(t *testing.T) {
+	store := &fakeSessionStore{}
+	srv := NewAuthServiceWithDependencies(
+		&fakeAuthRepository{
+			admin: makeadmin.Admin{
+				ID:       7,
+				Username: "operator",
+				Status:   makeadmin.StatusEnabled,
+			},
+			tenants:       []makeadmin.Tenant{{ID: 2, Code: "tenant_2", Name: "租户二", Status: makeadmin.StatusEnabled}},
+			tenantMembers: []makeadmin.TenantMember{{TenantID: 2, AdminID: 7, MemberType: "member", Status: makeadmin.StatusEnabled}},
+		},
+		fakePasswordHasher{matched: true},
+		fixedTokenCodec{token: "tenant-jwt", sessionID: "tenant-session"},
+		store,
+		1800,
+	)
+
+	result, err := srv.SwitchTenant(context.Background(), 7, 2)
+	if err != nil {
+		t.Fatalf("SwitchTenant() error = %v", err)
+	}
+	if result.Token != "tenant-jwt" || result.ExpiresIn != 1800 || result.Identity.TenantID != 2 {
+		t.Fatalf("SwitchTenant() result = %#v", result)
+	}
+	if store.sessionID != "tenant-session" || store.identity.TenantID != 2 || store.ttl != 1800 {
+		t.Fatalf("SwitchTenant() saved session id=%q identity=%#v ttl=%d", store.sessionID, store.identity, store.ttl)
 	}
 }
 

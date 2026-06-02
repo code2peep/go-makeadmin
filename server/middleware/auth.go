@@ -110,6 +110,10 @@ func handleMakeAdminToken(c *gin.Context, auths string, token string) bool {
 		core.Logger.Errorf("MakeAdminTokenAuth BuildIdentityByAdminID err: err=[%+v]", err)
 		if errors.Is(err, makeadminsvc.ErrAdminDisabled) {
 			response.Fail(c, response.LoginDisableError)
+		} else if errors.Is(err, makeadminsvc.ErrTenantNotFound) ||
+			errors.Is(err, makeadminsvc.ErrTenantDisabled) ||
+			errors.Is(err, makeadminsvc.ErrTenantForbidden) {
+			response.Fail(c, response.NoPermission)
 		} else {
 			response.Fail(c, response.TokenInvalid)
 		}

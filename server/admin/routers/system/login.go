@@ -3,6 +3,7 @@ package system
 import (
 	"github.com/gin-gonic/gin"
 	"go-makeadmin/admin/schemas/req"
+	"go-makeadmin/config"
 	"go-makeadmin/core"
 	"go-makeadmin/core/response"
 	makeadminadapter "go-makeadmin/makeadmin/adapter"
@@ -20,6 +21,8 @@ func regLogin(rg *gin.RouterGroup, group *core.GroupBase) error {
 	return group.Reg(func(handle *loginHandler) {
 		rg.POST("/login", handle.login)
 		rg.POST("/logout", handle.logout)
+		rg.GET("/tenant/list", handle.tenantList)
+		rg.POST("/tenant/switch", handle.tenantSwitch)
 	})
 }
 
@@ -44,4 +47,20 @@ func (lh loginHandler) logout(c *gin.Context) {
 		return
 	}
 	response.CheckAndResp(c, lh.makeadminAdapter.Logout(c.Request.Context(), logoutReq.Token))
+}
+
+// tenantList 可切换租户列表
+func (lh loginHandler) tenantList(c *gin.Context) {
+	res, err := lh.makeadminAdapter.TenantList(c.Request.Context(), uint64(config.AdminConfig.GetAdminId(c)))
+	response.CheckAndRespWithData(c, res, err)
+}
+
+// tenantSwitch 切换租户
+func (lh loginHandler) tenantSwitch(c *gin.Context) {
+	var switchReq req.SystemTenantSwitchReq
+	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &switchReq)) {
+		return
+	}
+	res, err := lh.makeadminAdapter.SwitchTenant(c.Request.Context(), uint64(config.AdminConfig.GetAdminId(c)), switchReq)
+	response.CheckAndRespWithData(c, res, err)
 }

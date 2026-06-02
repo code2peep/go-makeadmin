@@ -17,6 +17,9 @@ var (
 	ErrAdminDisabled     = errors.New("makeadmin admin is disabled")
 	ErrAdminDeleted      = errors.New("makeadmin admin is deleted")
 	ErrInvalidCredential = errors.New("makeadmin invalid credential")
+	ErrTenantNotFound    = errors.New("makeadmin tenant not found")
+	ErrTenantDisabled    = errors.New("makeadmin tenant is disabled")
+	ErrTenantForbidden   = errors.New("makeadmin tenant access forbidden")
 )
 
 type Identity struct {
@@ -64,12 +67,22 @@ type LoginResult struct {
 	Identity  Identity
 }
 
+type TenantItem struct {
+	ID         uint64
+	Code       string
+	Name       string
+	MemberType string
+	IsCurrent  bool
+}
+
 type AuthService interface {
 	Login(ctx context.Context, input LoginInput) (LoginResult, error)
 	Logout(ctx context.Context, token string) error
 	AuthenticateByUsername(ctx context.Context, tenantID uint64, username string, plainPassword string) (Identity, error)
 	BuildIdentityByAdminID(ctx context.Context, tenantID uint64, adminID uint64) (Identity, error)
 	BuildIdentityByUsername(ctx context.Context, tenantID uint64, username string) (Identity, error)
+	ListTenants(ctx context.Context, adminID uint64, currentTenantID uint64) ([]TenantItem, error)
+	SwitchTenant(ctx context.Context, adminID uint64, tenantID uint64) (LoginResult, error)
 	ListRouteMenus(ctx context.Context, identity Identity) ([]RouteMenu, error)
 }
 
@@ -159,12 +172,8 @@ func (srv authService) Login(ctx context.Context, input LoginInput) (LoginResult
 		return LoginResult{}, err
 	}
 
-	sessionToken, err := srv.tokenCodec.Issue(identity, srv.sessionTTL)
+	sessionToken, err := srv.issueSession(ctx, identity)
 	if err != nil {
-		_ = srv.recordLoginLog(ctx, loginLogInputFromAdmin(input, admin, err.Error()))
-		return LoginResult{}, err
-	}
-	if err := srv.sessionStore.Save(ctx, sessionToken.SessionID, identity, srv.sessionTTL); err != nil {
 		_ = srv.recordLoginLog(ctx, loginLogInputFromAdmin(input, admin, err.Error()))
 		return LoginResult{}, err
 	}
@@ -183,6 +192,17 @@ func (srv authService) Login(ctx context.Context, input LoginInput) (LoginResult
 		ExpiresIn: srv.sessionTTL,
 		Identity:  identity,
 	}, nil
+}
+
+func (srv authService) issueSession(ctx context.Context, identity Identity) (SessionToken, error) {
+	sessionToken, err := srv.tokenCodec.Issue(identity, srv.sessionTTL)
+	if err != nil {
+		return SessionToken{}, err
+	}
+	if err := srv.sessionStore.Save(ctx, sessionToken.SessionID, identity, srv.sessionTTL); err != nil {
+		return SessionToken{}, err
+	}
+	return sessionToken, nil
 }
 
 func (srv authService) Logout(ctx context.Context, token string) error {
@@ -242,6 +262,9 @@ func (srv authService) buildIdentityByAdmin(ctx context.Context, tenantID uint64
 	if admin.Status != makeadmin.StatusEnabled {
 		return Identity{}, ErrAdminDisabled
 	}
+	if err := srv.ensureTenantAccess(ctx, admin.ID, tenantID); err != nil {
+		return Identity{}, err
+	}
 
 	profile, err := srv.repo.FindAdminProfileByAdminID(ctx, admin.ID)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -288,6 +311,70 @@ func (srv authService) buildIdentityByAdmin(ctx context.Context, tenantID uint64
 	}
 	identity.DataScope = dataScope
 	return identity, nil
+}
+
+func (srv authService) ListTenants(ctx context.Context, adminID uint64, currentTenantID uint64) ([]TenantItem, error) {
+	rows, err := srv.repo.ListTenantMembershipsByAdminID(ctx, adminID)
+	if err != nil {
+		return nil, err
+	}
+	items := []TenantItem{{
+		ID:         makeadmin.GlobalTenantID,
+		Code:       "default",
+		Name:       "默认租户",
+		MemberType: "default",
+		IsCurrent:  currentTenantID == makeadmin.GlobalTenantID,
+	}}
+	for _, row := range rows {
+		if row.TenantID == makeadmin.GlobalTenantID {
+			continue
+		}
+		items = append(items, TenantItem{
+			ID:         row.TenantID,
+			Code:       row.Code,
+			Name:       row.Name,
+			MemberType: row.MemberType,
+			IsCurrent:  row.TenantID == currentTenantID,
+		})
+	}
+	return items, nil
+}
+
+func (srv authService) SwitchTenant(ctx context.Context, adminID uint64, tenantID uint64) (LoginResult, error) {
+	identity, err := srv.BuildIdentityByAdminID(ctx, tenantID, adminID)
+	if err != nil {
+		return LoginResult{}, err
+	}
+	sessionToken, err := srv.issueSession(ctx, identity)
+	if err != nil {
+		return LoginResult{}, err
+	}
+	return LoginResult{
+		Token:     sessionToken.AccessToken,
+		ExpiresIn: srv.sessionTTL,
+		Identity:  identity,
+	}, nil
+}
+
+func (srv authService) ensureTenantAccess(ctx context.Context, adminID uint64, tenantID uint64) error {
+	if tenantID == makeadmin.GlobalTenantID {
+		return nil
+	}
+	tenant, err := srv.repo.FindTenantByID(ctx, tenantID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ErrTenantNotFound
+	}
+	if err != nil {
+		return err
+	}
+	if tenant.Status != makeadmin.StatusEnabled {
+		return ErrTenantDisabled
+	}
+	_, err = srv.repo.FindTenantMember(ctx, tenantID, adminID)
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return ErrTenantForbidden
+	}
+	return err
 }
 
 func (srv authService) ListRouteMenus(ctx context.Context, identity Identity) ([]RouteMenu, error) {

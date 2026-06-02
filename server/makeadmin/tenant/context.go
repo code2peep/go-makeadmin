@@ -76,9 +76,6 @@ func ResolveLogin(headerValue string) (Context, error) {
 	if !provided {
 		return DefaultContext(), nil
 	}
-	if tenantID != makeadmin.GlobalTenantID {
-		return Context{}, ErrTenantUnsupported
-	}
 	return Context{TenantID: tenantID, Source: SourceHeader}, nil
 }
 

@@ -16,7 +16,7 @@ func TestContextDefaultsToGlobalTenant(t *testing.T) {
 	}
 }
 
-func TestResolveLoginOnlyAllowsGlobalTenantInP2(t *testing.T) {
+func TestResolveLoginAcceptsSelectedTenant(t *testing.T) {
 	tenantCtx, err := ResolveLogin("")
 	if err != nil || tenantCtx.TenantID != 0 || tenantCtx.Source != SourceDefault {
 		t.Fatalf("ResolveLogin(empty) = %#v, %v", tenantCtx, err)
@@ -25,8 +25,9 @@ func TestResolveLoginOnlyAllowsGlobalTenantInP2(t *testing.T) {
 	if err != nil || tenantCtx.TenantID != 0 || tenantCtx.Source != SourceHeader {
 		t.Fatalf("ResolveLogin(0) = %#v, %v", tenantCtx, err)
 	}
-	if _, err = ResolveLogin("2"); !errors.Is(err, ErrTenantUnsupported) {
-		t.Fatalf("ResolveLogin(2) error = %v, want ErrTenantUnsupported", err)
+	tenantCtx, err = ResolveLogin("2")
+	if err != nil || tenantCtx.TenantID != 2 || tenantCtx.Source != SourceHeader {
+		t.Fatalf("ResolveLogin(2) = %#v, %v", tenantCtx, err)
 	}
 }
 

@@ -31,6 +31,11 @@ python3 scripts/p1-smoke.py
 | 模块 | 接口 | 类型 | 断言 |
 | --- | --- | --- | --- |
 | auth | `POST /system/login` | read | 登录返回 token |
+| auth | `JWT claims` | read | 登录 token 包含 `sid/adminId/tenantId/iat/exp/iss` |
+| auth | `X-Tenant-ID mismatch` | read | token 请求拒绝不匹配租户头 |
+| auth | `GET /system/tenant/list` | read | 租户列表返回默认租户 |
+| auth | `POST /system/tenant/switch` | write | 切换到默认租户返回新 token |
+| auth | `POST /system/logout` | write | JWT session state 可删除 |
 | auth | `GET /system/admin/self` | read | token 能解析当前管理员 |
 | auth | `GET /system/menu/route` | read | token 能解析菜单路由 |
 | common | `GET /common/index/config` | read | 公共配置从 `ma_setting` 返回 |

@@ -12,6 +12,9 @@ type AuthRepository interface {
 	FindAdminByID(ctx context.Context, adminID uint64) (makeadmin.Admin, error)
 	FindAdminByUsername(ctx context.Context, username string) (makeadmin.Admin, error)
 	FindAdminProfileByAdminID(ctx context.Context, adminID uint64) (makeadmin.AdminProfile, error)
+	FindTenantByID(ctx context.Context, tenantID uint64) (makeadmin.Tenant, error)
+	FindTenantMember(ctx context.Context, tenantID uint64, adminID uint64) (makeadmin.TenantMember, error)
+	ListTenantMembershipsByAdminID(ctx context.Context, adminID uint64) ([]TenantMembership, error)
 	ListRoleIDsByAdminID(ctx context.Context, tenantID uint64, adminID uint64) ([]uint64, error)
 	ListPermissionCodesByRoleIDs(ctx context.Context, tenantID uint64, roleIDs []uint64) ([]string, error)
 	FindPrimaryAdminOrg(ctx context.Context, tenantID uint64, adminID uint64) (makeadmin.AdminOrg, error)
@@ -21,6 +24,13 @@ type AuthRepository interface {
 	ListMenuPermissionCodes(ctx context.Context) (map[uint64][]string, error)
 	UpdateAdminLoginInfo(ctx context.Context, adminID uint64, ip string, loginTime int64) error
 	CreateLoginLog(ctx context.Context, loginLog makeadmin.LoginLog) error
+}
+
+type TenantMembership struct {
+	TenantID   uint64
+	Code       string
+	Name       string
+	MemberType string
 }
 
 type authRepository struct {
@@ -56,6 +66,38 @@ func (repo authRepository) FindAdminProfileByAdminID(ctx context.Context, adminI
 		First(&profile).
 		Error
 	return
+}
+
+func (repo authRepository) FindTenantByID(ctx context.Context, tenantID uint64) (tenant makeadmin.Tenant, err error) {
+	err = repo.db.WithContext(ctx).
+		Where("id = ? AND delete_time = ?", tenantID, 0).
+		Limit(1).
+		First(&tenant).
+		Error
+	return
+}
+
+func (repo authRepository) FindTenantMember(ctx context.Context, tenantID uint64, adminID uint64) (member makeadmin.TenantMember, err error) {
+	err = repo.db.WithContext(ctx).
+		Where("tenant_id = ? AND admin_id = ? AND status = ? AND delete_time = ?", tenantID, adminID, makeadmin.StatusEnabled, 0).
+		Limit(1).
+		First(&member).
+		Error
+	return
+}
+
+func (repo authRepository) ListTenantMembershipsByAdminID(ctx context.Context, adminID uint64) ([]TenantMembership, error) {
+	var rows []TenantMembership
+	err := repo.db.WithContext(ctx).
+		Table("ma_tenant_member AS member").
+		Select("tenant.id AS tenant_id, tenant.code, tenant.name, member.member_type").
+		Joins("INNER JOIN ma_tenant AS tenant ON tenant.id = member.tenant_id").
+		Where("member.admin_id = ? AND member.status = ? AND member.delete_time = ?", adminID, makeadmin.StatusEnabled, 0).
+		Where("tenant.status = ? AND tenant.delete_time = ?", makeadmin.StatusEnabled, 0).
+		Order("tenant.id ASC").
+		Find(&rows).
+		Error
+	return rows, err
 }
 
 func (repo authRepository) ListRoleIDsByAdminID(ctx context.Context, tenantID uint64, adminID uint64) (roleIDs []uint64, err error) {

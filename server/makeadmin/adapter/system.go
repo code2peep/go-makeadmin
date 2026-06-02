@@ -39,6 +39,8 @@ type SystemAdapter interface {
 	Logout(ctx context.Context, token string) error
 	Self(ctx context.Context, adminID uint64) (resp.SystemAuthAdminSelfResp, error)
 	MenuRoute(ctx context.Context, adminID uint64) ([]interface{}, error)
+	TenantList(ctx context.Context, adminID uint64) ([]resp.SystemTenantResp, error)
+	SwitchTenant(ctx context.Context, adminID uint64, switchReq req.SystemTenantSwitchReq) (resp.SystemTenantSwitchResp, error)
 }
 
 type systemAdapter struct {
@@ -122,7 +124,7 @@ func (adapter systemAdapter) Login(c *gin.Context, loginReq *req.SystemLoginReq)
 	if err != nil {
 		return resp.SystemLoginResp{}, mapAuthError(err)
 	}
-	return resp.SystemLoginResp{Token: result.Token}, nil
+	return resp.SystemLoginResp{Token: result.Token, TenantId: result.Identity.TenantID}, nil
 }
 
 func (adapter systemAdapter) Logout(ctx context.Context, token string) error {
@@ -158,6 +160,25 @@ func (adapter systemAdapter) MenuRoute(ctx context.Context, adminID uint64) ([]i
 	return util.ArrayUtil.ListToTree(routeMenuMaps(menus), "id", "pid", "children"), nil
 }
 
+func (adapter systemAdapter) TenantList(ctx context.Context, adminID uint64) ([]resp.SystemTenantResp, error) {
+	items, err := adapter.authService(false).ListTenants(ctx, adminID, tenantIDFromContext(ctx))
+	if err != nil {
+		return nil, err
+	}
+	return tenantResponses(items), nil
+}
+
+func (adapter systemAdapter) SwitchTenant(ctx context.Context, adminID uint64, switchReq req.SystemTenantSwitchReq) (resp.SystemTenantSwitchResp, error) {
+	result, err := adapter.authService(true).SwitchTenant(ctx, adminID, switchReq.TenantId)
+	if err != nil {
+		return resp.SystemTenantSwitchResp{}, mapAuthError(err)
+	}
+	return resp.SystemTenantSwitchResp{
+		Token:    result.Token,
+		TenantId: result.Identity.TenantID,
+	}, nil
+}
+
 func (adapter systemAdapter) authService(withSession bool) makeadminsvc.AuthService {
 	repo := repository.NewAuthRepository(adapter.db)
 	sessionStore := makeadminsvc.SessionStore(makeadminsvc.UnavailableSessionStore{})
@@ -183,9 +204,31 @@ func mapAuthError(err error) error {
 		return response.LoginDisableError
 	case errors.Is(err, makeadminsvc.ErrAdminDeleted):
 		return response.LoginAccountError
+	case errors.Is(err, makeadminsvc.ErrTenantNotFound),
+		errors.Is(err, makeadminsvc.ErrTenantDisabled),
+		errors.Is(err, makeadminsvc.ErrTenantForbidden):
+		return response.NoPermission
 	default:
 		return err
 	}
+}
+
+func tenantResponses(items []makeadminsvc.TenantItem) []resp.SystemTenantResp {
+	result := make([]resp.SystemTenantResp, 0, len(items))
+	for _, item := range items {
+		current := uint8(0)
+		if item.IsCurrent {
+			current = 1
+		}
+		result = append(result, resp.SystemTenantResp{
+			ID:         item.ID,
+			Code:       item.Code,
+			Name:       item.Name,
+			MemberType: item.MemberType,
+			IsCurrent:  current,
+		})
+	}
+	return result
 }
 
 func roleLabel(identity makeadminsvc.Identity) string {

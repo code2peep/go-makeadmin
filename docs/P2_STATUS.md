@@ -111,6 +111,39 @@ P2 从 P1 冻结底座继续推进，不再扩大 P1 范围。P2 的重点是把
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 完整 `scripts/p1-smoke.py` 写入 smoke 因本机未提供 `P1_SMOKE_ADMIN_PASSWORD` 或 `ADMIN_PASSWORD` 环境变量未运行。
 
+## P2.4 当前落地
+
+租户成员校验和后端租户切换入口已建立：
+
+- 登录阶段允许解析 `X-Tenant-ID`，非 `0` 租户由 auth service 校验成员关系。
+- `tenant_id=0` 保持 P1/P2 默认兼容上下文，不要求 `ma_tenant_member`。
+- 非 `0` 租户必须存在启用租户和启用成员关系。
+- 认证中间件每次重建身份都会重新校验租户成员关系，租户或成员失效后旧 token 不能继续访问该租户。
+- 登录响应新增 `tenantId` 字段，旧前端只读取 `token` 不受影响。
+- 新增 `GET /system/tenant/list`，返回当前管理员可访问租户。
+- 新增 `POST /system/tenant/switch`，切换成功后签发目标租户的新 JWT 和 Redis session。
+- P1 HTTP smoke 脚本补充默认租户列表和切换到默认租户检查；本阶段未提供一次性密码变量时只做脚本编译检查。
+
+详见 `docs/P2_TENANT_SWITCH.md`。
+
+## P2.4 验收标准
+
+- `go test ./...` 通过。
+- `./scripts/verify-no-db.sh` 通过。
+- `./scripts/check-services.sh` 通过。
+- `./scripts/check-p1-seed.sh` 通过。
+- `scripts/p1-smoke.py` 语法编译通过。
+- P1 HTTP smoke 如本机提供一次性密码变量则继续通过；未提供时不读取 `.env` 猜测密码。
+
+## P2.4 验收结果
+
+- 已通过 `python3 -m py_compile scripts/p1-smoke.py`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache go test ./...`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `./scripts/check-services.sh` 和 `./scripts/check-p1-seed.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 完整 `scripts/p1-smoke.py` 写入 smoke 因本机未提供 `P1_SMOKE_ADMIN_PASSWORD` 或 `ADMIN_PASSWORD` 环境变量未运行。
+
 ## 下一步
 
-P2.4：租户成员和租户切换入口。
+P2.5：租户级设置、文件和日志的迁移策略。

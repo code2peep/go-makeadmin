@@ -26,6 +26,8 @@ var AdminConfig = adminConfig{
 		"system:menu:route",     // 菜单路由
 		"system:admin:upInfo",   // 管理员更新
 		"system:admin:self",     // 管理员信息
+		"system:tenant:list",    // 租户列表
+		"system:tenant:switch",  // 租户切换
 		"system:role:all",       // 所有角色
 		"system:post:all",       // 所有岗位
 		"system:dept:list",      // 所有部门

@@ -2,7 +2,6 @@ package adapter
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -61,14 +60,15 @@ func TestDataScopeFromContextFailsClosedWithoutIdentity(t *testing.T) {
 	}
 }
 
-func TestTenantContextFromGinRejectsUnsupportedLoginTenant(t *testing.T) {
+func TestTenantContextFromGinAcceptsSelectedLoginTenant(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	w := httptest.NewRecorder()
 	c, _ := gin.CreateTestContext(w)
 	c.Request = httptest.NewRequest(http.MethodPost, "/api/system/login", nil)
 	c.Request.Header.Set(makeadmintenant.HeaderTenantID, "2")
 
-	if _, err := tenantContextFromGin(c); !errors.Is(err, makeadmintenant.ErrTenantUnsupported) {
-		t.Fatalf("tenantContextFromGin() error = %v, want ErrTenantUnsupported", err)
+	tenantCtx, err := tenantContextFromGin(c)
+	if err != nil || tenantCtx.TenantID != 2 || tenantCtx.Source != makeadmintenant.SourceHeader {
+		t.Fatalf("tenantContextFromGin() = %#v, %v", tenantCtx, err)
 	}
 }
