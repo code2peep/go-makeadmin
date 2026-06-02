@@ -12,6 +12,7 @@ type LoginLogFilter struct {
 	Status    int
 	StartTime int64
 	EndTime   int64
+	DataScope repository.DataScopeFilter
 }
 
 type AuditLogFilter struct {
@@ -23,6 +24,7 @@ type AuditLogFilter struct {
 	Path      string
 	StartTime int64
 	EndTime   int64
+	DataScope repository.DataScopeFilter
 }
 
 type LogPageInput struct {
@@ -60,6 +62,7 @@ func (srv logService) ListLoginLogs(ctx context.Context, tenantID uint64, filter
 		Status:    filter.Status,
 		StartTime: filter.StartTime,
 		EndTime:   filter.EndTime,
+		DataScope: filter.DataScope,
 	}, logPageLimit(page), logPageOffset(page))
 	if err != nil {
 		return LoginLogPage{}, err
@@ -78,6 +81,7 @@ func (srv logService) ListAuditLogs(ctx context.Context, tenantID uint64, filter
 		Path:      filter.Path,
 		StartTime: filter.StartTime,
 		EndTime:   filter.EndTime,
+		DataScope: filter.DataScope,
 	}, logPageLimit(page), logPageOffset(page))
 	if err != nil {
 		return AuditLogPage{}, err

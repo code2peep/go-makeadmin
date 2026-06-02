@@ -30,11 +30,13 @@ type fakeAdminRepository struct {
 	updatedAdminOrg    makeadmin.AdminOrg
 	deletedAdminID     uint64
 	toggledAdminID     uint64
+	lastListFilter     repository.AdminFilter
 	selfUpdatedAdmin   makeadmin.Admin
 	selfUpdatedProfile makeadmin.AdminProfile
 }
 
 func (repo *fakeAdminRepository) ListAdmins(ctx context.Context, tenantID uint64, filter repository.AdminFilter, limit int, offset int) ([]makeadmin.Admin, int64, error) {
+	repo.lastListFilter = filter
 	return repo.admins, int64(len(repo.admins)), nil
 }
 
@@ -194,6 +196,33 @@ func (hasher fakePasswordHasher) Verify(plain string, digest security.PasswordDi
 
 func (hasher fakePasswordHasher) NeedsUpgrade(digest security.PasswordDigest) bool {
 	return false
+}
+
+func TestAdminListPassesDataScope(t *testing.T) {
+	repo := newAdminRepoFixture()
+	repo.admins = []makeadmin.Admin{{ID: 8, Username: "operator", Status: makeadmin.StatusEnabled}}
+	srv := NewAdminServiceWithPasswordHasher(repo, fakePasswordHasher{matched: true})
+	scope := repository.DataScopeFilter{
+		Enabled: true,
+		Self:    true,
+		AdminID: 8,
+		OrgIDs:  []uint64{1, 2},
+	}
+
+	result, err := srv.List(context.Background(), makeadmin.GlobalTenantID, repository.AdminFilter{
+		Username:  "operator",
+		DataScope: scope,
+	}, 2, 10)
+	if err != nil {
+		t.Fatalf("List() error = %v", err)
+	}
+	if result.Count != 1 || len(result.Items) != 1 {
+		t.Fatalf("List() = %#v", result)
+	}
+	got := repo.lastListFilter.DataScope
+	if !got.Enabled || !got.Self || got.AdminID != 8 || len(got.OrgIDs) != 2 || got.OrgIDs[0] != 1 || got.OrgIDs[1] != 2 {
+		t.Fatalf("List() data scope = %#v, want %#v", got, scope)
+	}
 }
 
 func TestAdminAddCreatesAdminRelations(t *testing.T) {

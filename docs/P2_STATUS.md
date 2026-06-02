@@ -76,6 +76,41 @@ P2 从 P1 冻结底座继续推进，不再扩大 P1 范围。P2 的重点是把
 - 临时 Redis session key 已清理，临时 API 已停止。
 - 完整 `scripts/p1-smoke.py` 写入 smoke 因本机未提供 `P1_SMOKE_ADMIN_PASSWORD` 或 `ADMIN_PASSWORD` 环境变量未运行；脚本已补租户 mismatch guard 并通过 `python3 -m py_compile`。
 
+## P2.3 当前落地
+
+数据权限查询约束已接入核心列表型查询：
+
+- 认证身份会根据当前租户角色解析 `ma_data_scope` / `ma_role_data_scope`。
+- 超级管理员获得当前租户内全部数据权限。
+- 普通管理员支持 `all`、`self`、`org`、`org_tree`、`custom_org`。
+- 多个数据范围取并集，`all` 优先。
+- 无角色或无有效数据范围时保守回退为 `self`。
+- 数据范围无法解析出本人或组织 ID 时回退为 `NoAccess`。
+- Adapter 会把认证身份同步写入 request context，供查询入口读取 `DataScope`。
+- Adapter 缺失 request identity 时按 `NoAccess` 处理，避免异常上下文放开列表查询。
+- 管理员列表、登录日志、操作日志已在 repository 层应用数据范围约束。
+
+详见 `docs/P2_DATA_SCOPE.md`。
+
+## P2.3 验收标准
+
+- `go test ./...` 通过。
+- `./scripts/verify-no-db.sh` 通过。
+- `./scripts/check-runtime-residue.sh` 通过。
+- `./scripts/check-services.sh` 通过。
+- `./scripts/check-p1-seed.sh` 通过。
+- P1 HTTP smoke 如本机提供一次性密码变量则继续通过；未提供时不读取 `.env` 猜测密码。
+
+## P2.3 验收结果
+
+- 已通过 `bash -n scripts/check-runtime-residue.sh scripts/verify-no-db.sh scripts/check-services.sh scripts/check-p1-seed.sh`。
+- 已通过 `python3 -m py_compile scripts/p1-smoke.py`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache go test ./...`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `./scripts/check-services.sh` 和 `./scripts/check-p1-seed.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 完整 `scripts/p1-smoke.py` 写入 smoke 因本机未提供 `P1_SMOKE_ADMIN_PASSWORD` 或 `ADMIN_PASSWORD` 环境变量未运行。
+
 ## 下一步
 
-P2.3：数据权限查询约束。
+P2.4：租户成员和租户切换入口。

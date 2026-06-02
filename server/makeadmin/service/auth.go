@@ -29,6 +29,7 @@ type Identity struct {
 	TenantID    uint64
 	RoleIDs     []uint64
 	Permissions []string
+	DataScope   repository.DataScopeFilter
 }
 
 type RouteMenu struct {
@@ -262,6 +263,11 @@ func (srv authService) buildIdentityByAdmin(ctx context.Context, tenantID uint64
 
 	if identity.IsSuper {
 		identity.Permissions = []string{"*"}
+		identity.DataScope = repository.DataScopeFilter{
+			Enabled: true,
+			All:     true,
+			AdminID: admin.ID,
+		}
 		return identity, nil
 	}
 
@@ -276,6 +282,11 @@ func (srv authService) buildIdentityByAdmin(ctx context.Context, tenantID uint64
 		return Identity{}, err
 	}
 	identity.Permissions = permissions
+	dataScope, err := srv.resolveDataScope(ctx, tenantID, admin.ID, roleIDs)
+	if err != nil {
+		return Identity{}, err
+	}
+	identity.DataScope = dataScope
 	return identity, nil
 }
 

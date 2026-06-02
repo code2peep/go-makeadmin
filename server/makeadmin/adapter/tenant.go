@@ -7,11 +7,20 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"go-makeadmin/core/response"
+	"go-makeadmin/makeadmin/repository"
 	makeadmintenant "go-makeadmin/makeadmin/tenant"
 )
 
 func tenantIDFromContext(ctx context.Context) uint64 {
 	return makeadmintenant.IDFromContext(ctx)
+}
+
+func dataScopeFromContext(ctx context.Context) repository.DataScopeFilter {
+	identity, ok := IdentityFromRequestContext(ctx)
+	if !ok {
+		return repository.DataScopeFilter{Enabled: true, NoAccess: true}
+	}
+	return identity.DataScope
 }
 
 func tenantContextFromGin(c *gin.Context) (makeadmintenant.Context, error) {

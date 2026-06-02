@@ -36,12 +36,14 @@ func TestListLoginLogsBuildsRepositoryFilter(t *testing.T) {
 		loginLogs: []makeadmin.LoginLog{{ID: 1, Username: "admin", Status: 1}},
 	}
 	srv := NewLogService(repo)
+	scope := repository.DataScopeFilter{Enabled: true, Self: true, AdminID: 7}
 
 	result, err := srv.ListLoginLogs(context.Background(), makeadmin.GlobalTenantID, LoginLogFilter{
 		Username:  "admin",
 		Status:    1,
 		StartTime: 100,
 		EndTime:   200,
+		DataScope: scope,
 	}, LogPageInput{PageNo: 2, PageSize: 10})
 	if err != nil {
 		t.Fatalf("ListLoginLogs() error = %v", err)
@@ -53,7 +55,10 @@ func TestListLoginLogsBuildsRepositoryFilter(t *testing.T) {
 		repo.loginFilter.Username != "admin" ||
 		repo.loginFilter.Status != 1 ||
 		repo.loginFilter.StartTime != 100 ||
-		repo.loginFilter.EndTime != 200 {
+		repo.loginFilter.EndTime != 200 ||
+		!repo.loginFilter.DataScope.Enabled ||
+		!repo.loginFilter.DataScope.Self ||
+		repo.loginFilter.DataScope.AdminID != 7 {
 		t.Fatalf("ListLoginLogs() filter = %#v", repo.loginFilter)
 	}
 	if repo.limit != 10 || repo.offset != 10 {
@@ -70,6 +75,7 @@ func TestListAuditLogsBuildsRepositoryFilter(t *testing.T) {
 		}},
 	}
 	srv := NewLogService(repo)
+	scope := repository.DataScopeFilter{Enabled: true, OrgIDs: []uint64{10, 11}}
 
 	result, err := srv.ListAuditLogs(context.Background(), makeadmin.GlobalTenantID, AuditLogFilter{
 		Title:     "上传",
@@ -80,6 +86,7 @@ func TestListAuditLogsBuildsRepositoryFilter(t *testing.T) {
 		Path:      "/api/common/upload/image",
 		StartTime: 100,
 		EndTime:   200,
+		DataScope: scope,
 	}, LogPageInput{PageNo: 1, PageSize: 20})
 	if err != nil {
 		t.Fatalf("ListAuditLogs() error = %v", err)
@@ -95,7 +102,11 @@ func TestListAuditLogsBuildsRepositoryFilter(t *testing.T) {
 		repo.auditFilter.Status != 2 ||
 		repo.auditFilter.Path != "/api/common/upload/image" ||
 		repo.auditFilter.StartTime != 100 ||
-		repo.auditFilter.EndTime != 200 {
+		repo.auditFilter.EndTime != 200 ||
+		!repo.auditFilter.DataScope.Enabled ||
+		len(repo.auditFilter.DataScope.OrgIDs) != 2 ||
+		repo.auditFilter.DataScope.OrgIDs[0] != 10 ||
+		repo.auditFilter.DataScope.OrgIDs[1] != 11 {
 		t.Fatalf("ListAuditLogs() filter = %#v", repo.auditFilter)
 	}
 	if repo.limit != 20 || repo.offset != 0 {

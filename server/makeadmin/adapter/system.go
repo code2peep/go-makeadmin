@@ -31,6 +31,8 @@ const (
 
 var ErrUnavailable = errors.New("makeadmin adapter is unavailable")
 
+type requestIdentityContextKey struct{}
+
 type SystemAdapter interface {
 	Available(ctx context.Context) bool
 	Login(c *gin.Context, loginReq *req.SystemLoginReq) (resp.SystemLoginResp, error)
@@ -53,10 +55,15 @@ func MarkMakeAdminContext(c *gin.Context, identity makeadminsvc.Identity) {
 		tenantCtx = makeadmintenant.Context{TenantID: identity.TenantID, Source: makeadmintenant.SourceJWT}
 		c.Request = c.Request.WithContext(makeadmintenant.WithContext(c.Request.Context(), tenantCtx))
 	}
+	c.Request = c.Request.WithContext(WithIdentityRequestContext(c.Request.Context(), identity))
 	c.Set(ContextAuthSourceKey, ContextAuthSource)
 	c.Set(ContextIdentityKey, identity)
 	c.Set(ContextTenantKey, tenantCtx)
 	c.Set(config.AdminConfig.ReqTenantIdKey, tenantCtx.TenantID)
+}
+
+func WithIdentityRequestContext(ctx context.Context, identity makeadminsvc.Identity) context.Context {
+	return context.WithValue(ctx, requestIdentityContextKey{}, identity)
 }
 
 func IsMakeAdminContext(c *gin.Context) bool {
@@ -70,6 +77,14 @@ func IdentityFromContext(c *gin.Context) (makeadminsvc.Identity, bool) {
 		return makeadminsvc.Identity{}, false
 	}
 	identity, ok := value.(makeadminsvc.Identity)
+	return identity, ok
+}
+
+func IdentityFromRequestContext(ctx context.Context) (makeadminsvc.Identity, bool) {
+	if ctx == nil {
+		return makeadminsvc.Identity{}, false
+	}
+	identity, ok := ctx.Value(requestIdentityContextKey{}).(makeadminsvc.Identity)
 	return identity, ok
 }
 

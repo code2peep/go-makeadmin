@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 
 	"go-makeadmin/makeadmin/security"
 	"go-makeadmin/model/makeadmin"
@@ -16,6 +17,9 @@ type fakeAuthRepository struct {
 	profile        makeadmin.AdminProfile
 	roleIDs        []uint64
 	permissionCode []string
+	dataScopes     []makeadmin.DataScope
+	primaryOrg     makeadmin.AdminOrg
+	orgs           []makeadmin.OrgUnit
 	menus          []makeadmin.Menu
 	menuPerms      map[uint64][]string
 	loginLogs      []makeadmin.LoginLog
@@ -41,6 +45,21 @@ func (repo *fakeAuthRepository) ListRoleIDsByAdminID(context.Context, uint64, ui
 
 func (repo *fakeAuthRepository) ListPermissionCodesByRoleIDs(context.Context, uint64, []uint64) ([]string, error) {
 	return repo.permissionCode, nil
+}
+
+func (repo *fakeAuthRepository) FindPrimaryAdminOrg(context.Context, uint64, uint64) (makeadmin.AdminOrg, error) {
+	if repo.primaryOrg.OrgID == 0 {
+		return makeadmin.AdminOrg{}, gorm.ErrRecordNotFound
+	}
+	return repo.primaryOrg, nil
+}
+
+func (repo *fakeAuthRepository) ListDataScopesByRoleIDs(context.Context, uint64, []uint64) ([]makeadmin.DataScope, error) {
+	return repo.dataScopes, nil
+}
+
+func (repo *fakeAuthRepository) ListOrgUnits(context.Context, uint64) ([]makeadmin.OrgUnit, error) {
+	return repo.orgs, nil
 }
 
 func (repo *fakeAuthRepository) ListVisibleRouteMenus(context.Context) ([]makeadmin.Menu, error) {
@@ -135,6 +154,50 @@ func TestBuildIdentityByUsernameSuperAdmin(t *testing.T) {
 	}
 	if len(identity.Permissions) != 1 || identity.Permissions[0] != "*" {
 		t.Fatalf("BuildIdentityByUsername() permissions = %#v, want wildcard", identity.Permissions)
+	}
+	if !identity.DataScope.Enabled || !identity.DataScope.All {
+		t.Fatalf("BuildIdentityByUsername() data scope = %#v, want all", identity.DataScope)
+	}
+}
+
+func TestBuildIdentityByUsernameResolvesOrgTreeDataScope(t *testing.T) {
+	srv := NewAuthService(&fakeAuthRepository{
+		admin: makeadmin.Admin{
+			ID:       7,
+			Username: "operator",
+			Status:   makeadmin.StatusEnabled,
+		},
+		roleIDs:        []uint64{2},
+		permissionCode: []string{"system:admin:list"},
+		dataScopes: []makeadmin.DataScope{{
+			ID:        1,
+			TenantID:  makeadmin.GlobalTenantID,
+			ScopeType: makeadmin.ScopeTypeOrgTree,
+			Status:    makeadmin.StatusEnabled,
+		}},
+		primaryOrg: makeadmin.AdminOrg{TenantID: makeadmin.GlobalTenantID, AdminID: 7, OrgID: 10, Status: makeadmin.StatusEnabled},
+		orgs: []makeadmin.OrgUnit{
+			{ID: 10, TenantID: makeadmin.GlobalTenantID, ParentID: 0, Status: makeadmin.StatusEnabled},
+			{ID: 11, TenantID: makeadmin.GlobalTenantID, ParentID: 10, Status: makeadmin.StatusEnabled},
+			{ID: 12, TenantID: makeadmin.GlobalTenantID, ParentID: 11, Status: makeadmin.StatusEnabled},
+		},
+	})
+
+	identity, err := srv.BuildIdentityByUsername(context.Background(), makeadmin.GlobalTenantID, "operator")
+	if err != nil {
+		t.Fatalf("BuildIdentityByUsername() error = %v", err)
+	}
+	if identity.DataScope.All || identity.DataScope.Self || identity.DataScope.NoAccess {
+		t.Fatalf("BuildIdentityByUsername() data scope flags = %#v", identity.DataScope)
+	}
+	wantOrgIDs := []uint64{10, 11, 12}
+	if len(identity.DataScope.OrgIDs) != len(wantOrgIDs) {
+		t.Fatalf("BuildIdentityByUsername() org ids = %#v, want %#v", identity.DataScope.OrgIDs, wantOrgIDs)
+	}
+	for i, id := range wantOrgIDs {
+		if identity.DataScope.OrgIDs[i] != id {
+			t.Fatalf("BuildIdentityByUsername() org ids = %#v, want %#v", identity.DataScope.OrgIDs, wantOrgIDs)
+		}
 	}
 }
 

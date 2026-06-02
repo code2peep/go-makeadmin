@@ -1,6 +1,7 @@
 package adapter
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -9,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"go-makeadmin/config"
+	"go-makeadmin/makeadmin/repository"
 	makeadminsvc "go-makeadmin/makeadmin/service"
 	makeadmintenant "go-makeadmin/makeadmin/tenant"
 )
@@ -22,7 +24,16 @@ func TestMarkMakeAdminContextStoresTenantContext(t *testing.T) {
 	req = req.WithContext(makeadmintenant.WithContext(req.Context(), tenantCtx))
 	c.Request = req
 
-	identity := makeadminsvc.Identity{AdminID: 3, TenantID: 7, Username: "admin"}
+	identity := makeadminsvc.Identity{
+		AdminID:  3,
+		TenantID: 7,
+		Username: "admin",
+		DataScope: repository.DataScopeFilter{
+			Enabled: true,
+			Self:    true,
+			AdminID: 3,
+		},
+	}
 	MarkMakeAdminContext(c, identity)
 
 	if got := config.AdminConfig.GetTenantId(c); got != 7 {
@@ -35,6 +46,18 @@ func TestMarkMakeAdminContextStoresTenantContext(t *testing.T) {
 	gotIdentity, ok := IdentityFromContext(c)
 	if !ok || gotIdentity.AdminID != 3 || gotIdentity.TenantID != 7 {
 		t.Fatalf("IdentityFromContext() = %#v, %v", gotIdentity, ok)
+	}
+	gotRequestIdentity, ok := IdentityFromRequestContext(c.Request.Context())
+	if !ok || gotRequestIdentity.AdminID != 3 || gotRequestIdentity.TenantID != 7 || !gotRequestIdentity.DataScope.Self {
+		t.Fatalf("IdentityFromRequestContext() = %#v, %v", gotRequestIdentity, ok)
+	}
+}
+
+func TestDataScopeFromContextFailsClosedWithoutIdentity(t *testing.T) {
+	scope := dataScopeFromContext(context.Background())
+
+	if !scope.Enabled || !scope.NoAccess {
+		t.Fatalf("dataScopeFromContext() = %#v, want no access", scope)
 	}
 }
 

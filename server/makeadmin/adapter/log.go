@@ -49,6 +49,7 @@ func (adapter logAdapter) Operate(ctx context.Context, page request.PageReq, log
 		Path:      logReq.Url,
 		StartTime: logReq.StartTime.Unix(),
 		EndTime:   logReq.EndTime.Unix(),
+		DataScope: dataScopeFromContext(ctx),
 	}, makeadminsvc.LogPageInput{PageNo: page.PageNo, PageSize: page.PageSize})
 	if err != nil {
 		return response.PageResp{}, err
@@ -68,6 +69,7 @@ func (adapter logAdapter) Login(ctx context.Context, page request.PageReq, logRe
 		Status:    logReq.Status,
 		StartTime: logReq.StartTime.Unix(),
 		EndTime:   logReq.EndTime.Unix(),
+		DataScope: dataScopeFromContext(ctx),
 	}, makeadminsvc.LogPageInput{PageNo: page.PageNo, PageSize: page.PageSize})
 	if err != nil {
 		return response.PageResp{}, err

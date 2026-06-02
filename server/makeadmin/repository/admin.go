@@ -11,10 +11,11 @@ import (
 )
 
 type AdminFilter struct {
-	Username string
-	Nickname string
-	RoleID   uint64
-	RoleSet  bool
+	Username  string
+	Nickname  string
+	RoleID    uint64
+	RoleSet   bool
+	DataScope DataScopeFilter
 }
 
 type AdminRepository interface {
@@ -63,6 +64,7 @@ func (repo adminRepository) ListAdmins(ctx context.Context, tenantID uint64, fil
 				Select("admin_id").
 				Where("tenant_id = ? AND role_id = ?", tenantID, filter.RoleID))
 	}
+	query = applyDataScopeFilter(repo.db, query, tenantID, "ma_admin.id", filter.DataScope)
 	var count int64
 	if err := query.Count(&count).Error; err != nil {
 		return nil, 0, err

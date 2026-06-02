@@ -14,6 +14,9 @@ type AuthRepository interface {
 	FindAdminProfileByAdminID(ctx context.Context, adminID uint64) (makeadmin.AdminProfile, error)
 	ListRoleIDsByAdminID(ctx context.Context, tenantID uint64, adminID uint64) ([]uint64, error)
 	ListPermissionCodesByRoleIDs(ctx context.Context, tenantID uint64, roleIDs []uint64) ([]string, error)
+	FindPrimaryAdminOrg(ctx context.Context, tenantID uint64, adminID uint64) (makeadmin.AdminOrg, error)
+	ListDataScopesByRoleIDs(ctx context.Context, tenantID uint64, roleIDs []uint64) ([]makeadmin.DataScope, error)
+	ListOrgUnits(ctx context.Context, tenantID uint64) ([]makeadmin.OrgUnit, error)
 	ListVisibleRouteMenus(ctx context.Context) ([]makeadmin.Menu, error)
 	ListMenuPermissionCodes(ctx context.Context) (map[uint64][]string, error)
 	UpdateAdminLoginInfo(ctx context.Context, adminID uint64, ip string, loginTime int64) error
@@ -75,6 +78,41 @@ func (repo authRepository) ListPermissionCodesByRoleIDs(ctx context.Context, ten
 		Order("p.sort DESC, p.id ASC").
 		Distinct().
 		Pluck("p.code", &codes).
+		Error
+	return
+}
+
+func (repo authRepository) FindPrimaryAdminOrg(ctx context.Context, tenantID uint64, adminID uint64) (adminOrg makeadmin.AdminOrg, err error) {
+	err = repo.db.WithContext(ctx).
+		Where("tenant_id = ? AND admin_id = ? AND is_primary = ? AND status = ? AND delete_time = ?", tenantID, adminID, 1, makeadmin.StatusEnabled, 0).
+		Limit(1).
+		First(&adminOrg).
+		Error
+	return
+}
+
+func (repo authRepository) ListDataScopesByRoleIDs(ctx context.Context, tenantID uint64, roleIDs []uint64) ([]makeadmin.DataScope, error) {
+	if len(roleIDs) == 0 {
+		return []makeadmin.DataScope{}, nil
+	}
+	var scopes []makeadmin.DataScope
+	err := repo.db.WithContext(ctx).
+		Table("ma_data_scope AS scope").
+		Select("scope.*").
+		Joins("INNER JOIN ma_role_data_scope AS rds ON rds.data_scope_id = scope.id").
+		Where("rds.tenant_id = ? AND rds.role_id IN ?", tenantID, roleIDs).
+		Where("scope.tenant_id = ? AND scope.status = ? AND scope.delete_time = ?", tenantID, makeadmin.StatusEnabled, 0).
+		Order("scope.id ASC").
+		Find(&scopes).
+		Error
+	return scopes, err
+}
+
+func (repo authRepository) ListOrgUnits(ctx context.Context, tenantID uint64) (orgs []makeadmin.OrgUnit, err error) {
+	err = repo.db.WithContext(ctx).
+		Where("tenant_id = ? AND status = ? AND delete_time = ?", tenantID, makeadmin.StatusEnabled, 0).
+		Order("id ASC").
+		Find(&orgs).
 		Error
 	return
 }

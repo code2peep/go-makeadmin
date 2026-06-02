@@ -59,10 +59,11 @@ func (adapter adminAdapter) List(ctx context.Context, page request.PageReq, list
 	page = normalizePage(page)
 	tenantID := tenantIDFromContext(ctx)
 	result, err := adapter.adminService().List(ctx, tenantID, repository.AdminFilter{
-		Username: listReq.Username,
-		Nickname: listReq.Nickname,
-		RoleID:   uint64(listReq.Role),
-		RoleSet:  listReq.Role >= 0,
+		Username:  listReq.Username,
+		Nickname:  listReq.Nickname,
+		RoleID:    uint64(listReq.Role),
+		RoleSet:   listReq.Role >= 0,
+		DataScope: dataScopeFromContext(ctx),
 	}, page.PageNo, page.PageSize)
 	if err != nil {
 		return response.PageResp{}, mapAdminError(err)

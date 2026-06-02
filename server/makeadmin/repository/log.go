@@ -14,6 +14,7 @@ type LoginLogFilter struct {
 	Status    int
 	StartTime int64
 	EndTime   int64
+	DataScope DataScopeFilter
 }
 
 type AuditLogFilter struct {
@@ -26,6 +27,7 @@ type AuditLogFilter struct {
 	Path      string
 	StartTime int64
 	EndTime   int64
+	DataScope DataScopeFilter
 }
 
 type AuditLogRow struct {
@@ -85,6 +87,7 @@ func (repo logRepository) loginLogQuery(ctx context.Context, filter LoginLogFilt
 	if filter.EndTime > 0 {
 		query = query.Where("create_time <= ?", filter.EndTime)
 	}
+	query = applyDataScopeFilter(repo.db, query, filter.TenantID, "admin_id", filter.DataScope)
 	return query
 }
 
@@ -121,5 +124,6 @@ func (repo logRepository) auditLogQuery(ctx context.Context, filter AuditLogFilt
 	if filter.EndTime > 0 {
 		query = query.Where("log.create_time <= ?", filter.EndTime)
 	}
+	query = applyDataScopeFilter(repo.db, query, filter.TenantID, "log.admin_id", filter.DataScope)
 	return query
 }
