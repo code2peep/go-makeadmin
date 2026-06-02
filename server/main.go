@@ -10,6 +10,7 @@ import (
 	genRouters "go-makeadmin/generator/routers"
 	gen "go-makeadmin/generator/service"
 	"go-makeadmin/middleware"
+	moduleRouters "go-makeadmin/modules/routers"
 	"log"
 	"net"
 	"net/http"
@@ -55,6 +56,7 @@ func initRouter() *gin.Engine {
 
 	routers := adminRouters.InitRouters[:]
 	routers = append(routers, genRouters.InitRouters...)
+	routers = append(routers, moduleRouters.InitRouters()...)
 	for i := 0; i < len(routers); i++ {
 		core.RegisterGroup(group, routers[i])
 	}

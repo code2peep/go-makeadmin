@@ -482,6 +482,37 @@ P2 从 P1 冻结底座继续推进，不再扩大 P1 范围。P2 的重点是把
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有执行数据库写入、没有修改 schema、没有默认授权任何角色。
 
+## P2.15 当前落地
+
+模块运行时注册闭环已建立：
+
+- 新增 `server/modules/routers` 作为运行时模块路由入口。
+- 新增 `MAKEADMIN_ENABLE_DEMO_MODULE=1` 环境变量开关。
+- 默认不挂载 demo runtime 模块。
+- 开启后主路由会追加 `server/modules/routers.InitRouters()` 返回的模块路由。
+- 新增 demo article 路由，路径与 `examples/demo/manifest.json` 的 `backend.routes` 保持一致。
+- demo article 路由仍使用 `middleware.TokenAuth()`。
+- 未登录访问 `/api/article/list` 返回 token empty 响应，确认没有绕过认证。
+- demo article 写操作返回只读失败响应。
+- 本阶段不创建 demo 表、不写数据库、不自动授权角色。
+
+详见 `docs/P2_MODULE_RUNTIME_REGISTRY.md`。
+
+## P2.15 验收标准
+
+- `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./modules/routers` 通过。
+- `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./...` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不执行数据库写入、不修改 schema、不开放无认证 demo API。
+
+## P2.15 验收结果
+
+- 已通过 `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./modules/routers`。
+- 已通过 `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./...`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有执行数据库写入、没有修改 schema、没有开放无认证 demo API。
+
 ## 下一步
 
-P2.15：模块运行时注册闭环。该任务把 demo 模块从 manifest/SQL 预览推进到可控的路由挂载和本地访问验证。
+P2.16：模块安装器编排计划。该任务把 manifest 校验、注册 SQL、角色授权 SQL 和 runtime 开关汇总成一条可审阅的安装计划。
