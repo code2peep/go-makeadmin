@@ -10,6 +10,8 @@ P2.19 建立模块卸载/回滚 dry-run 计划，用来生成 manifest 对应菜
 
 当前更新：P2.20 已定义卸载写入边界；未来开放 apply 前必须遵守 `docs/P2_MODULE_UNINSTALL_APPLY_BOUNDARY.md`。
 
+当前更新：P2.21 已按该边界开放本地受控删除模式；现行删除规则见 `docs/P2_MODULE_UNINSTALL_APPLY.md`。
+
 ## 命令
 
 ```bash

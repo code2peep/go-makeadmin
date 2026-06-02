@@ -8,6 +8,8 @@ P2.20 定义模块卸载 apply/write 执行器的边界，为后续把卸载 dry
 
 本阶段只写边界规范，不开放新的删除命令。
 
+当前更新：P2.21 已按该边界开放本地受控删除模式；现行删除规则见 `docs/P2_MODULE_UNINSTALL_APPLY.md`。
+
 ## 删除门禁
 
 未来 `module-uninstall-plan.py --apply` 必须同时满足：

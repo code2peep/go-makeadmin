@@ -676,6 +676,46 @@ P2 从 P1 冻结底座继续推进，不再扩大 P1 范围。P2 的重点是把
 - 本阶段没有开放新的删除命令。
 - 本阶段没有执行数据库删除、没有删除文件、没有修改 schema、没有修改 `.env`。
 
+## P2.21 当前落地
+
+模块卸载 apply/write 模式已开放为本地受控删除：
+
+- `scripts/module-uninstall-plan.py --apply` 现在支持执行模块卸载删除。
+- 删除必须满足 `MAKEADMIN_ALLOW_MODULE_UNINSTALL_WRITE=1`、`--confirm-module <module>` 和 `--confirm-delete`。
+- 缺少环境变量或确认参数时，脚本会在数据库访问前失败。
+- 删除前输出权限、菜单、菜单权限、角色授权四类快照计数。
+- 四类计数均为 0 时报告 no-op，不执行删除。
+- 删除在单个事务中执行。
+- 删除内容限定为 `ma_role_permission`、`ma_menu_permission`、`ma_menu`、`ma_permission`。
+- 本阶段不删除前端文件、后端代码、runtime 环境变量、schema 或 codegen 元数据。
+
+详见 `docs/P2_MODULE_UNINSTALL_APPLY.md`。
+
+## P2.21 验收标准
+
+- `python3 -m py_compile scripts/check-module-manifests.py scripts/module-registry-plan.py scripts/module-uninstall-plan.py` 通过。
+- `python3 scripts/module-uninstall-plan.py --apply` 失败，且错误说明没有访问数据库。
+- `MAKEADMIN_ALLOW_MODULE_UNINSTALL_WRITE=1 python3 scripts/module-uninstall-plan.py --apply` 失败，且错误说明没有访问数据库。
+- `MAKEADMIN_ALLOW_MODULE_UNINSTALL_WRITE=1 python3 scripts/module-uninstall-plan.py --apply --confirm-module article` 失败，且错误说明没有访问数据库。
+- `python3 scripts/module-uninstall-plan.py --manifest examples/demo/manifest.json` 继续通过，只输出 SQL。
+- 对本地 `go_makeadmin` 执行一次 demo article 安装后卸载 smoke。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不修改 schema、不读取或修改 `.env`、不连接真实 zyai 业务库。
+
+## P2.21 验收结果
+
+- 已通过 `python3 -m py_compile scripts/check-module-manifests.py scripts/module-registry-plan.py scripts/module-uninstall-plan.py`。
+- 已通过 `python3 scripts/module-uninstall-plan.py --apply` 失败门禁；失败文案明确没有访问数据库。
+- 已通过 `MAKEADMIN_ALLOW_MODULE_UNINSTALL_WRITE=1 python3 scripts/module-uninstall-plan.py --apply` 失败门禁；失败文案明确没有访问数据库。
+- 已通过 `MAKEADMIN_ALLOW_MODULE_UNINSTALL_WRITE=1 python3 scripts/module-uninstall-plan.py --apply --confirm-module article` 失败门禁；失败文案明确没有访问数据库。
+- 已通过 `python3 scripts/module-uninstall-plan.py --manifest examples/demo/manifest.json`；dry-run 卸载 SQL 预览继续可用。
+- 已对本地 `go_makeadmin` 完成 demo article 安装后卸载 smoke：安装后得到 5 条权限、1 条菜单、1 条菜单权限关联、5 条角色授权。
+- 已执行卸载，卸载后权限、菜单、菜单权限和角色授权计数均为 0。
+- 已第二次执行卸载，脚本报告 no-op。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有修改 schema、没有读取或修改 `.env`、没有连接真实 zyai 业务库。
+
 ## 下一步
 
-P2.21：模块卸载 apply/write 模式与本地安装后卸载 smoke。该任务会触及数据库删除，只允许在本地 `go_makeadmin` 开发库执行。
+P2.22：模块生命周期 smoke 脚本。该任务把 install apply、uninstall apply 和残留检查串成一个本地一次性脚本。
