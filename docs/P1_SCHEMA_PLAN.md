@@ -378,6 +378,19 @@ la_system_log_sms
 - 旧 `server/admin/service/*` 和 `server/model/{system,setting,common}` 暂作为过渡兜底保留，等 P1 smoke 覆盖核心写操作后再移除。
 - 不再新增任何直接读写 `la_*` 的 P1 功能。
 
+## P1.21 当前落地
+
+- 新增 `scripts/p1-smoke.py`，用 HTTP API 覆盖 P1 核心读写链路，默认要求 `P1_SMOKE_ALLOW_WRITE=1` 才会执行写操作。
+- 新增 `docs/P1_SMOKE_MATRIX.md`，记录 smoke 运行前提、环境变量、覆盖矩阵、清理策略和不覆盖范围。
+- smoke 矩阵覆盖登录、自身信息、菜单路由、角色、管理员、菜单、字典、文件上传和代码生成器。
+- 脚本会按反序清理已创建的测试数据；上传 smoke 会清理 `ma_file` 元数据，但本地物理上传文件可能残留。
+
+## P1.21 已定事项
+
+- P1 smoke 只面向 disposable P1 数据库，不用于共享库或生产库。
+- P1 smoke 不修改数据库 schema，不覆盖旧 `la_*` 兜底链路。
+- 真实执行 smoke 属于写库验证，必须显式传入 `P1_SMOKE_ALLOW_WRITE=1` 和本地管理员密码。
+
 ## 已定事项
 
 - `la_* -> ma_*` 只支持一次性迁移。
