@@ -36,6 +36,7 @@ python3 scripts/tenant-init-plan.py --from-tenant 0 --to-tenant 2 --sql-only
 ## 安全规则
 
 - 脚本只查询数据库，不执行输出的 SQL。
+- `--apply` 是 P2.7 预留写入入口，当前会在数据库访问前失败。
 - `--from-tenant` 和 `--to-tenant` 必须不同。
 - `--to-tenant` 不会被自动创建。
 - 目标租户已存在的 setting key 和文件分类 code 默认跳过。
@@ -67,6 +68,7 @@ SET @now = UNIX_TIMESTAMP();
 ## 不在 P2.6 做
 
 - 不执行 SQL。
+- 不开放 `--apply` 写入模式。
 - 不创建租户或租户成员。
 - 不覆盖目标租户已有配置。
 - 不迁移 `ma_file` 文件元数据。
@@ -83,3 +85,5 @@ P2.6 需要通过：
 - `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`
 - `./scripts/check-services.sh`
 - `./scripts/check-p1-seed.sh`
+
+后续写入门禁见 `docs/P2_TENANT_INIT_APPLY_GUARD.md`。

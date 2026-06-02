@@ -211,6 +211,40 @@ P2 从 P1 冻结底座继续推进，不再扩大 P1 范围。P2 的重点是把
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有执行租户数据写入、schema 变更或 `.env` 修改。
 
+## P2.7 当前落地
+
+租户初始化 apply/write 模式的安全门禁已建立：
+
+- `scripts/tenant-init-plan.py` 新增预留 `--apply` 参数。
+- 当前传入 `--apply` 会在任何数据库访问前失败。
+- dry-run SQL 预览模式保持不变。
+- 明确后续真正开放写入需要额外 `MAKEADMIN_ALLOW_TENANT_INIT_WRITE=1` 和 `--confirm-to-tenant <id>` 双门禁。
+- 明确未来写入必须在单事务内完成，只插入缺失 setting 和文件分类，不覆盖目标租户已有配置。
+- 明确本阶段不执行 SQL、不修改 schema、不修改 `.env`。
+
+详见 `docs/P2_TENANT_INIT_APPLY_GUARD.md`。
+
+## P2.7 验收标准
+
+- `python3 -m py_compile scripts/tenant-init-plan.py scripts/p1-smoke.py` 通过。
+- `python3 scripts/tenant-init-plan.py --from-tenant 0 --to-tenant 999999 --apply` 失败，且错误说明没有访问数据库。
+- `python3 scripts/tenant-init-plan.py --from-tenant 0 --to-tenant 999999 --sql-only` 继续通过。
+- `./scripts/verify-no-db.sh` 通过。
+- `./scripts/check-services.sh` 通过。
+- `./scripts/check-p1-seed.sh` 通过。
+- 不执行数据写入、不修改 schema、不读取或修改 `.env`。
+
+## P2.7 验收结果
+
+- 已通过 `python3 -m py_compile scripts/tenant-init-plan.py scripts/p1-smoke.py`。
+- 已通过 `python3 scripts/tenant-init-plan.py --from-tenant 0 --to-tenant 999999 --apply` 失败门禁；失败文案明确没有访问数据库。
+- 已通过 `python3 scripts/tenant-init-plan.py --from-tenant 0 --to-tenant 999999 --sql-only`；dry-run SQL 预览继续可用。
+- 已通过 `bash -n scripts/check-runtime-residue.sh scripts/verify-no-db.sh scripts/check-services.sh scripts/check-p1-seed.sh`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `./scripts/check-services.sh` 和 `./scripts/check-p1-seed.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有执行租户数据写入、schema 变更或 `.env` 修改。
+
 ## 下一步
 
-P2.7：租户初始化 apply/write 模式设计与安全门禁。该任务会触及数据库写入红线，进入前需要明确授权。
+P2.8：租户初始化 apply/write 实现与本地写入 smoke。该任务会触及数据库写入红线，进入前需要明确授权。

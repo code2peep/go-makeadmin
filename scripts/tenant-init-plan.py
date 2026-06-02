@@ -33,6 +33,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--mysql-database", default=os.environ.get("MYSQL_DATABASE", "go_makeadmin"))
     parser.add_argument("--copy-secret", action="store_true", help="keep cloud storage accessKey/secretKey in SQL preview")
     parser.add_argument("--sql-only", action="store_true", help="print only SQL preview")
+    parser.add_argument("--apply", action="store_true", help="reserved write mode; currently fails before database access")
     return parser.parse_args()
 
 
@@ -282,6 +283,8 @@ def main() -> int:
         raise PlanError("tenant ids must be non-negative")
     if args.from_tenant == args.to_tenant:
         raise PlanError("--from-tenant and --to-tenant must be different")
+    if args.apply:
+        raise PlanError("--apply is intentionally disabled until DB write approval is granted; no database access was attempted")
     plan = build_plan(args)
     print_plan(args, plan)
     return 0
