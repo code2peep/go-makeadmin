@@ -288,6 +288,35 @@ P2 从 P1 冻结底座继续推进，不再扩大 P1 范围。P2 的重点是把
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有修改 schema、没有读取或修改 `.env`、没有连接真实 zyai 业务库。
 
+## P2.9 当前落地
+
+代码生成器 Go 输出闭环已建立：
+
+- 修复 `route.go.tpl` 中 list handler 使用错误接收者的问题。
+- `schema.go.tpl` 只在需要 `core.*` 类型时导入 `go-makeadmin/core`，避免生成无用导入。
+- `service.go.tpl` 只在需要 URL 绝对化时导入 `go-makeadmin/util`，避免生成无用导入。
+- `service.go.tpl` 的 `Detail` / `Del` 主键参数类型跟随生成主键类型。
+- `EditReq` 始终包含主键字段，保证编辑逻辑可编译。
+- 新增 `server/generator/tpl_test.go`，渲染 CRUD Go 模板到临时目录并执行 `go test .` 编译生成包。
+- 新增 `examples/README.md` 和 `examples/demo/`，沉淀标准 CRUD 模块接入约定。
+
+详见 `docs/P2_CODEGEN_CLOSURE.md`。
+
+## P2.9 验收标准
+
+- `GOCACHE=/private/tmp/go-makeadmin-gocache go test ./generator ./generator/service/gen` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache go test ./...` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不创建 demo 表、不写菜单或权限种子、不默认注册运行时路由。
+
+## P2.9 验收结果
+
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache go test ./generator ./generator/service/gen`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache go test ./...`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有创建 demo 表、没有写菜单或权限种子、没有默认注册运行时路由。
+
 ## 下一步
 
-P2.9：代码生成器闭环，生成可编译、可挂载、可验证的标准示例模块。
+P2.10：前端生成模板闭环，验证生成 API 和页面模板与当前 admin 工程约定一致。

@@ -39,7 +39,7 @@ func (hd {{{ toCamelCase .ModuleName }}}Handler) list(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &listReq)) {
 		return
 	}
-	res, err := ph.srv.List(page, listReq)
+	res, err := hd.srv.List(page, listReq)
 	response.CheckAndRespWithData(c, res, err)
 }
 

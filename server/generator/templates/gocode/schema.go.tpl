@@ -1,8 +1,10 @@
 package {{{ .PackageName }}}
 
+{{{- if .NeedsCoreImport }}}
 import (
 	"go-makeadmin/core"
 )
+{{{- end }}}
 
 //{{{ title (toCamelCase .EntityName) }}}ListReq {{{ .FunctionName }}}列表参数
 type {{{ title (toCamelCase .EntityName) }}}ListReq struct {
@@ -34,7 +36,7 @@ type {{{ title (toCamelCase .EntityName) }}}AddReq struct {
 //{{{ title (toCamelCase .EntityName) }}}EditReq {{{ .FunctionName }}}新增参数
 type {{{ title (toCamelCase .EntityName) }}}EditReq struct {
     {{{- range .Columns }}}
-    {{{- if .IsEdit }}}
+    {{{- if or .IsEdit .IsPk }}}
     {{{ title (toCamelCase .JavaField) }}} {{{ .JavaType }}} `form:"{{{ toCamelCase .JavaField }}}"` // {{{ .ColumnComment }}}
     {{{- end }}}
     {{{- end }}}

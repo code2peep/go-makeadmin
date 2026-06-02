@@ -4,12 +4,12 @@ import (
 	"archive/zip"
 	"bytes"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"go-makeadmin/config"
 	"go-makeadmin/core/response"
 	"go-makeadmin/model/gen"
 	"go-makeadmin/util"
+	"io"
+	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -29,23 +29,23 @@ var TemplateUtil = templateUtil{
 		}),
 }
 
-//sub 模板-减函数
+// sub 模板-减函数
 func sub(a, b int) int {
 	return a - b
 }
 
-//slice 模板-创建切片
+// slice 模板-创建切片
 func slice(items ...interface{}) []interface{} {
 	return items
 }
 
-//zFile 待加入zip的文件
+// zFile 待加入zip的文件
 type zFile struct {
 	Name string
 	Body string
 }
 
-//TplVars 模板变量
+// TplVars 模板变量
 type TplVars struct {
 	GenTpl          string
 	TableName       string
@@ -59,6 +59,7 @@ type TplVars struct {
 	DateFields      []string
 	PrimaryKey      string
 	PrimaryField    string
+	PrimaryGoType   string
 	AllFields       []string
 	SubPriCol       gen.GenTableColumn
 	SubPriField     string
@@ -67,6 +68,8 @@ type TplVars struct {
 	DetailFields    []string
 	DictFields      []string
 	IsSearch        bool
+	NeedsCoreImport bool
+	NeedsUrlUtil    bool
 	ModelOprMap     map[string]string
 	Table           gen.GenTable
 	Columns         []gen.GenTableColumn
@@ -74,19 +77,20 @@ type TplVars struct {
 	//ModelTypeMap    map[string]string
 }
 
-//genUtil 模板工具
+// genUtil 模板工具
 type templateUtil struct {
 	basePath string
 	tpl      *template.Template
 }
 
-//PrepareVars 获取模板变量信息
+// PrepareVars 获取模板变量信息
 func (tu templateUtil) PrepareVars(table gen.GenTable, columns []gen.GenTableColumn,
 	oriSubPriCol gen.GenTableColumn, oriSubCols []gen.GenTableColumn) TplVars {
 	subPriField := "id"
 	isSearch := false
 	primaryKey := "id"
 	primaryField := "id"
+	primaryGoType := "uint"
 	functionName := "【请填写功能名称】"
 	var allFields []string
 	var subTableFields []string
@@ -95,6 +99,8 @@ func (tu templateUtil) PrepareVars(table gen.GenTable, columns []gen.GenTableCol
 	var dictFields []string
 	var subColumns []gen.GenTableColumn
 	var oriSubColNames []string
+	needsCoreImport := false
+	needsUrlUtil := false
 	for _, column := range oriSubCols {
 		oriSubColNames = append(oriSubColNames, column.ColumnName)
 	}
@@ -120,6 +126,13 @@ func (tu templateUtil) PrepareVars(table gen.GenTable, columns []gen.GenTableCol
 		if column.IsPk == 1 {
 			primaryKey = column.JavaField
 			primaryField = column.ColumnName
+			primaryGoType = column.JavaType
+		}
+		if strings.Contains(column.JavaType, "core.") {
+			needsCoreImport = true
+		}
+		if column.IsEdit == 1 && util.ToolsUtil.Contains([]string{"image", "avatar", "logo", "img"}, column.JavaField) {
+			needsUrlUtil = true
 		}
 		if column.DictType != "" && !util.ToolsUtil.Contains(dictFields, column.DictType) {
 			dictFields = append(dictFields, column.DictType)
@@ -145,6 +158,7 @@ func (tu templateUtil) PrepareVars(table gen.GenTable, columns []gen.GenTableCol
 		DateFields:      SqlConstants.ColumnTimeName,
 		PrimaryKey:      primaryKey,
 		PrimaryField:    primaryField,
+		PrimaryGoType:   primaryGoType,
 		AllFields:       allFields,
 		SubPriCol:       oriSubPriCol,
 		SubPriField:     subPriField,
@@ -153,13 +167,16 @@ func (tu templateUtil) PrepareVars(table gen.GenTable, columns []gen.GenTableCol
 		DetailFields:    detailFields,
 		DictFields:      dictFields,
 		IsSearch:        isSearch,
+		NeedsCoreImport: needsCoreImport,
+		NeedsUrlUtil:    needsUrlUtil,
 		ModelOprMap:     modelOprMap,
+		Table:           table,
 		Columns:         columns,
 		SubColumns:      subColumns,
 	}
 }
 
-//GetTemplatePaths 获取模板路径
+// GetTemplatePaths 获取模板路径
 func (tu templateUtil) GetTemplatePaths(genTpl string) []string {
 	tplPaths := []string{
 		"gocode/model.go.tpl",
@@ -177,7 +194,7 @@ func (tu templateUtil) GetTemplatePaths(genTpl string) []string {
 	return tplPaths
 }
 
-//Render 渲染模板
+// Render 渲染模板
 func (tu templateUtil) Render(tplPath string, tplVars TplVars) (res string, e error) {
 	tpl, err := tu.tpl.ParseFiles(path.Join(config.Config.RootPath, tu.basePath, tplPath))
 	if e = response.CheckErr(err, "TemplateUtil.Render ParseFiles err"); e != nil {
@@ -191,7 +208,7 @@ func (tu templateUtil) Render(tplPath string, tplVars TplVars) (res string, e er
 	return buf.String(), nil
 }
 
-//GetGenPath 获取生成路径
+// GetGenPath 获取生成路径
 func (tu templateUtil) GetGenPath(table gen.GenTable) string {
 	if table.GenPath == "/" {
 		//return path.Join(config.Config.RootPath, config.GenConfig.GenRootPath)
@@ -200,7 +217,7 @@ func (tu templateUtil) GetGenPath(table gen.GenTable) string {
 	return table.GenPath
 }
 
-//GetFilePaths 获取生成文件相对路径
+// GetFilePaths 获取生成文件相对路径
 func (tu templateUtil) GetFilePaths(tplCodeMap map[string]string, moduleName string) map[string]string {
 	//模板文件对应的输出文件
 	fmtMap := map[string]string{
@@ -221,7 +238,7 @@ func (tu templateUtil) GetFilePaths(tplCodeMap map[string]string, moduleName str
 	return filePath
 }
 
-//GenCodeFiles 生成代码文件
+// GenCodeFiles 生成代码文件
 func (tu templateUtil) GenCodeFiles(tplCodeMap map[string]string, moduleName string, basePath string) error {
 	filePaths := tu.GetFilePaths(tplCodeMap, moduleName)
 	for file, tplCode := range filePaths {
@@ -257,7 +274,7 @@ func addFileToZip(zipWriter *zip.Writer, file zFile) error {
 	return nil
 }
 
-//GenZip 生成代码压缩包
+// GenZip 生成代码压缩包
 func (tu templateUtil) GenZip(zipWriter *zip.Writer, tplCodeMap map[string]string, moduleName string) error {
 	filePaths := tu.GetFilePaths(tplCodeMap, moduleName)
 	files := make([]zFile, 0)

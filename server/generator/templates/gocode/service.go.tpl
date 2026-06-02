@@ -4,15 +4,17 @@ import (
 	"gorm.io/gorm"
 	"go-makeadmin/core/request"
 	"go-makeadmin/core/response"
+	{{{- if .NeedsUrlUtil }}}
 	"go-makeadmin/util"
+	{{{- end }}}
 )
 
 type I{{{ title (toCamelCase .EntityName) }}}Service interface {
 	List(page request.PageReq, listReq {{{ title (toCamelCase .EntityName) }}}ListReq) (res response.PageResp, e error)
-	Detail(id uint) (res {{{ title (toCamelCase .EntityName) }}}Resp, e error)
+	Detail(id {{{ .PrimaryGoType }}}) (res {{{ title (toCamelCase .EntityName) }}}Resp, e error)
 	Add(addReq {{{ title (toCamelCase .EntityName) }}}AddReq) (e error)
 	Edit(editReq {{{ title (toCamelCase .EntityName) }}}EditReq) (e error)
-	Del(id uint) (e error)
+	Del(id {{{ .PrimaryGoType }}}) (e error)
 }
 
 //New{{{ title (toCamelCase .EntityName) }}}Service 初始化
@@ -72,7 +74,7 @@ func (srv {{{ toCamelCase .EntityName }}}Service) List(page request.PageReq, lis
 }
 
 //Detail {{{ .FunctionName }}}详情
-func (srv {{{ toCamelCase .EntityName }}}Service) Detail(id uint) (res {{{ title (toCamelCase .EntityName) }}}Resp, e error) {
+func (srv {{{ toCamelCase .EntityName }}}Service) Detail(id {{{ .PrimaryGoType }}}) (res {{{ title (toCamelCase .EntityName) }}}Resp, e error) {
 	var obj {{{ title (toCamelCase .EntityName) }}}
 	err := srv.db.Where("{{{ $.PrimaryKey }}} = ?{{{ if contains .AllFields "is_delete" }}} AND is_delete = ?{{{ end }}}", id{{{ if contains .AllFields "is_delete" }}}, 0{{{ end }}}).Limit(1).First(&obj).Error
 	if e = response.CheckErrDBNotRecord(err, "数据不存在!"); e != nil {
@@ -102,7 +104,7 @@ func (srv {{{ toCamelCase .EntityName }}}Service) Add(addReq {{{ title (toCamelC
 //Edit {{{ .FunctionName }}}编辑
 func (srv {{{ toCamelCase .EntityName }}}Service) Edit(editReq {{{ title (toCamelCase .EntityName) }}}EditReq) (e error) {
 	var obj {{{ title (toCamelCase .EntityName) }}}
-	err := srv.db.Where("{{{ $.PrimaryKey }}} = ?{{{ if contains .AllFields "is_delete" }}} AND is_delete = ?{{{ end }}}", editReq.ID{{{ if contains .AllFields "is_delete" }}}, 0{{{ end }}}).Limit(1).First(&obj).Error
+	err := srv.db.Where("{{{ $.PrimaryKey }}} = ?{{{ if contains .AllFields "is_delete" }}} AND is_delete = ?{{{ end }}}", editReq.{{{ title (toCamelCase .PrimaryKey) }}}{{{ if contains .AllFields "is_delete" }}}, 0{{{ end }}}).Limit(1).First(&obj).Error
 	// 校验
 	if e = response.CheckErrDBNotRecord(err, "数据不存在!"); e != nil {
 		return
@@ -118,7 +120,7 @@ func (srv {{{ toCamelCase .EntityName }}}Service) Edit(editReq {{{ title (toCame
 }
 
 //Del {{{ .FunctionName }}}删除
-func (srv {{{ toCamelCase .EntityName }}}Service) Del(id uint) (e error) {
+func (srv {{{ toCamelCase .EntityName }}}Service) Del(id {{{ .PrimaryGoType }}}) (e error) {
 	var obj {{{ title (toCamelCase .EntityName) }}}
 	err := srv.db.Where("{{{ $.PrimaryKey }}} = ?{{{ if contains .AllFields "is_delete" }}} AND is_delete = ?{{{ end }}}", id{{{ if contains .AllFields "is_delete" }}}, 0{{{ end }}}).Limit(1).First(&obj).Error
 	// 校验
