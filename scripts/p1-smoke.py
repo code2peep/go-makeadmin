@@ -430,7 +430,7 @@ def run() -> None:
         client.api_json(
             "POST",
             "/common/album/cateRename",
-            body={"id": category_id, "keyword": category_name + "Edit"},
+            body={"id": category_id, "name": category_name + "Edit"},
             label="file category rename",
         )
         upload = client.upload_png("/common/upload/image", cid=category_id, label="image upload")
@@ -445,7 +445,7 @@ def run() -> None:
         client.api_json(
             "POST",
             "/common/album/albumRename",
-            body={"id": file_id, "keyword": f"p1-smoke-{suffix[-6:]}.png"},
+            body={"id": file_id, "name": f"p1-smoke-{suffix[-6:]}.png"},
             label="file rename",
         )
 

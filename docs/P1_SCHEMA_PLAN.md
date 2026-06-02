@@ -391,6 +391,13 @@ la_system_log_sms
 - P1 smoke 不修改数据库 schema，不覆盖旧 `la_*` 兜底链路。
 - 真实执行 smoke 属于写库验证，必须显式传入 `P1_SMOKE_ALLOW_WRITE=1` 和本地管理员密码。
 
+## P1.21 验证结果
+
+- 已在本地 disposable P1 库 `go_makeadmin` 上完成一次完整写入 smoke，覆盖矩阵全部通过。
+- smoke 实跑修正了文件分类/文件重命名请求字段，统一按前端实际 JSON 字段 `name` 调用。
+- smoke 实跑修正了管理员删除时 `ma_admin_org` 软删标记的唯一索引碰撞问题；组织关系软删使用微秒级 delete marker，避免同一秒内编辑后删除失败。
+- 已通过只读残留计数确认 smoke 产生的 live 测试数据为 0。
+
 ## 已定事项
 
 - `la_* -> ma_*` 只支持一次性迁移。

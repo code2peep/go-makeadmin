@@ -288,7 +288,7 @@ func (repo adminRepository) SoftDeleteAdmin(ctx context.Context, tenantID uint64
 		return tx.Model(&makeadmin.AdminOrg{}).
 			Where("tenant_id = ? AND admin_id = ? AND delete_time = ?", tenantID, adminID, 0).
 			Updates(map[string]interface{}{
-				"delete_time": now,
+				"delete_time": softDeleteMarker(),
 				"update_time": now,
 			}).Error
 	})
@@ -349,7 +349,7 @@ func replacePrimaryAdminOrg(tx *gorm.DB, adminOrg makeadmin.AdminOrg, now int64)
 	if err := tx.Model(&makeadmin.AdminOrg{}).
 		Where("tenant_id = ? AND admin_id = ? AND is_primary = ? AND delete_time = ?", adminOrg.TenantID, adminOrg.AdminID, 1, 0).
 		Updates(map[string]interface{}{
-			"delete_time": now,
+			"delete_time": softDeleteMarker(),
 			"update_time": now,
 		}).Error; err != nil {
 		return err
@@ -362,4 +362,8 @@ func replacePrimaryAdminOrg(tx *gorm.DB, adminOrg makeadmin.AdminOrg, now int64)
 	adminOrg.CreateTime = now
 	adminOrg.UpdateTime = now
 	return tx.Create(&adminOrg).Error
+}
+
+func softDeleteMarker() int64 {
+	return time.Now().UnixMicro()
 }
