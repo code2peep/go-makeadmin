@@ -576,6 +576,46 @@ P2 从 P1 冻结底座继续推进，不再扩大 P1 范围。P2 的重点是把
 - 本阶段没有开放新的写入命令。
 - 本阶段没有执行数据库写入、没有修改 schema、没有修改 `.env`。
 
+## P2.18 当前落地
+
+模块安装 apply/write 模式已开放为本地受控写入：
+
+- `scripts/module-install-plan.py --apply` 现在支持执行模块安装写入。
+- 写入必须满足 `MAKEADMIN_ALLOW_MODULE_INSTALL_WRITE=1` 和 `--confirm-module <module>`。
+- 如果传入 `--role-id`，必须同时传入匹配的 `--confirm-role-id <id>`。
+- 缺少环境变量或确认参数时，脚本会在数据库访问前失败。
+- manifest `requiresSchema=true` 时，脚本会在数据库访问前失败，不自动建表。
+- 写入在单个事务中执行。
+- 写入内容包含 `ma_permission`、`ma_menu`、`ma_menu_permission` 和可选 `ma_role_permission`。
+- runtime 开关只输出提示，不修改 `.env` 或系统环境变量。
+
+详见 `docs/P2_MODULE_INSTALL_APPLY.md`。
+
+## P2.18 验收标准
+
+- `python3 -m py_compile scripts/check-module-manifests.py scripts/module-registry-plan.py scripts/module-role-grant-plan.py scripts/module-install-plan.py` 通过。
+- `python3 scripts/module-install-plan.py --apply` 失败，且错误说明没有访问数据库。
+- `MAKEADMIN_ALLOW_MODULE_INSTALL_WRITE=1 python3 scripts/module-install-plan.py --apply` 失败，且错误说明没有访问数据库。
+- `MAKEADMIN_ALLOW_MODULE_INSTALL_WRITE=1 python3 scripts/module-install-plan.py --apply --confirm-module article --role-id 1` 失败，且错误说明没有访问数据库。
+- `python3 scripts/module-install-plan.py --manifest examples/demo/manifest.json --tenant-id 0 --role-id 1` 继续通过，只输出计划。
+- 对本地 `go_makeadmin` 执行一次 demo article 安装写入 smoke，并清理临时行。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不修改 schema、不读取或修改 `.env`、不连接真实 zyai 业务库。
+
+## P2.18 验收结果
+
+- 已通过 `python3 -m py_compile scripts/check-module-manifests.py scripts/module-registry-plan.py scripts/module-role-grant-plan.py scripts/module-install-plan.py`。
+- 已通过 `python3 scripts/module-install-plan.py --apply` 失败门禁；失败文案明确没有访问数据库。
+- 已通过 `MAKEADMIN_ALLOW_MODULE_INSTALL_WRITE=1 python3 scripts/module-install-plan.py --apply` 失败门禁；失败文案明确没有访问数据库。
+- 已通过 `MAKEADMIN_ALLOW_MODULE_INSTALL_WRITE=1 python3 scripts/module-install-plan.py --apply --confirm-module article --role-id 1` 失败门禁；失败文案明确没有访问数据库。
+- 已通过 `python3 scripts/module-install-plan.py --manifest examples/demo/manifest.json --tenant-id 0 --role-id 1`；dry-run 安装计划继续可用。
+- 已对本地 `go_makeadmin` 完成 demo article 安装写入 smoke：第一次 apply 后得到 5 条权限、1 条菜单、1 条菜单权限关联、5 条角色授权。
+- 已第二次执行 apply，计数仍为 5 条权限、1 条菜单、1 条菜单权限关联、5 条角色授权，确认幂等。
+- 已清理 demo article 注册行和角色授权，清理后残留计数为 0。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有修改 schema、没有读取或修改 `.env`、没有连接真实 zyai 业务库。
+
 ## 下一步
 
-P2.18：模块安装 apply/write 模式与本地写入 smoke。该任务会触及数据库写入，只允许在本地 `go_makeadmin` 开发库执行。
+P2.19：模块卸载/回滚 dry-run 计划。该任务先生成 demo module 注册清理 SQL 预览，不执行写入。
