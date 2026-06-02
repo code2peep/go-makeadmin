@@ -2,7 +2,7 @@
 
 ## 定位
 
-`go-makeadmin` 是 `makeadmin` 的 Go 版本后台基础框架，面向多项目复用。项目早期参考 LikeAdmin Go 的 MIT 代码，当前 P1 默认运行链路已切到 `ma_*` 自研系统表，旧 `la_*` 代码只作为蓝本参考保留。
+`go-makeadmin` 是 `makeadmin` 的 Go 版本后台基础框架，面向多项目复用。项目早期参考 LikeAdmin Go 的 MIT 代码，当前 P1 已冻结，默认运行链路已切到 `ma_*` 自研系统表，旧 `la_*` 代码只作为蓝本参考保留。
 
 ## 当前结构
 
@@ -25,13 +25,14 @@ go-makeadmin/
 - `server/admin/service/*` 和 `server/model/{system,setting,common}` 暂作参考代码保留，不作为 P1 核心运行兜底。
 - `sql/install.sql` 和 `sql/install.core.sql` 是蓝本初始化资料，不代表框架默认 schema。
 
-## P1 收口标准
+## P1 冻结标准
 
 - `./scripts/verify-no-db.sh` 通过。
 - `./scripts/check-p1-seed.sh` 通过。
 - 本地 disposable P1 库上 `scripts/p1-smoke.py` 覆盖矩阵通过。
 - 新增 P1 功能不得直接读写 `la_*` 表。
 - 文档默认入口必须指向 P1 独立库和 `ma_*` 模型。
+- P1 最终状态记录在 `docs/P1_FINAL_STATUS.md`。
 
 ## 后续重构方向
 

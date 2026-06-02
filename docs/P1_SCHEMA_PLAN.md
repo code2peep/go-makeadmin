@@ -435,6 +435,18 @@ la_system_log_sms
 - 守卫脚本只扫描 P1 核心运行目录，不扫描旧蓝本服务、旧模型、旧 SQL 和 P0 历史脚本。
 - 旧 `server/admin/service/*` 与 `server/model/{system,setting,common}` 仍作为参考代码保留，不在本阶段删除。
 
+## P1.25 当前落地
+
+- 新增 `docs/P1_FINAL_STATUS.md`，记录 P1 冻结结论、完成范围、验收结果、保留边界、不覆盖范围和 P2 入口。
+- README、架构说明和 P1 验收清单已同步到 P1 已冻结状态。
+- `scripts/check-p1-seed.sh` 的菜单、字典和文件分类 seed 计数改为只统计 `delete_time=0` 的 live 行，避免 P1 smoke 的软删除历史行污染验收读数。
+
+## P1.25 已定事项
+
+- P1 到此冻结，不继续扩张 P1 范围。
+- 下一阶段从 P2.1 认证模型升级开始。
+- 旧蓝本目录、旧模型、旧服务、旧 SQL 继续保留为参考资料，不在 P1 删除。
+
 ## 已定事项
 
 - `la_* -> ma_*` 只支持一次性迁移。

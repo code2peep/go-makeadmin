@@ -101,11 +101,11 @@ admin_count="$(mysql_query "SELECT COUNT(*) FROM ma_admin WHERE username='admin'
 role_count="$(mysql_query "SELECT COUNT(*) FROM ma_role WHERE code='super_admin' AND tenant_id=0 AND delete_time=0;")"
 permission_count="$(mysql_query "SELECT COUNT(*) FROM ma_permission;")"
 role_permission_count="$(mysql_query "SELECT COUNT(*) FROM ma_role_permission WHERE role_id=1;")"
-menu_count="$(mysql_query "SELECT COUNT(*) FROM ma_menu;")"
+menu_count="$(mysql_query "SELECT COUNT(*) FROM ma_menu WHERE delete_time=0;")"
 setting_count="$(mysql_query "SELECT COUNT(*) FROM ma_setting;")"
-dict_type_count="$(mysql_query "SELECT COUNT(*) FROM ma_dict_type;")"
-dict_item_count="$(mysql_query "SELECT COUNT(*) FROM ma_dict_item;")"
-file_category_count="$(mysql_query "SELECT COUNT(*) FROM ma_file_category;")"
+dict_type_count="$(mysql_query "SELECT COUNT(*) FROM ma_dict_type WHERE delete_time=0;")"
+dict_item_count="$(mysql_query "SELECT COUNT(*) FROM ma_dict_item WHERE delete_time=0;")"
+file_category_count="$(mysql_query "SELECT COUNT(*) FROM ma_file_category WHERE delete_time=0;")"
 
 echo "==> Checking P1 seed rows"
 if [ "$admin_count" -ne 1 ]; then

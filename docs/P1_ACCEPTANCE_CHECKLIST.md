@@ -2,7 +2,9 @@
 
 ## 目标
 
-P1 的目标是把 `go-makeadmin` 从 LikeAdmin Go 蓝本过渡为可继续自研的 Go 后台框架底座。当前默认运行链路应面向独立开发库 `go_makeadmin` 和 `ma_*` 系统表。
+P1 的目标是把 `go-makeadmin` 从 LikeAdmin Go 蓝本过渡为可继续自研的 Go 后台框架底座。当前 P1 已冻结，默认运行链路面向独立开发库 `go_makeadmin` 和 `ma_*` 系统表。
+
+最终状态见 `docs/P1_FINAL_STATUS.md`。
 
 ## 当前默认入口
 
@@ -64,6 +66,7 @@ python3 scripts/p1-smoke.py
 - P1 运行残留守卫已接入 `verify-no-db`。
 - `verify-no-db`、P1 seed 检查和 P1 HTTP smoke 均可通过。
 - P1 运行残留边界已记录在 `docs/P1_RUNTIME_RESIDUE_AUDIT.md`。
+- P1 最终冻结状态已记录在 `docs/P1_FINAL_STATUS.md`。
 - P2 入口任务已明确。
 
 ## P2 入口任务
