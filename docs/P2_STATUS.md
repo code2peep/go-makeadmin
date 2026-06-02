@@ -175,6 +175,42 @@ P2 从 P1 冻结底座继续推进，不再扩大 P1 范围。P2 的重点是把
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有执行租户数据复制、schema 变更或 `.env` 修改。
 
+## P2.6 当前落地
+
+租户初始化命令 dry-run 版本已建立：
+
+- 新增 `scripts/tenant-init-plan.py`，用于生成目标租户初始化 SQL 预览。
+- 默认从源租户读取 `ma_setting` 的 `website`、`protocol`、`storage` 三类设置。
+- 默认从源租户读取未软删除的 `ma_file_category` 文件分类。
+- 目标租户已存在的 setting key 和文件分类 code 会跳过，不生成覆盖 SQL。
+- `storage` JSON 配置中的 `secretKey` / `accessKey` 默认清空。
+- 只有显式传入 `--copy-secret` 才保留云存储密钥字段在 SQL 预览里。
+- 脚本只通过本机 `mysql` client 执行查询，不执行输出 SQL。
+- 脚本不读取 `.env`，数据库连接参数来自 `MYSQL_*` 环境变量或命令参数默认值。
+
+详见 `docs/P2_TENANT_INIT_PLAN.md`。
+
+## P2.6 验收标准
+
+- `python3 -m py_compile scripts/tenant-init-plan.py scripts/p1-smoke.py` 通过。
+- `python3 scripts/tenant-init-plan.py --help` 通过。
+- `python3 scripts/tenant-init-plan.py --from-tenant 0 --to-tenant 999999 --sql-only` 通过，且只输出 SQL 预览。
+- `./scripts/verify-no-db.sh` 通过。
+- `./scripts/check-services.sh` 通过。
+- `./scripts/check-p1-seed.sh` 通过。
+- 不执行数据写入、不修改 schema、不读取或修改 `.env`。
+
+## P2.6 验收结果
+
+- 已通过 `python3 -m py_compile scripts/tenant-init-plan.py scripts/p1-smoke.py`。
+- 已通过 `python3 scripts/tenant-init-plan.py --help`。
+- 已通过 `python3 scripts/tenant-init-plan.py --from-tenant 0 --to-tenant 999999 --sql-only`；本机预览生成 12 条 setting 和 2 条文件分类插入 SQL，没有执行 SQL。
+- 已通过 `bash -n scripts/check-runtime-residue.sh scripts/verify-no-db.sh scripts/check-services.sh scripts/check-p1-seed.sh`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `./scripts/check-services.sh` 和 `./scripts/check-p1-seed.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有执行租户数据写入、schema 变更或 `.env` 修改。
+
 ## 下一步
 
-P2.6：租户初始化命令 dry-run 版本，只生成计划和 SQL 预览，不直接写库。
+P2.7：租户初始化 apply/write 模式设计与安全门禁。该任务会触及数据库写入红线，进入前需要明确授权。
