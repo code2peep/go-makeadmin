@@ -1,20 +1,20 @@
 {
-  "module": "demo_article",
+  "module": "article",
   "entity": "DemoArticle",
   "table": "ma_demo_article",
   "backendPackage": "gencode",
   "routes": [
-    "GET /demo_article/list",
-    "GET /demo_article/detail",
-    "POST /demo_article/add",
-    "POST /demo_article/edit",
-    "POST /demo_article/del"
+    "GET /article/list",
+    "GET /article/detail",
+    "POST /article/add",
+    "POST /article/edit",
+    "POST /article/del"
   ],
   "permissions": [
-    "demo_article:list",
-    "demo_article:add",
-    "demo_article:edit",
-    "demo_article:del"
+    "article:list",
+    "article:add",
+    "article:edit",
+    "article:del"
   ],
   "runtimeRegistered": false,
   "requiresSchema": false

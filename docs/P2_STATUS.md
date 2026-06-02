@@ -317,6 +317,37 @@ P2 从 P1 冻结底座继续推进，不再扩大 P1 范围。P2 的重点是把
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有创建 demo 表、没有写菜单或权限种子、没有默认注册运行时路由。
 
+## P2.10 当前落地
+
+前端生成模板闭环已建立：
+
+- 新增 `scripts/check-codegen-frontend.sh`。
+- 新增 env-gated 测试 `TestGeneratedCrudFrontendCodeTypeChecks`，默认后端测试不触发 Node。
+- 显式运行脚本时，测试会渲染 `api.ts`、`index.vue`、`edit.vue`。
+- 测试临时写入 `admin/src/api/article.ts` 和 `admin/src/views/article/`。
+- 测试执行 `npm run type-check`，验证生成前端代码符合当前 admin TypeScript/Vue 约定。
+- 测试结束后清理临时生成文件。
+- `examples/demo` 已补充前端生成模板验证说明。
+
+详见 `docs/P2_FRONTEND_CODEGEN_CLOSURE.md`。
+
+## P2.10 验收标准
+
+- `./scripts/check-codegen-frontend.sh` 通过。
+- `cd admin && npm run type-check` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 临时生成的 `admin/src/api/article.ts` 和 `admin/src/views/article/` 不残留。
+
+## P2.10 验收结果
+
+- 已通过 `bash -n scripts/check-codegen-frontend.sh`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache go test ./generator -run TestGeneratedCrudFrontendCodeTypeChecks`；默认未设置环境变量时前端 type-check 测试会跳过。
+- 已通过 `./scripts/check-codegen-frontend.sh`；脚本临时生成前端 API 和页面并执行 `npm run type-check`。
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已确认临时生成的 `admin/src/api/article.ts` 和 `admin/src/views/article/` 没有残留。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+
 ## 下一步
 
-P2.10：前端生成模板闭环，验证生成 API 和页面模板与当前 admin 工程约定一致。
+P2.11：模块注册清单，沉淀后端路由、前端菜单、权限和初始化数据的接入规范。
