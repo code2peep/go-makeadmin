@@ -144,6 +144,37 @@ P2 从 P1 冻结底座继续推进，不再扩大 P1 范围。P2 的重点是把
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 完整 `scripts/p1-smoke.py` 写入 smoke 因本机未提供 `P1_SMOKE_ADMIN_PASSWORD` 或 `ADMIN_PASSWORD` 环境变量未运行。
 
+## P2.5 当前落地
+
+租户级设置、文件和日志的迁移策略已沉淀：
+
+- 明确 `ma_setting` 当前已按 `tenant_id + setting_group + setting_key` 隔离。
+- 明确非 `0` 租户不会自动回退读取租户 `0` 设置，新租户上线前必须准备自己的设置基线。
+- 明确 `ma_file_category` 和 `ma_file` 元数据已按 `tenant_id` 隔离，物理上传路径本阶段不改。
+- 明确登录日志和操作日志不做跨租户复制，历史 `tenant_id=0` 日志保留默认租户归属。
+- 明确云存储 `secretKey` / `accessKey` 不默认复制，必须显式 opt-in 或重新配置。
+- `scripts/check-runtime-residue.sh` 增加设置、文件和日志 service/repository 不得硬编码 `GlobalTenantID` 的防回流检查。
+
+详见 `docs/P2_TENANT_MIGRATION.md`。
+
+## P2.5 验收标准
+
+- `scripts/check-runtime-residue.sh` 通过，并包含租户级设置/文件/日志防回流检查。
+- `./scripts/verify-no-db.sh` 通过。
+- `./scripts/check-services.sh` 通过。
+- `./scripts/check-p1-seed.sh` 通过。
+- 不执行数据迁移、不修改 schema、不读取或修改 `.env`。
+
+## P2.5 验收结果
+
+- 已通过 `bash -n scripts/check-runtime-residue.sh scripts/verify-no-db.sh scripts/check-services.sh scripts/check-p1-seed.sh`。
+- 已通过 `python3 -m py_compile scripts/p1-smoke.py`。
+- 已通过 `./scripts/check-runtime-residue.sh`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `./scripts/check-services.sh` 和 `./scripts/check-p1-seed.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有执行租户数据复制、schema 变更或 `.env` 修改。
+
 ## 下一步
 
-P2.5：租户级设置、文件和日志的迁移策略。
+P2.6：租户初始化命令 dry-run 版本，只生成计划和 SQL 预览，不直接写库。

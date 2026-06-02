@@ -70,6 +70,16 @@ check_no_match \
     server/middleware
 
 check_no_match \
+    "P2 tenant-scoped settings, files and logs must not hardcode GlobalTenantID" \
+    'GlobalTenantID' \
+    server/makeadmin/repository/setting.go \
+    server/makeadmin/repository/file.go \
+    server/makeadmin/repository/log.go \
+    server/makeadmin/service/setting.go \
+    server/makeadmin/service/file.go \
+    server/makeadmin/service/log.go
+
+check_no_match \
     "P1 routes and middleware must not branch on adapter Available fallback" \
     '\.Available\(' \
     server/admin/routers \
