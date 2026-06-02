@@ -749,6 +749,35 @@ P2 从 P1 冻结底座继续推进，不再扩大 P1 范围。P2 的重点是把
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有修改 schema、没有读取或修改 `.env`、没有连接真实 zyai 业务库。
 
+## P2.23 当前落地
+
+模块工具验证边界已建立：
+
+- 新增 `scripts/check-module-tools-no-db.sh`。
+- `scripts/verify-no-db.sh` 已接入模块工具 no-db guard。
+- no-db guard 覆盖 Python 语法、shell 语法、manifest 校验、模块 dry-run 预览和写入门禁失败检查。
+- no-db guard 不连接数据库、不执行写入或删除。
+- `scripts/check-module-lifecycle-smoke.sh` 继续保持显式写库 smoke，不进入默认 no-db 验证。
+
+详见 `docs/P2_MODULE_VERIFY_BOUNDARY.md`。
+
+## P2.23 验收标准
+
+- `bash -n scripts/verify-no-db.sh scripts/check-module-tools-no-db.sh scripts/check-module-lifecycle-smoke.sh` 通过。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不把写库 smoke 放入 `verify-no-db.sh`。
+- 不修改 schema、不读取或修改 `.env`、不连接真实 zyai 业务库。
+
+## P2.23 验收结果
+
+- 已通过 `bash -n scripts/verify-no-db.sh scripts/check-module-tools-no-db.sh scripts/check-module-lifecycle-smoke.sh`。
+- 已通过 `scripts/check-module-tools-no-db.sh`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`，且 verify 链路已执行模块工具 no-db guard。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有把写库 smoke 放入 `verify-no-db.sh`。
+- 本阶段没有修改 schema、没有读取或修改 `.env`、没有连接真实 zyai 业务库。
+
 ## 下一步
 
-P2.23：模块生命周期 smoke 纳入验证边界评估。该任务决定哪些检查进入 no-db 验证、哪些保持显式写库 smoke。
+P2.24：模块文档收敛与使用入口整理。该任务把模块注册、安装、卸载、runtime 和验证入口整理成一份模块使用指南。
