@@ -376,6 +376,37 @@ P2 从 P1 冻结底座继续推进，不再扩大 P1 范围。P2 的重点是把
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有执行数据库写入、没有修改 schema、没有默认注册 demo 运行时路由。
 
+## P2.12 当前落地
+
+模块注册 SQL dry-run 已建立：
+
+- 新增 `scripts/module-registry-plan.py`。
+- 脚本读取 manifest 并复用 `scripts/check-module-manifests.py` 做结构校验。
+- 脚本只输出 SQL 预览，不连接数据库、不执行 SQL。
+- SQL 预览包含 `ma_permission`、`ma_menu`、`ma_menu_permission`。
+- SQL 使用 `WHERE NOT EXISTS` 防止重复插入。
+- 菜单父级通过 manifest `menu.parent` 对应的 `ma_menu.route_name` 查找。
+- 本阶段不写 `ma_role_permission`，不自动给角色授权。
+
+详见 `docs/P2_MODULE_REGISTRY_SQL_PLAN.md`。
+
+## P2.12 验收标准
+
+- `python3 -m py_compile scripts/check-module-manifests.py scripts/module-registry-plan.py` 通过。
+- `python3 scripts/check-module-manifests.py` 通过。
+- `python3 scripts/module-registry-plan.py --manifest examples/demo/manifest.json` 通过，只输出 SQL。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不执行数据库写入、不修改 schema、不默认注册 demo 运行时路由。
+
+## P2.12 验收结果
+
+- 已通过 `python3 -m py_compile scripts/check-module-manifests.py scripts/module-registry-plan.py`。
+- 已通过 `python3 scripts/check-module-manifests.py`。
+- 已通过 `python3 scripts/module-registry-plan.py --manifest examples/demo/manifest.json`；生成 76 行 SQL 预览，没有执行 SQL。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有执行数据库写入、没有修改 schema、没有默认注册 demo 运行时路由。
+
 ## 下一步
 
-P2.12：模块注册 SQL dry-run，根据 manifest 生成菜单和权限初始化 SQL 预览，不直接写库。
+P2.13：模块注册 SQL apply/write 模式与本地写入 smoke。该任务会触及数据库写入红线，进入前需要明确授权。

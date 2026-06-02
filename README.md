@@ -81,7 +81,7 @@ P1_SMOKE_ADMIN_PASSWORD='your-local-admin-password' \
 python3 scripts/p1-smoke.py
 ```
 
-本地启动链路见 `docs/LOCAL_DEV.md`。P1 最终状态见 `docs/P1_FINAL_STATUS.md`。P2 状态见 `docs/P2_STATUS.md`。P2.1 认证模型见 `docs/P2_AUTH_MODEL.md`。P2.2 租户上下文见 `docs/P2_TENANT_CONTEXT.md`。P2.3 数据权限见 `docs/P2_DATA_SCOPE.md`。P2.4 租户切换见 `docs/P2_TENANT_SWITCH.md`。P2.5 租户迁移策略见 `docs/P2_TENANT_MIGRATION.md`。P2.6 租户初始化 dry-run 见 `docs/P2_TENANT_INIT_PLAN.md`。P2.7 租户初始化写入门禁见 `docs/P2_TENANT_INIT_APPLY_GUARD.md`。P2.8 租户初始化受控写入见 `docs/P2_TENANT_INIT_APPLY.md`。P2.9 代码生成器闭环见 `docs/P2_CODEGEN_CLOSURE.md`。P2.10 前端生成模板闭环见 `docs/P2_FRONTEND_CODEGEN_CLOSURE.md`。P2.11 模块注册清单见 `docs/P2_MODULE_REGISTRY.md`。
+本地启动链路见 `docs/LOCAL_DEV.md`。P1 最终状态见 `docs/P1_FINAL_STATUS.md`。P2 状态见 `docs/P2_STATUS.md`。P2.1 认证模型见 `docs/P2_AUTH_MODEL.md`。P2.2 租户上下文见 `docs/P2_TENANT_CONTEXT.md`。P2.3 数据权限见 `docs/P2_DATA_SCOPE.md`。P2.4 租户切换见 `docs/P2_TENANT_SWITCH.md`。P2.5 租户迁移策略见 `docs/P2_TENANT_MIGRATION.md`。P2.6 租户初始化 dry-run 见 `docs/P2_TENANT_INIT_PLAN.md`。P2.7 租户初始化写入门禁见 `docs/P2_TENANT_INIT_APPLY_GUARD.md`。P2.8 租户初始化受控写入见 `docs/P2_TENANT_INIT_APPLY.md`。P2.9 代码生成器闭环见 `docs/P2_CODEGEN_CLOSURE.md`。P2.10 前端生成模板闭环见 `docs/P2_FRONTEND_CODEGEN_CLOSURE.md`。P2.11 模块注册清单见 `docs/P2_MODULE_REGISTRY.md`。P2.12 注册 SQL dry-run 见 `docs/P2_MODULE_REGISTRY_SQL_PLAN.md`。
 
 ## 授权
 
