@@ -375,7 +375,7 @@ la_system_log_sms
 ## P1.20 已定事项
 
 - P1 默认运行目标是 `ma_*`；P0 蓝本 SQL 和脚本仍可保留，但不再代表框架默认运行模型。
-- 旧 `server/admin/service/*` 和 `server/model/{system,setting,common}` 暂作为过渡兜底保留，等 P1 smoke 覆盖核心写操作后再移除。
+- 旧 `server/admin/service/*` 和 `server/model/{system,setting,common}` 在 P1.20 时暂作为过渡兜底保留；P1.22 已冻结运行兜底，当前只作为蓝本参考代码保留。
 - 不再新增任何直接读写 `la_*` 的 P1 功能。
 
 ## P1.21 当前落地
@@ -410,6 +410,18 @@ la_system_log_sms
 
 - 旧 `server/admin/service/*` 和 `server/model/{system,setting,common}` 暂保留为蓝本参考代码，不再作为 P1 核心后台运行兜底。
 - 删除或迁入 `legacy` 属于单独清理步骤，本阶段不删除文件。
+
+## P1.23 当前落地
+
+- README、架构说明、本地开发入口和数据库边界文档已同步到 P1 默认口径。
+- 新增 `docs/P1_ACCEPTANCE_CHECKLIST.md`，将 P1 验收标准、验证命令、运行链路和 P2 入口任务固定下来。
+- 本地开发默认入口明确为 `scripts/init-p1-db.sh`、`scripts/check-p1-seed.sh`、`scripts/dev-api.sh`、`scripts/dev-admin.sh` 和 `scripts/p1-smoke.py`。
+
+## P1.23 已定事项
+
+- P1 当前默认运行目标是 `go_makeadmin` 独立库和 `ma_*` 表。
+- P0 蓝本 SQL 和旧服务只作为历史资料保留，不再出现在默认启动路径里。
+- 后续做完一个阶段任务后，交付时直接给出下一步任务建议。
 
 ## 已定事项
 

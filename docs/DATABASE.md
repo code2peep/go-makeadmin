@@ -2,9 +2,9 @@
 
 ## 当前状态
 
-P0 阶段不连接 zyai 现有业务库做写操作。
+当前阶段不连接 zyai 现有业务库做写操作。
 
-当前本机已按 P0.7 初始化一次性开发库 `go_makeadmin`，用于验证登录、菜单、权限和工作台链路。LikeAdmin 原始 SQL 保留在 `sql/install.sql`，当前只作为 P0 蓝本初始化数据，P1 会切换为 `ma_*` 自研系统表。
+`go-makeadmin` 使用独立开发库 `go_makeadmin`，当前默认系统表为 `ma_*`。LikeAdmin 原始 SQL 保留在 `sql/install.sql`，只作为蓝本初始化资料，不作为框架默认 schema。
 
 P1 阶段已明确：`go-makeadmin` 使用独立数据库，不和 zyai 业务库混用；独立库最终命名沿用 `go_makeadmin`，采用一次性初始化或迁移方式，不保留长期双写。
 
@@ -24,7 +24,7 @@ root:@tcp(127.0.0.1:3306)/go_makeadmin?charset=utf8mb4&parseTime=True&loc=Local
 
 - MySQL 服务可连接。
 - 开发库 `go_makeadmin` 已存在。
-- 当前 P0 蓝本需要 `la_*` 系统表和初始化数据。
+- 当前默认需要 `ma_*` 系统表和初始化数据。
 - Redis 服务可连接。
 
 可先运行只读检查：
@@ -39,26 +39,23 @@ cd /Users/fengrongxin/AI/01-projects/go-makeadmin
 本地烟测账号：
 
 ```text
-P0 蓝本：
-username: admin
-password: 123456
-
 P1 ma_*：
 username: admin
 password: 由 scripts/init-p1-db.sh 执行时的 ADMIN_PASSWORD 决定
 ```
 
-P0.7 的一次性本地库方案见：
+P1 独立库初始化：
 
-```text
-docs/DB_INIT_PLAN.md
+```bash
+cd /Users/fengrongxin/AI/01-projects/go-makeadmin
+ADMIN_PASSWORD='your-local-admin-password' ./scripts/init-p1-db.sh
 ```
 
 初始化后可运行只读种子检查：
 
 ```bash
 cd /Users/fengrongxin/AI/01-projects/go-makeadmin
-./scripts/check-db-seed.sh
+./scripts/check-p1-seed.sh
 ```
 
 ## 命名规划
@@ -77,11 +74,11 @@ sql/p1.schema.sql
 sql/p1.seed.sql
 ```
 
-P1 独立库种子只读检查：
+P0 蓝本库只读检查仍保留给历史验证使用：
 
 ```bash
 cd /Users/fengrongxin/AI/01-projects/go-makeadmin
-./scripts/check-p1-seed.sh
+./scripts/check-db-seed.sh
 ```
 
 业务表由具体项目决定。例如 zyai 迁移时，优先兼容现有业务表：

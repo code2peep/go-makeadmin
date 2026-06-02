@@ -2,26 +2,36 @@
 
 ## 定位
 
-`go-makeadmin` 是 `makeadmin` 的 Go 版本后台基础框架，面向多项目复用。P0 阶段参考 LikeAdmin Go 的 MIT 代码，先完成现代化升级和最小可运行验证；后续逐步重构为自研架构。
+`go-makeadmin` 是 `makeadmin` 的 Go 版本后台基础框架，面向多项目复用。项目早期参考 LikeAdmin Go 的 MIT 代码，当前 P1 默认运行链路已切到 `ma_*` 自研系统表，旧 `la_*` 代码只作为蓝本参考保留。
 
 ## 当前结构
 
 ```text
 go-makeadmin/
 ├── admin/      # Vue 管理端
-├── frontend/   # LikeAdmin 原发布目录，P0 阶段保留
+├── frontend/   # LikeAdmin 原发布目录，保留为蓝本资料
+├── legacy/     # 历史来源和迁移参考资料
 ├── public/     # 静态资源和上传目录
 ├── server/     # Go API 服务
-└── sql/        # LikeAdmin 原始初始化 SQL
+└── sql/        # P1 ma_* 初始化 SQL 和蓝本 SQL
 ```
 
-## P0 已确定方向
+## P1 运行模型
 
-- 后端 module 改为 `go-makeadmin`。
-- 前端包名改为 `go-makeadmin-admin`。
-- 默认响应结构未来向 `code=0/msg/data` 收敛，P0 暂不批量重写业务响应。
-- MySQL 和 Redis 改为懒加载，避免包加载时强制连接基础设施。
-- 默认 `npm run build` 只构建 `admin/dist`，发布复制改为 `npm run build:release`。
+- 默认开发库是 `go_makeadmin`，系统表使用 `ma_*` 前缀。
+- 已接管链路包括登录、管理员、角色、菜单、部门、岗位、设置、字典、文件、日志、公共首页和代码生成器。
+- 后台认证中间件只接受 `makeadmin:token:*` 新 token，不再回退旧 `backstage:*` token。
+- 操作审计固定写入 `ma_audit_log`，登录日志写入 `ma_login_log`。
+- `server/admin/service/*` 和 `server/model/{system,setting,common}` 暂作参考代码保留，不作为 P1 核心运行兜底。
+- `sql/install.sql` 和 `sql/install.core.sql` 是蓝本初始化资料，不代表框架默认 schema。
+
+## P1 收口标准
+
+- `./scripts/verify-no-db.sh` 通过。
+- `./scripts/check-p1-seed.sh` 通过。
+- 本地 disposable P1 库上 `scripts/p1-smoke.py` 覆盖矩阵通过。
+- 新增 P1 功能不得直接读写 `la_*` 表。
+- 文档默认入口必须指向 P1 独立库和 `ma_*` 模型。
 
 ## 后续重构方向
 
@@ -71,3 +81,11 @@ admin/src/
 - 不继承 Gin-Vue-Admin 框架层代码。
 - 不沿用 LikeAdmin 的强全局初始化模式。
 - 不把 Redis token 作为长期认证模型，后续改为 JWT + Redis 会话状态。
+
+## P2 优先级
+
+1. 认证模型升级为 JWT + Redis session state。
+2. 建立租户上下文 middleware 和租户数据边界。
+3. 将角色数据范围落到查询层。
+4. 让代码生成器生成可运行模块。
+5. 建立 `examples/demo` 标准模块，验证框架扩展约定。
