@@ -800,6 +800,33 @@ P2 从 P1 冻结底座继续推进，不再扩大 P1 范围。P2 的重点是把
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有修改 schema、没有执行数据库写入或删除、没有读取或修改 `.env`、没有连接真实 zyai 业务库。
 
+## P2.25 当前落地
+
+P2 冻结状态文档已建立：
+
+- 新增 `docs/P2_FINAL_STATUS.md`。
+- README 已补充 P2 最终状态入口。
+- `docs/P2_MODULE_GUIDE.md` 已指向 P2 最终状态文档。
+- 最终状态文档汇总 P2 已完成范围、冻结验收范围、已知验证噪音、保留边界、不覆盖范围和 P3 入口。
+
+## P2.25 验收标准
+
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- `MAKEADMIN_ALLOW_MODULE_LIFECYCLE_WRITE=1 scripts/check-module-lifecycle-smoke.sh` 通过。
+- `git diff --check` 通过。
+- 不修改 schema、不读取或修改 `.env`、不连接真实 zyai 业务库。
+
+## P2.25 验收结果
+
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `MAKEADMIN_ALLOW_MODULE_LIFECYCLE_WRITE=1 scripts/check-module-lifecycle-smoke.sh`。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets`。
+- 生命周期 smoke 安装后计数为 5 条权限、1 条菜单、1 条菜单权限关联、5 条角色授权；卸载后残留计数为 0，二次卸载为 no-op。
+- 冻结验收后再次查询 demo article 残留计数为 0。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有修改 schema、没有读取或修改 `.env`、没有连接真实 zyai 业务库。
+
 ## 下一步
 
-P2.25：P2 模块生命周期冻结验收与最终状态文档。该任务冻结 P2 模块能力边界，汇总当前可用命令、验证结果、剩余风险和后续 P3 入口。
+P3.1：业务模块脚手架与产品化模板。该任务把 P2 的 codegen、manifest 和模块生命周期能力串成标准模块开发体验。

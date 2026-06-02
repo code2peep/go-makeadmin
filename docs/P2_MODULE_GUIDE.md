@@ -6,6 +6,8 @@
 
 本文是 P2 模块生命周期能力的统一入口，串联模块 manifest、注册 SQL、角色授权、安装、卸载、runtime 开关和验证命令。
 
+P2 冻结状态见 `docs/P2_FINAL_STATUS.md`。
+
 ## 模块清单
 
 模块清单放在：
@@ -168,3 +170,4 @@ scripts/check-module-lifecycle-smoke.sh
 - `docs/P2_MODULE_UNINSTALL_APPLY.md`
 - `docs/P2_MODULE_LIFECYCLE_SMOKE.md`
 - `docs/P2_MODULE_VERIFY_BOUNDARY.md`
+- `docs/P2_FINAL_STATUS.md`
