@@ -53,7 +53,7 @@ func (adapter fileAdapter) Available(ctx context.Context) bool {
 	var count int64
 	err := adapter.db.WithContext(ctx).
 		Model(&makeadmin.FileCategory{}).
-		Where("tenant_id = ? AND delete_time = ?", makeadmin.GlobalTenantID, 0).
+		Where("tenant_id = ? AND delete_time = ?", tenantIDFromContext(ctx), 0).
 		Count(&count).
 		Error
 	return err == nil && count > 0
@@ -69,7 +69,8 @@ func (adapter fileAdapter) AlbumList(ctx context.Context, page request.PageReq, 
 	if listReq.Cid > 0 {
 		categoryID = uint64(listReq.Cid)
 	}
-	result, err := adapter.fileService().ListFiles(ctx, makeadmin.GlobalTenantID, makeadminsvc.FileFilter{
+	tenantID := tenantIDFromContext(ctx)
+	result, err := adapter.fileService().ListFiles(ctx, tenantID, makeadminsvc.FileFilter{
 		CategoryID: categoryID,
 		FileType:   fileType,
 		Name:       listReq.Name,
@@ -86,7 +87,7 @@ func (adapter fileAdapter) AlbumList(ctx context.Context, page request.PageReq, 
 }
 
 func (adapter fileAdapter) AlbumRename(ctx context.Context, id uint, name string) error {
-	return mapFileError(adapter.fileService().RenameFile(ctx, makeadmin.GlobalTenantID, uint64(id), name))
+	return mapFileError(adapter.fileService().RenameFile(ctx, tenantIDFromContext(ctx), uint64(id), name))
 }
 
 func (adapter fileAdapter) AlbumMove(ctx context.Context, ids []uint, cid int) error {
@@ -94,7 +95,7 @@ func (adapter fileAdapter) AlbumMove(ctx context.Context, ids []uint, cid int) e
 	if cid > 0 {
 		categoryID = uint64(cid)
 	}
-	return mapFileError(adapter.fileService().MoveFiles(ctx, makeadmin.GlobalTenantID, uintSliceToUint64(ids), categoryID))
+	return mapFileError(adapter.fileService().MoveFiles(ctx, tenantIDFromContext(ctx), uintSliceToUint64(ids), categoryID))
 }
 
 func (adapter fileAdapter) AlbumAdd(ctx context.Context, addReq req.CommonAlbumAddReq) (uint, error) {
@@ -102,8 +103,9 @@ func (adapter fileAdapter) AlbumAdd(ctx context.Context, addReq req.CommonAlbumA
 	if err != nil {
 		return 0, mapFileError(err)
 	}
+	tenantID := tenantIDFromContext(ctx)
 	item, err := adapter.fileService().AddFile(ctx, makeadminsvc.FileInput{
-		TenantID:   makeadmin.GlobalTenantID,
+		TenantID:   tenantID,
 		CategoryID: uint64(addReq.Cid),
 		AdminID:    uint64(addReq.Aid),
 		FileType:   fileType,
@@ -120,7 +122,7 @@ func (adapter fileAdapter) AlbumAdd(ctx context.Context, addReq req.CommonAlbumA
 }
 
 func (adapter fileAdapter) AlbumDel(ctx context.Context, ids []uint) error {
-	return mapFileError(adapter.fileService().DeleteFiles(ctx, makeadmin.GlobalTenantID, uintSliceToUint64(ids)))
+	return mapFileError(adapter.fileService().DeleteFiles(ctx, tenantIDFromContext(ctx), uintSliceToUint64(ids)))
 }
 
 func (adapter fileAdapter) CateList(ctx context.Context, listReq req.CommonCateListReq) ([]interface{}, error) {
@@ -128,7 +130,7 @@ func (adapter fileAdapter) CateList(ctx context.Context, listReq req.CommonCateL
 	if err != nil {
 		return nil, mapFileError(err)
 	}
-	categories, err := adapter.fileService().ListCategories(ctx, makeadmin.GlobalTenantID, fileType, listReq.Name)
+	categories, err := adapter.fileService().ListCategories(ctx, tenantIDFromContext(ctx), fileType, listReq.Name)
 	if err != nil {
 		return nil, mapFileError(err)
 	}
@@ -141,8 +143,9 @@ func (adapter fileAdapter) CateAdd(ctx context.Context, addReq req.CommonCateAdd
 	if err != nil {
 		return mapFileError(err)
 	}
+	tenantID := tenantIDFromContext(ctx)
 	return mapFileError(adapter.fileService().AddCategory(ctx, makeadminsvc.FileCategoryInput{
-		TenantID: makeadmin.GlobalTenantID,
+		TenantID: tenantID,
 		ParentID: uint64(addReq.Pid),
 		FileType: fileType,
 		Name:     addReq.Name,
@@ -150,11 +153,11 @@ func (adapter fileAdapter) CateAdd(ctx context.Context, addReq req.CommonCateAdd
 }
 
 func (adapter fileAdapter) CateRename(ctx context.Context, id uint, name string) error {
-	return mapFileError(adapter.fileService().RenameCategory(ctx, makeadmin.GlobalTenantID, uint64(id), name))
+	return mapFileError(adapter.fileService().RenameCategory(ctx, tenantIDFromContext(ctx), uint64(id), name))
 }
 
 func (adapter fileAdapter) CateDel(ctx context.Context, id uint) error {
-	return mapFileError(adapter.fileService().DeleteCategory(ctx, makeadmin.GlobalTenantID, uint64(id)))
+	return mapFileError(adapter.fileService().DeleteCategory(ctx, tenantIDFromContext(ctx), uint64(id)))
 }
 
 func (adapter fileAdapter) UploadImage(ctx context.Context, file *multipart.FileHeader, cid uint, adminID uint) (resp.CommonUploadFileResp, error) {

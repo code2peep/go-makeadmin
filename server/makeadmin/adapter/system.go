@@ -17,6 +17,7 @@ import (
 	"go-makeadmin/makeadmin/repository"
 	"go-makeadmin/makeadmin/security"
 	makeadminsvc "go-makeadmin/makeadmin/service"
+	makeadmintenant "go-makeadmin/makeadmin/tenant"
 	"go-makeadmin/model/makeadmin"
 	"go-makeadmin/util"
 )
@@ -24,6 +25,7 @@ import (
 const (
 	ContextAuthSourceKey = "makeadmin_auth_source"
 	ContextIdentityKey   = "makeadmin_identity"
+	ContextTenantKey     = "makeadmin_tenant"
 	ContextAuthSource    = "makeadmin"
 )
 
@@ -46,8 +48,15 @@ func NewSystemAdapter(db *gorm.DB) SystemAdapter {
 }
 
 func MarkMakeAdminContext(c *gin.Context, identity makeadminsvc.Identity) {
+	tenantCtx, ok := makeadmintenant.FromContext(c.Request.Context())
+	if !ok {
+		tenantCtx = makeadmintenant.Context{TenantID: identity.TenantID, Source: makeadmintenant.SourceJWT}
+		c.Request = c.Request.WithContext(makeadmintenant.WithContext(c.Request.Context(), tenantCtx))
+	}
 	c.Set(ContextAuthSourceKey, ContextAuthSource)
 	c.Set(ContextIdentityKey, identity)
+	c.Set(ContextTenantKey, tenantCtx)
+	c.Set(config.AdminConfig.ReqTenantIdKey, tenantCtx.TenantID)
 }
 
 func IsMakeAdminContext(c *gin.Context) bool {
@@ -82,9 +91,13 @@ func (adapter systemAdapter) Login(c *gin.Context, loginReq *req.SystemLoginReq)
 	if !adapter.Available(c.Request.Context()) {
 		return resp.SystemLoginResp{}, ErrUnavailable
 	}
+	tenantCtx, err := tenantContextFromGin(c)
+	if err != nil {
+		return resp.SystemLoginResp{}, mapTenantError(err)
+	}
 	ua := core.UAParser.Parse(c.GetHeader("user-agent"))
 	result, err := adapter.authService(true).Login(c.Request.Context(), makeadminsvc.LoginInput{
-		TenantID: makeadmin.GlobalTenantID,
+		TenantID: tenantCtx.TenantID,
 		Username: loginReq.Username,
 		Password: loginReq.Password,
 		IP:       c.ClientIP(),
@@ -102,7 +115,7 @@ func (adapter systemAdapter) Logout(ctx context.Context, token string) error {
 }
 
 func (adapter systemAdapter) Self(ctx context.Context, adminID uint64) (resp.SystemAuthAdminSelfResp, error) {
-	identity, err := adapter.authService(false).BuildIdentityByAdminID(ctx, makeadmin.GlobalTenantID, adminID)
+	identity, err := adapter.authService(false).BuildIdentityByAdminID(ctx, tenantIDFromContext(ctx), adminID)
 	if err != nil {
 		return resp.SystemAuthAdminSelfResp{}, mapAuthError(err)
 	}
@@ -119,7 +132,7 @@ func (adapter systemAdapter) Self(ctx context.Context, adminID uint64) (resp.Sys
 
 func (adapter systemAdapter) MenuRoute(ctx context.Context, adminID uint64) ([]interface{}, error) {
 	auth := adapter.authService(false)
-	identity, err := auth.BuildIdentityByAdminID(ctx, makeadmin.GlobalTenantID, adminID)
+	identity, err := auth.BuildIdentityByAdminID(ctx, tenantIDFromContext(ctx), adminID)
 	if err != nil {
 		return nil, mapAuthError(err)
 	}

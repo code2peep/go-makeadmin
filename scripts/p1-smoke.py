@@ -23,6 +23,7 @@ from typing import Any, Callable
 SMOKE_MATRIX = [
     ("auth", "POST /system/login", "read", "login returns a token"),
     ("auth", "JWT claims", "read", "login token has sid/adminId/tenantId/iat/exp/iss claims"),
+    ("auth", "X-Tenant-ID mismatch", "read", "token request rejects mismatched tenant header"),
     ("auth", "POST /system/logout", "write", "JWT session state can be deleted"),
     ("auth", "GET /system/admin/self", "read", "token resolves current admin"),
     ("auth", "GET /system/menu/route", "read", "token resolves route menus"),
@@ -73,9 +74,10 @@ class Client:
         *,
         params: dict[str, Any] | None = None,
         body: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
         label: str,
     ) -> dict[str, Any]:
-        raw = self._request(method, path, params=params, body=body)
+        raw = self._request(method, path, params=params, body=body, extra_headers=headers)
         try:
             payload = json.loads(raw.decode("utf-8"))
         except json.JSONDecodeError as exc:
@@ -83,6 +85,28 @@ class Client:
         code = payload.get("code")
         if code != 200:
             raise SmokeError(f"{label}: code={code}, msg={payload.get('msg')!r}, data={payload.get('data')!r}")
+        print(f"OK: {label}")
+        return payload
+
+    def api_json_expect_code(
+        self,
+        method: str,
+        path: str,
+        *,
+        expected_code: int,
+        params: dict[str, Any] | None = None,
+        body: dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+        label: str,
+    ) -> dict[str, Any]:
+        raw = self._request(method, path, params=params, body=body, extra_headers=headers)
+        try:
+            payload = json.loads(raw.decode("utf-8"))
+        except json.JSONDecodeError as exc:
+            raise SmokeError(f"{label}: response is not JSON: {raw[:300]!r}") from exc
+        code = payload.get("code")
+        if code != expected_code:
+            raise SmokeError(f"{label}: code={code}, want={expected_code}, msg={payload.get('msg')!r}")
         print(f"OK: {label}")
         return payload
 
@@ -123,6 +147,7 @@ class Client:
         body: dict[str, Any] | None = None,
         data: bytes | None = None,
         content_type: str | None = None,
+        extra_headers: dict[str, str] | None = None,
     ) -> bytes:
         query = urllib.parse.urlencode(params or {}, doseq=True)
         url = self.base_url + path
@@ -136,6 +161,8 @@ class Client:
             content_type = "application/json"
         if content_type:
             headers["Content-Type"] = content_type
+        if extra_headers:
+            headers.update(extra_headers)
         req = urllib.request.Request(url, data=data, headers=headers, method=method)
         try:
             with urllib.request.urlopen(req, timeout=15) as resp:
@@ -266,6 +293,13 @@ def run() -> None:
             raise SmokeError("login did not return data.token")
         client.token = str(token)
         assert_jwt_claims(client.token)
+        client.api_json_expect_code(
+            "GET",
+            "/system/admin/self",
+            headers={"X-Tenant-ID": "1"},
+            expected_code=403,
+            label="tenant mismatch guard",
+        )
 
         client.api_json("GET", "/system/admin/self", label="admin self")
         client.api_json("GET", "/system/menu/route", label="menu route")

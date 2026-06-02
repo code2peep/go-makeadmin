@@ -64,6 +64,12 @@ check_no_match \
     "${runtime_paths[@]}"
 
 check_no_match \
+    "P2 tenant runtime must not hardcode GlobalTenantID in adapters or middleware" \
+    'GlobalTenantID' \
+    server/makeadmin/adapter \
+    server/middleware
+
+check_no_match \
     "P1 routes and middleware must not branch on adapter Available fallback" \
     '\.Available\(' \
     server/admin/routers \

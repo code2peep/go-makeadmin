@@ -33,7 +33,7 @@ func (adapter websiteAdapter) Available(ctx context.Context) bool {
 	var count int64
 	err := adapter.db.WithContext(ctx).
 		Model(&makeadmin.Setting{}).
-		Where("tenant_id = ? AND setting_group = ? AND setting_key IN ?", makeadmin.GlobalTenantID, "website", []string{
+		Where("tenant_id = ? AND setting_group = ? AND setting_key IN ?", tenantIDFromContext(ctx), "website", []string{
 			"name",
 			"logo",
 			"favicon",
@@ -45,7 +45,7 @@ func (adapter websiteAdapter) Available(ctx context.Context) bool {
 }
 
 func (adapter websiteAdapter) Detail(ctx context.Context) (map[string]string, error) {
-	setting, err := adapter.settingService().WebsiteDetail(ctx, makeadmin.GlobalTenantID)
+	setting, err := adapter.settingService().WebsiteDetail(ctx, tenantIDFromContext(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (adapter websiteAdapter) Detail(ctx context.Context) (map[string]string, er
 }
 
 func (adapter websiteAdapter) Save(ctx context.Context, websiteReq req.SettingWebsiteReq) error {
-	return adapter.settingService().SaveWebsite(ctx, makeadmin.GlobalTenantID, makeadminsvc.WebsiteSetting{
+	return adapter.settingService().SaveWebsite(ctx, tenantIDFromContext(ctx), makeadminsvc.WebsiteSetting{
 		Name:     websiteReq.Name,
 		Logo:     util.UrlUtil.ToRelativeUrl(websiteReq.Logo),
 		Favicon:  util.UrlUtil.ToRelativeUrl(websiteReq.Favicon),

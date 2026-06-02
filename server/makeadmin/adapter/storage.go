@@ -34,7 +34,7 @@ func (adapter storageAdapter) Available(ctx context.Context) bool {
 	var count int64
 	err := adapter.db.WithContext(ctx).
 		Model(&makeadmin.Setting{}).
-		Where("tenant_id = ? AND setting_group = ? AND setting_key IN ?", makeadmin.GlobalTenantID, "storage", []string{
+		Where("tenant_id = ? AND setting_group = ? AND setting_key IN ?", tenantIDFromContext(ctx), "storage", []string{
 			"default",
 			makeadminsvc.StorageAliasLocal,
 			makeadminsvc.StorageAliasQiniu,
@@ -47,7 +47,7 @@ func (adapter storageAdapter) Available(ctx context.Context) bool {
 }
 
 func (adapter storageAdapter) List(ctx context.Context) ([]map[string]interface{}, error) {
-	settings, err := adapter.settingService().StorageList(ctx, makeadmin.GlobalTenantID)
+	settings, err := adapter.settingService().StorageList(ctx, tenantIDFromContext(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +64,7 @@ func (adapter storageAdapter) List(ctx context.Context) ([]map[string]interface{
 }
 
 func (adapter storageAdapter) Detail(ctx context.Context, alias string) (map[string]interface{}, error) {
-	setting, err := adapter.settingService().StorageDetail(ctx, makeadmin.GlobalTenantID, alias)
+	setting, err := adapter.settingService().StorageDetail(ctx, tenantIDFromContext(ctx), alias)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func (adapter storageAdapter) Detail(ctx context.Context, alias string) (map[str
 }
 
 func (adapter storageAdapter) Edit(ctx context.Context, editReq req.SettingStorageEditReq) error {
-	return adapter.settingService().SaveStorage(ctx, makeadmin.GlobalTenantID, makeadminsvc.StorageSetting{
+	return adapter.settingService().SaveStorage(ctx, tenantIDFromContext(ctx), makeadminsvc.StorageSetting{
 		Alias:     editReq.Alias,
 		Status:    editReq.Status,
 		Bucket:    editReq.Bucket,
@@ -84,7 +84,7 @@ func (adapter storageAdapter) Edit(ctx context.Context, editReq req.SettingStora
 }
 
 func (adapter storageAdapter) Change(ctx context.Context, alias string, status int) error {
-	return adapter.settingService().ChangeStorage(ctx, makeadmin.GlobalTenantID, alias, status)
+	return adapter.settingService().ChangeStorage(ctx, tenantIDFromContext(ctx), alias, status)
 }
 
 func (adapter storageAdapter) settingService() makeadminsvc.SettingService {

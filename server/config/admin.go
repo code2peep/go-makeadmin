@@ -43,6 +43,7 @@ var AdminConfig = adminConfig{
 	SuperAdminId:   1,
 	ReqAdminIdKey:  "admin_id",
 	ReqRoleIdKey:   "role",
+	ReqTenantIdKey: "tenant_id",
 	ReqUsernameKey: "username",
 	ReqNicknameKey: "nickname",
 }
@@ -58,6 +59,7 @@ type adminConfig struct {
 	SuperAdminId       uint
 	ReqAdminIdKey      string
 	ReqRoleIdKey       string
+	ReqTenantIdKey     string
 	ReqUsernameKey     string
 	ReqNicknameKey     string
 }
@@ -76,6 +78,21 @@ func (cnf adminConfig) GetRoleId(c *gin.Context) string {
 		return ""
 	}
 	return roleId.(string)
+}
+
+func (cnf adminConfig) GetTenantId(c *gin.Context) uint64 {
+	tenantId, ok := c.Get(cnf.ReqTenantIdKey)
+	if !ok {
+		return 0
+	}
+	switch value := tenantId.(type) {
+	case uint64:
+		return value
+	case uint:
+		return uint64(value)
+	default:
+		return 0
+	}
 }
 
 func (cnf adminConfig) GetUsername(c *gin.Context) string {

@@ -57,7 +57,8 @@ func (adapter adminAdapter) Available(ctx context.Context) bool {
 
 func (adapter adminAdapter) List(ctx context.Context, page request.PageReq, listReq req.SystemAuthAdminListReq) (response.PageResp, error) {
 	page = normalizePage(page)
-	result, err := adapter.adminService().List(ctx, makeadmin.GlobalTenantID, repository.AdminFilter{
+	tenantID := tenantIDFromContext(ctx)
+	result, err := adapter.adminService().List(ctx, tenantID, repository.AdminFilter{
 		Username: listReq.Username,
 		Nickname: listReq.Nickname,
 		RoleID:   uint64(listReq.Role),
@@ -75,7 +76,7 @@ func (adapter adminAdapter) List(ctx context.Context, page request.PageReq, list
 }
 
 func (adapter adminAdapter) Detail(ctx context.Context, id uint) (resp.SystemAuthAdminResp, error) {
-	item, err := adapter.adminService().Detail(ctx, makeadmin.GlobalTenantID, uint64(id))
+	item, err := adapter.adminService().Detail(ctx, tenantIDFromContext(ctx), uint64(id))
 	if err != nil {
 		return resp.SystemAuthAdminResp{}, mapAdminError(err)
 	}
@@ -83,8 +84,9 @@ func (adapter adminAdapter) Detail(ctx context.Context, id uint) (resp.SystemAut
 }
 
 func (adapter adminAdapter) Add(ctx context.Context, addReq req.SystemAuthAdminAddReq) error {
+	tenantID := tenantIDFromContext(ctx)
 	return mapAdminError(adapter.adminService().Add(ctx, makeadminsvc.AdminInput{
-		TenantID:     makeadmin.GlobalTenantID,
+		TenantID:     tenantID,
 		OrgID:        uint64(addReq.DeptId),
 		PositionID:   uint64(addReq.PostId),
 		Username:     addReq.Username,
@@ -98,9 +100,10 @@ func (adapter adminAdapter) Add(ctx context.Context, addReq req.SystemAuthAdminA
 }
 
 func (adapter adminAdapter) Edit(ctx context.Context, editReq req.SystemAuthAdminEditReq) error {
+	tenantID := tenantIDFromContext(ctx)
 	return mapAdminError(adapter.adminService().Edit(ctx, makeadminsvc.AdminInput{
 		ID:           uint64(editReq.ID),
-		TenantID:     makeadmin.GlobalTenantID,
+		TenantID:     tenantID,
 		OrgID:        uint64(editReq.DeptId),
 		PositionID:   uint64(editReq.PostId),
 		Username:     editReq.Username,
@@ -124,7 +127,7 @@ func (adapter adminAdapter) UpdateSelf(c *gin.Context, updateReq req.SystemAuthA
 }
 
 func (adapter adminAdapter) Del(ctx context.Context, currentAdminID uint, id uint) error {
-	return mapAdminError(adapter.adminService().Delete(ctx, makeadmin.GlobalTenantID, uint64(currentAdminID), uint64(id)))
+	return mapAdminError(adapter.adminService().Delete(ctx, tenantIDFromContext(ctx), uint64(currentAdminID), uint64(id)))
 }
 
 func (adapter adminAdapter) Disable(ctx context.Context, currentAdminID uint, id uint) error {

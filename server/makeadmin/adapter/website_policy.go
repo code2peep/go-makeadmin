@@ -44,7 +44,7 @@ func (adapter copyrightAdapter) Available(ctx context.Context) bool {
 }
 
 func (adapter copyrightAdapter) Detail(ctx context.Context) ([]map[string]interface{}, error) {
-	items, err := adapter.settingService().CopyrightDetail(ctx, makeadmin.GlobalTenantID)
+	items, err := adapter.settingService().CopyrightDetail(ctx, tenantIDFromContext(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (adapter copyrightAdapter) Save(ctx context.Context, items []req.SettingCop
 			Link: item.Link,
 		})
 	}
-	return adapter.settingService().SaveCopyright(ctx, makeadmin.GlobalTenantID, copyrightItems)
+	return adapter.settingService().SaveCopyright(ctx, tenantIDFromContext(ctx), copyrightItems)
 }
 
 func (adapter copyrightAdapter) settingService() makeadminsvc.SettingService {
@@ -80,14 +80,14 @@ func (adapter protocolAdapter) Available(ctx context.Context) bool {
 	var count int64
 	err := adapter.db.WithContext(ctx).
 		Model(&makeadmin.Setting{}).
-		Where("tenant_id = ? AND setting_group = ? AND setting_key IN ?", makeadmin.GlobalTenantID, "protocol", []string{"service", "privacy"}).
+		Where("tenant_id = ? AND setting_group = ? AND setting_key IN ?", tenantIDFromContext(ctx), "protocol", []string{"service", "privacy"}).
 		Count(&count).
 		Error
 	return err == nil && count >= 2
 }
 
 func (adapter protocolAdapter) Detail(ctx context.Context) (map[string]interface{}, error) {
-	setting, err := adapter.settingService().ProtocolDetail(ctx, makeadmin.GlobalTenantID)
+	setting, err := adapter.settingService().ProtocolDetail(ctx, tenantIDFromContext(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (adapter protocolAdapter) Detail(ctx context.Context) (map[string]interface
 }
 
 func (adapter protocolAdapter) Save(ctx context.Context, protocolReq req.SettingProtocolReq) error {
-	return adapter.settingService().SaveProtocol(ctx, makeadmin.GlobalTenantID, makeadminsvc.ProtocolSetting{
+	return adapter.settingService().SaveProtocol(ctx, tenantIDFromContext(ctx), makeadminsvc.ProtocolSetting{
 		Service: makeadminsvc.ProtocolItem{
 			Name:    protocolReq.Service.Name,
 			Content: protocolReq.Service.Content,
@@ -127,7 +127,7 @@ func settingExists(ctx context.Context, db *gorm.DB, group string, key string) b
 	var count int64
 	err := db.WithContext(ctx).
 		Model(&makeadmin.Setting{}).
-		Where("tenant_id = ? AND setting_group = ? AND setting_key = ?", makeadmin.GlobalTenantID, group, key).
+		Where("tenant_id = ? AND setting_group = ? AND setting_key = ?", tenantIDFromContext(ctx), group, key).
 		Count(&count).
 		Error
 	return err == nil && count > 0

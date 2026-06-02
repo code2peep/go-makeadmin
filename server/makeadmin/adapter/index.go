@@ -10,7 +10,6 @@ import (
 	"go-makeadmin/core"
 	"go-makeadmin/makeadmin/repository"
 	makeadminsvc "go-makeadmin/makeadmin/service"
-	"go-makeadmin/model/makeadmin"
 	"go-makeadmin/util"
 )
 
@@ -28,7 +27,7 @@ func NewIndexAdapter(db *gorm.DB) IndexAdapter {
 }
 
 func (adapter indexAdapter) Console(ctx context.Context) (map[string]interface{}, error) {
-	website, err := adapter.settingService().WebsiteDetail(ctx, makeadmin.GlobalTenantID)
+	website, err := adapter.settingService().WebsiteDetail(ctx, tenantIDFromContext(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -68,11 +67,12 @@ func (adapter indexAdapter) Console(ctx context.Context) (map[string]interface{}
 
 func (adapter indexAdapter) Config(ctx context.Context) (map[string]interface{}, error) {
 	srv := adapter.settingService()
-	website, err := srv.WebsiteDetail(ctx, makeadmin.GlobalTenantID)
+	tenantID := tenantIDFromContext(ctx)
+	website, err := srv.WebsiteDetail(ctx, tenantID)
 	if err != nil {
 		return nil, err
 	}
-	copyright, err := srv.CopyrightDetail(ctx, makeadmin.GlobalTenantID)
+	copyright, err := srv.CopyrightDetail(ctx, tenantID)
 	if err != nil {
 		return nil, err
 	}

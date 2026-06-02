@@ -14,7 +14,7 @@ import (
 	makeadminadapter "go-makeadmin/makeadmin/adapter"
 	"go-makeadmin/makeadmin/repository"
 	makeadminsvc "go-makeadmin/makeadmin/service"
-	"go-makeadmin/model/makeadmin"
+	makeadmintenant "go-makeadmin/makeadmin/tenant"
 	"go-makeadmin/util"
 )
 
@@ -96,11 +96,16 @@ func handleMakeAdminToken(c *gin.Context, auths string, token string) bool {
 		return true
 	}
 
-	tenantID := claims.TenantID
-	if tenantID == 0 {
-		tenantID = makeadmin.GlobalTenantID
+	tenantCtx, err := makeadmintenant.ResolveAuthenticated(claims.TenantID, makeadmintenant.HeaderValue(c.Request.Header))
+	if err != nil {
+		core.Logger.Errorf("MakeAdminTokenAuth resolve tenant err: err=[%+v]", err)
+		response.Fail(c, response.NoPermission)
+		c.Abort()
+		return true
 	}
-	identity, err := makeadminAuth.BuildIdentityByAdminID(c.Request.Context(), tenantID, adminID)
+	c.Request = c.Request.WithContext(makeadmintenant.WithContext(c.Request.Context(), tenantCtx))
+
+	identity, err := makeadminAuth.BuildIdentityByAdminID(c.Request.Context(), tenantCtx.TenantID, adminID)
 	if err != nil {
 		core.Logger.Errorf("MakeAdminTokenAuth BuildIdentityByAdminID err: err=[%+v]", err)
 		if errors.Is(err, makeadminsvc.ErrAdminDisabled) {
@@ -124,6 +129,7 @@ func handleMakeAdminToken(c *gin.Context, auths string, token string) bool {
 	}
 	c.Set(config.AdminConfig.ReqAdminIdKey, uint(identity.AdminID))
 	c.Set(config.AdminConfig.ReqRoleIdKey, roleID)
+	c.Set(config.AdminConfig.ReqTenantIdKey, identity.TenantID)
 	c.Set(config.AdminConfig.ReqUsernameKey, identity.Username)
 	c.Set(config.AdminConfig.ReqNicknameKey, identity.Nickname)
 	makeadminadapter.MarkMakeAdminContext(c, identity)

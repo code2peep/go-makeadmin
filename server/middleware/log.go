@@ -7,6 +7,7 @@ import (
 	"go-makeadmin/config"
 	"go-makeadmin/core"
 	"go-makeadmin/core/response"
+	makeadmintenant "go-makeadmin/makeadmin/tenant"
 	"go-makeadmin/model/makeadmin"
 	"go-makeadmin/util"
 	"go.uber.org/zap"
@@ -141,7 +142,7 @@ func recordOperateLog(
 	}
 	_ = handlerName
 	return db.Create(&makeadmin.AuditLog{
-		TenantID:     makeadmin.GlobalTenantID,
+		TenantID:     makeadmintenant.IDFromContext(c.Request.Context()),
 		AdminID:      uint64(adminID),
 		Action:       title,
 		Method:       reqMethod,

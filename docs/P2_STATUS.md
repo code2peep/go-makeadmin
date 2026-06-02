@@ -44,6 +44,38 @@ P2 从 P1 冻结底座继续推进，不再扩大 P1 范围。P2 的重点是把
 - 不修改前端 header 名称。
 - 不处理生产密钥轮换。
 
+## P2.2 当前落地
+
+多租户上下文 middleware 已建立：
+
+- 默认租户仍为 `tenant_id=0`。
+- 登录阶段不开放非 `0` 租户切换。
+- 认证后请求以 JWT `tenantId` 为可信来源。
+- 可选 header `X-Tenant-ID` 必须与 JWT `tenantId` 一致，否则直接无权限。
+- 认证中间件会把租户上下文写入 request context 和 gin context。
+- makeadmin adapter 中的租户隔离链路已从硬编码 `GlobalTenantID` 改为读取上下文。
+- 操作日志写入当前请求租户。
+- P1 HTTP smoke 增加 `X-Tenant-ID` mismatch guard。
+
+详见 `docs/P2_TENANT_CONTEXT.md`。
+
+## P2.2 验收标准
+
+- `go test ./...` 通过。
+- `./scripts/check-runtime-residue.sh` 通过。
+- `./scripts/verify-no-db.sh` 通过。
+- P1 HTTP smoke 继续通过，并包含租户 header 越权校验。
+
+## P2.2 验收结果
+
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache go test ./...`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `./scripts/check-runtime-residue.sh`，并新增 adapter/middleware 禁止硬编码 `GlobalTenantID` 的防回流检查。
+- 已通过 `./scripts/check-services.sh` 和 `./scripts/check-p1-seed.sh`。
+- 已在本地 18082 临时 API 上通过最小 HTTP guard：合法 JWT + Redis session 携带错误 `X-Tenant-ID` 返回 `403`。
+- 临时 Redis session key 已清理，临时 API 已停止。
+- 完整 `scripts/p1-smoke.py` 写入 smoke 因本机未提供 `P1_SMOKE_ADMIN_PASSWORD` 或 `ADMIN_PASSWORD` 环境变量未运行；脚本已补租户 mismatch guard 并通过 `python3 -m py_compile`。
+
 ## 下一步
 
-P2.2：多租户上下文 middleware。
+P2.3：数据权限查询约束。

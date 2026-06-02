@@ -40,7 +40,7 @@ func (adapter logAdapter) Available(ctx context.Context) bool {
 
 func (adapter logAdapter) Operate(ctx context.Context, page request.PageReq, logReq req.SystemLogOperateReq) (response.PageResp, error) {
 	page = normalizePage(page)
-	result, err := adapter.logService().ListAuditLogs(ctx, makeadmin.GlobalTenantID, makeadminsvc.AuditLogFilter{
+	result, err := adapter.logService().ListAuditLogs(ctx, tenantIDFromContext(ctx), makeadminsvc.AuditLogFilter{
 		Title:     logReq.Title,
 		Username:  logReq.Username,
 		IP:        logReq.Ip,
@@ -63,7 +63,7 @@ func (adapter logAdapter) Operate(ctx context.Context, page request.PageReq, log
 
 func (adapter logAdapter) Login(ctx context.Context, page request.PageReq, logReq req.SystemLogLoginReq) (response.PageResp, error) {
 	page = normalizePage(page)
-	result, err := adapter.logService().ListLoginLogs(ctx, makeadmin.GlobalTenantID, makeadminsvc.LoginLogFilter{
+	result, err := adapter.logService().ListLoginLogs(ctx, tenantIDFromContext(ctx), makeadminsvc.LoginLogFilter{
 		Username:  logReq.Username,
 		Status:    logReq.Status,
 		StartTime: logReq.StartTime.Unix(),

@@ -81,7 +81,7 @@ P1_SMOKE_ADMIN_PASSWORD='your-local-admin-password' \
 python3 scripts/p1-smoke.py
 ```
 
-本地启动链路见 `docs/LOCAL_DEV.md`。P1 最终状态见 `docs/P1_FINAL_STATUS.md`。P2 状态见 `docs/P2_STATUS.md`。P2.1 认证模型见 `docs/P2_AUTH_MODEL.md`。
+本地启动链路见 `docs/LOCAL_DEV.md`。P1 最终状态见 `docs/P1_FINAL_STATUS.md`。P2 状态见 `docs/P2_STATUS.md`。P2.1 认证模型见 `docs/P2_AUTH_MODEL.md`。P2.2 租户上下文见 `docs/P2_TENANT_CONTEXT.md`。
 
 ## 授权
 

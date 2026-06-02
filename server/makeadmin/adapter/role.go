@@ -44,14 +44,14 @@ func (adapter roleAdapter) Available(ctx context.Context) bool {
 	var count int64
 	err := adapter.db.WithContext(ctx).
 		Model(&makeadmin.Role{}).
-		Where("tenant_id = ? AND delete_time = ?", makeadmin.GlobalTenantID, 0).
+		Where("tenant_id = ? AND delete_time = ?", tenantIDFromContext(ctx), 0).
 		Count(&count).
 		Error
 	return err == nil && count > 0
 }
 
 func (adapter roleAdapter) All(ctx context.Context) ([]resp.SystemAuthRoleSimpleResp, error) {
-	items, err := adapter.roleService().ListAll(ctx, makeadmin.GlobalTenantID)
+	items, err := adapter.roleService().ListAll(ctx, tenantIDFromContext(ctx))
 	if err != nil {
 		return nil, mapRoleError(err)
 	}
@@ -69,7 +69,7 @@ func (adapter roleAdapter) All(ctx context.Context) ([]resp.SystemAuthRoleSimple
 
 func (adapter roleAdapter) List(ctx context.Context, page request.PageReq) (response.PageResp, error) {
 	page = normalizePage(page)
-	result, err := adapter.roleService().List(ctx, makeadmin.GlobalTenantID, page.PageNo, page.PageSize)
+	result, err := adapter.roleService().List(ctx, tenantIDFromContext(ctx), page.PageNo, page.PageSize)
 	if err != nil {
 		return response.PageResp{}, mapRoleError(err)
 	}
@@ -82,7 +82,7 @@ func (adapter roleAdapter) List(ctx context.Context, page request.PageReq) (resp
 }
 
 func (adapter roleAdapter) Detail(ctx context.Context, id uint) (resp.SystemAuthRoleResp, error) {
-	item, err := adapter.roleService().Detail(ctx, makeadmin.GlobalTenantID, uint64(id))
+	item, err := adapter.roleService().Detail(ctx, tenantIDFromContext(ctx), uint64(id))
 	if err != nil {
 		return resp.SystemAuthRoleResp{}, mapRoleError(err)
 	}
@@ -90,8 +90,9 @@ func (adapter roleAdapter) Detail(ctx context.Context, id uint) (resp.SystemAuth
 }
 
 func (adapter roleAdapter) Add(ctx context.Context, addReq req.SystemAuthRoleAddReq) error {
+	tenantID := tenantIDFromContext(ctx)
 	return mapRoleError(adapter.roleService().Add(ctx, makeadminsvc.RoleInput{
-		TenantID:  makeadmin.GlobalTenantID,
+		TenantID:  tenantID,
 		Name:      addReq.Name,
 		Remark:    addReq.Remark,
 		Sort:      addReq.Sort,
@@ -101,9 +102,10 @@ func (adapter roleAdapter) Add(ctx context.Context, addReq req.SystemAuthRoleAdd
 }
 
 func (adapter roleAdapter) Edit(ctx context.Context, editReq req.SystemAuthRoleEditReq) error {
+	tenantID := tenantIDFromContext(ctx)
 	return mapRoleError(adapter.roleService().Edit(ctx, makeadminsvc.RoleInput{
 		ID:        uint64(editReq.ID),
-		TenantID:  makeadmin.GlobalTenantID,
+		TenantID:  tenantID,
 		Name:      editReq.Name,
 		Remark:    editReq.Remark,
 		Sort:      editReq.Sort,
@@ -113,7 +115,7 @@ func (adapter roleAdapter) Edit(ctx context.Context, editReq req.SystemAuthRoleE
 }
 
 func (adapter roleAdapter) Del(ctx context.Context, id uint) error {
-	return mapRoleError(adapter.roleService().Delete(ctx, makeadmin.GlobalTenantID, uint64(id)))
+	return mapRoleError(adapter.roleService().Delete(ctx, tenantIDFromContext(ctx), uint64(id)))
 }
 
 func (adapter roleAdapter) roleService() makeadminsvc.RoleService {

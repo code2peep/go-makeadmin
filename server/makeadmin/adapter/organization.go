@@ -62,14 +62,14 @@ func (adapter orgUnitAdapter) Available(ctx context.Context) bool {
 	var count int64
 	err := adapter.db.WithContext(ctx).
 		Model(&makeadmin.OrgUnit{}).
-		Where("tenant_id = ? AND delete_time = ?", makeadmin.GlobalTenantID, 0).
+		Where("tenant_id = ? AND delete_time = ?", tenantIDFromContext(ctx), 0).
 		Count(&count).
 		Error
 	return err == nil && count > 0
 }
 
 func (adapter orgUnitAdapter) All(ctx context.Context) ([]resp.SystemAuthDeptResp, error) {
-	items, err := adapter.orgService().List(ctx, makeadmin.GlobalTenantID, repository.OrgUnitFilter{})
+	items, err := adapter.orgService().List(ctx, tenantIDFromContext(ctx), repository.OrgUnitFilter{})
 	if err != nil {
 		return nil, mapOrgUnitError(err)
 	}
@@ -89,7 +89,7 @@ func (adapter orgUnitAdapter) List(ctx context.Context, listReq req.SystemAuthDe
 		Status:    statusFromListStop(listReq.IsStop),
 		StatusSet: listReq.IsStop >= 0,
 	}
-	items, err := adapter.orgService().List(ctx, makeadmin.GlobalTenantID, filter)
+	items, err := adapter.orgService().List(ctx, tenantIDFromContext(ctx), filter)
 	if err != nil {
 		return nil, mapOrgUnitError(err)
 	}
@@ -98,7 +98,7 @@ func (adapter orgUnitAdapter) List(ctx context.Context, listReq req.SystemAuthDe
 }
 
 func (adapter orgUnitAdapter) Detail(ctx context.Context, id uint) (resp.SystemAuthDeptResp, error) {
-	item, err := adapter.orgService().Detail(ctx, makeadmin.GlobalTenantID, uint64(id))
+	item, err := adapter.orgService().Detail(ctx, tenantIDFromContext(ctx), uint64(id))
 	if err != nil {
 		return resp.SystemAuthDeptResp{}, mapOrgUnitError(err)
 	}
@@ -106,8 +106,9 @@ func (adapter orgUnitAdapter) Detail(ctx context.Context, id uint) (resp.SystemA
 }
 
 func (adapter orgUnitAdapter) Add(ctx context.Context, addReq req.SystemAuthDeptAddReq) error {
+	tenantID := tenantIDFromContext(ctx)
 	return mapOrgUnitError(adapter.orgService().Add(ctx, makeadminsvc.OrgUnitInput{
-		TenantID: makeadmin.GlobalTenantID,
+		TenantID: tenantID,
 		ParentID: uint64(addReq.Pid),
 		Name:     addReq.Name,
 		IsStop:   addReq.IsStop,
@@ -116,9 +117,10 @@ func (adapter orgUnitAdapter) Add(ctx context.Context, addReq req.SystemAuthDept
 }
 
 func (adapter orgUnitAdapter) Edit(ctx context.Context, editReq req.SystemAuthDeptEditReq) error {
+	tenantID := tenantIDFromContext(ctx)
 	return mapOrgUnitError(adapter.orgService().Edit(ctx, makeadminsvc.OrgUnitInput{
 		ID:       uint64(editReq.ID),
-		TenantID: makeadmin.GlobalTenantID,
+		TenantID: tenantID,
 		ParentID: uint64(editReq.Pid),
 		Name:     editReq.Name,
 		IsStop:   editReq.IsStop,
@@ -127,7 +129,7 @@ func (adapter orgUnitAdapter) Edit(ctx context.Context, editReq req.SystemAuthDe
 }
 
 func (adapter orgUnitAdapter) Del(ctx context.Context, id uint) error {
-	return mapOrgUnitError(adapter.orgService().Delete(ctx, makeadmin.GlobalTenantID, uint64(id)))
+	return mapOrgUnitError(adapter.orgService().Delete(ctx, tenantIDFromContext(ctx), uint64(id)))
 }
 
 func (adapter orgUnitAdapter) orgService() makeadminsvc.OrgUnitService {
@@ -143,14 +145,14 @@ func (adapter positionAdapter) Available(ctx context.Context) bool {
 	var count int64
 	err := adapter.db.WithContext(ctx).
 		Model(&makeadmin.Position{}).
-		Where("tenant_id = ? AND delete_time = ?", makeadmin.GlobalTenantID, 0).
+		Where("tenant_id = ? AND delete_time = ?", tenantIDFromContext(ctx), 0).
 		Count(&count).
 		Error
 	return err == nil && count > 0
 }
 
 func (adapter positionAdapter) All(ctx context.Context) ([]resp.SystemAuthPostResp, error) {
-	items, err := adapter.positionService().ListAll(ctx, makeadmin.GlobalTenantID)
+	items, err := adapter.positionService().ListAll(ctx, tenantIDFromContext(ctx))
 	if err != nil {
 		return nil, mapPositionError(err)
 	}
@@ -159,7 +161,7 @@ func (adapter positionAdapter) All(ctx context.Context) ([]resp.SystemAuthPostRe
 
 func (adapter positionAdapter) List(ctx context.Context, page request.PageReq, listReq req.SystemAuthPostListReq) (response.PageResp, error) {
 	page = normalizePage(page)
-	result, err := adapter.positionService().List(ctx, makeadmin.GlobalTenantID, repository.PositionFilter{
+	result, err := adapter.positionService().List(ctx, tenantIDFromContext(ctx), repository.PositionFilter{
 		Code:      listReq.Code,
 		Name:      listReq.Name,
 		Status:    statusFromListStop(listReq.IsStop),
@@ -177,7 +179,7 @@ func (adapter positionAdapter) List(ctx context.Context, page request.PageReq, l
 }
 
 func (adapter positionAdapter) Detail(ctx context.Context, id uint) (resp.SystemAuthPostResp, error) {
-	item, err := adapter.positionService().Detail(ctx, makeadmin.GlobalTenantID, uint64(id))
+	item, err := adapter.positionService().Detail(ctx, tenantIDFromContext(ctx), uint64(id))
 	if err != nil {
 		return resp.SystemAuthPostResp{}, mapPositionError(err)
 	}
@@ -185,8 +187,9 @@ func (adapter positionAdapter) Detail(ctx context.Context, id uint) (resp.System
 }
 
 func (adapter positionAdapter) Add(ctx context.Context, addReq req.SystemAuthPostAddReq) error {
+	tenantID := tenantIDFromContext(ctx)
 	return mapPositionError(adapter.positionService().Add(ctx, makeadminsvc.PositionInput{
-		TenantID: makeadmin.GlobalTenantID,
+		TenantID: tenantID,
 		Code:     addReq.Code,
 		Name:     addReq.Name,
 		Remark:   addReq.Remarks,
@@ -196,9 +199,10 @@ func (adapter positionAdapter) Add(ctx context.Context, addReq req.SystemAuthPos
 }
 
 func (adapter positionAdapter) Edit(ctx context.Context, editReq req.SystemAuthPostEditReq) error {
+	tenantID := tenantIDFromContext(ctx)
 	return mapPositionError(adapter.positionService().Edit(ctx, makeadminsvc.PositionInput{
 		ID:       uint64(editReq.ID),
-		TenantID: makeadmin.GlobalTenantID,
+		TenantID: tenantID,
 		Code:     editReq.Code,
 		Name:     editReq.Name,
 		Remark:   editReq.Remarks,
@@ -208,7 +212,7 @@ func (adapter positionAdapter) Edit(ctx context.Context, editReq req.SystemAuthP
 }
 
 func (adapter positionAdapter) Del(ctx context.Context, id uint) error {
-	return mapPositionError(adapter.positionService().Delete(ctx, makeadmin.GlobalTenantID, uint64(id)))
+	return mapPositionError(adapter.positionService().Delete(ctx, tenantIDFromContext(ctx), uint64(id)))
 }
 
 func (adapter positionAdapter) positionService() makeadminsvc.PositionService {
