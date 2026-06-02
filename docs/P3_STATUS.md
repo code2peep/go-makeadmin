@@ -113,6 +113,44 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有创建业务 schema、没有执行数据库写入或删除、没有读取或修改 `.env`、没有连接真实 zyai 业务库。
 
+## P3.4 当前落地
+
+模块脚手架产物与后台生成器配置预览已打通：
+
+- 新增 `scripts/module-codegen-plan.py`。
+- 新增 `scripts/check-module-codegen-plan.sh`。
+- `module-codegen-plan.py` 读取 manifest 并输出 `ma_codegen_table` / `ma_codegen_column` 对应的 `makeadmin` 配置预览。
+- 同时输出旧 `GenTable` / `GenTableColumn` 对应的 `legacy` 配置预览，保留 `/gen/*` 兼容面。
+- 默认 CRUD 列配置包含 `id`、`title`、`status`。
+- manifest 声明 `codegen.columns` 时会使用 `id` 加自定义列配置，并保留 `htmlType`、`dictType`、`queryType`。
+- `scripts/check-module-scaffold-write-smoke.sh` 已使用实际写入的 `.cache/.../manifest.json` 生成 `codegen-plan.json` 并断言表名和列配置。
+- `scripts/check-module-tools-no-db.sh` 已接入 codegen plan 验证。
+
+详见 `docs/P3_MODULE_CODEGEN_PLAN.md`。
+
+## P3.4 验收标准
+
+- `python3 scripts/module-codegen-plan.py --manifest examples/demo/manifest.json --format json` 通过。
+- `scripts/check-module-codegen-plan.sh` 通过。
+- `MAKEADMIN_ALLOW_MODULE_SCAFFOLD_WRITE=1 scripts/check-module-scaffold-write-smoke.sh` 通过。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不写 `ma_codegen_*`、不创建业务 schema、不执行数据库写入或删除、不读取或修改 `.env`、不连接真实 zyai 业务库。
+
+## P3.4 验收结果
+
+- 已通过 `python3 -m py_compile scripts/module-codegen-plan.py scripts/module-scaffold.py scripts/check-module-manifests.py`。
+- 已通过 `bash -n scripts/check-module-codegen-plan.sh scripts/check-module-tools-no-db.sh`。
+- 已通过 `python3 scripts/module-codegen-plan.py --manifest examples/demo/manifest.json --format json | python3 -m json.tool >/dev/null`。
+- 已通过 `scripts/check-module-codegen-plan.sh`，覆盖默认列和 manifest `codegen.columns` 自定义列配置。
+- 已通过 `MAKEADMIN_ALLOW_MODULE_SCAFFOLD_WRITE=1 scripts/check-module-scaffold-write-smoke.sh`，实际写入产物已生成 `codegen-plan.json` 并完成表名和列配置断言。
+- 已通过 `scripts/check-module-tools-no-db.sh`，且 no-db guard 已执行 scaffold codegen plan。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有写入 `ma_codegen_*`、没有创建业务 schema、没有执行数据库写入或删除、没有读取或修改 `.env`、没有连接真实 zyai 业务库。
+
 ## 下一步
 
-P3.4：模块脚手架写入产物与后台生成器配置联动。该任务继续把脚手架 manifest 转换为生成器表/列配置预览。
+P3.5：模块生成器配置受控写入边界。该任务定义 manifest 转 `ma_codegen_*` 写入前的门禁、事务、幂等和 schema 边界。

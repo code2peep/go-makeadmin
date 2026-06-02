@@ -15,6 +15,7 @@ TABLE="ma_billing_invoice_${STAMP}"
 EXAMPLES_ROOT=".cache/module-scaffold-smoke/${STAMP}/examples"
 MANIFEST="${EXAMPLES_ROOT}/${MODULE}/manifest.json"
 README="${EXAMPLES_ROOT}/${MODULE}/README.md"
+CODEGEN_PLAN="${EXAMPLES_ROOT}/${MODULE}/codegen-plan.json"
 
 cd "$ROOT"
 
@@ -29,9 +30,27 @@ test -f "$MANIFEST"
 test -f "$README"
 
 python3 -m json.tool "$MANIFEST" >/dev/null
+python3 scripts/module-codegen-plan.py --manifest "$MANIFEST" --tenant-id 0 --format json >"$CODEGEN_PLAN"
 python3 scripts/module-install-plan.py --manifest "$MANIFEST" --tenant-id 0 --role-id 1 >/dev/null
 python3 scripts/module-uninstall-plan.py --manifest "$MANIFEST" >/dev/null
 scripts/check-module-codegen.sh --manifest "$MANIFEST" >/dev/null
+
+python3 - "$CODEGEN_PLAN" "$TABLE" <<'PY'
+import json
+import sys
+
+plan = json.load(open(sys.argv[1]))
+expected_table = sys.argv[2]
+table = plan["makeadmin"]["table"]
+columns = plan["makeadmin"]["columns"]
+legacy = plan["legacy"]["genTable"]
+if table["sourceTable"] != expected_table:
+    raise SystemExit(f"unexpected source table: {table['sourceTable']}")
+if legacy["tableName"] != expected_table:
+    raise SystemExit(f"unexpected legacy table: {legacy['tableName']}")
+if [column["columnName"] for column in columns] != ["id", "title", "status"]:
+    raise SystemExit("unexpected generated columns")
+PY
 
 if ! grep -q "$MANIFEST" "$README"; then
     echo "FAIL: README does not reference generated manifest path"

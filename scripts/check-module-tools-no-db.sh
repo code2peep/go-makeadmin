@@ -26,13 +26,14 @@ echo "==> Module tools: python syntax"
 python3 -m py_compile \
     scripts/check-module-manifests.py \
     scripts/module-scaffold.py \
+    scripts/module-codegen-plan.py \
     scripts/module-registry-plan.py \
     scripts/module-role-grant-plan.py \
     scripts/module-install-plan.py \
     scripts/module-uninstall-plan.py
 
 echo "==> Module tools: shell syntax"
-bash -n scripts/check-module-lifecycle-smoke.sh scripts/check-module-codegen.sh scripts/check-module-scaffold-write-smoke.sh
+bash -n scripts/check-module-lifecycle-smoke.sh scripts/check-module-codegen.sh scripts/check-module-codegen-plan.sh scripts/check-module-scaffold-write-smoke.sh
 
 echo "==> Module tools: manifest validation"
 python3 scripts/check-module-manifests.py >/dev/null
@@ -48,7 +49,11 @@ python3 scripts/module-scaffold.py \
 echo "==> Module tools: scaffold codegen link"
 scripts/check-module-codegen.sh >/dev/null
 
+echo "==> Module tools: scaffold codegen plan"
+scripts/check-module-codegen-plan.sh >/dev/null
+
 echo "==> Module tools: dry-run previews"
+python3 scripts/module-codegen-plan.py --manifest examples/demo/manifest.json --format json >/dev/null
 python3 scripts/module-registry-plan.py --manifest examples/demo/manifest.json >/dev/null
 python3 scripts/module-role-grant-plan.py --manifest examples/demo/manifest.json --tenant-id 0 --role-id 1 >/dev/null
 python3 scripts/module-install-plan.py --manifest examples/demo/manifest.json --tenant-id 0 --role-id 1 >/dev/null
