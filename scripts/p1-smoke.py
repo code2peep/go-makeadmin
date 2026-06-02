@@ -22,6 +22,8 @@ from typing import Any, Callable
 
 SMOKE_MATRIX = [
     ("auth", "POST /system/login", "read", "login returns a token"),
+    ("auth", "JWT claims", "read", "login token has sid/adminId/tenantId/iat/exp/iss claims"),
+    ("auth", "POST /system/logout", "write", "JWT session state can be deleted"),
     ("auth", "GET /system/admin/self", "read", "token resolves current admin"),
     ("auth", "GET /system/menu/route", "read", "token resolves route menus"),
     ("common", "GET /common/index/config", "read", "public config resolves from ma_setting"),
@@ -196,6 +198,35 @@ def find_id(items: list[dict[str, Any]], field: str, value: Any) -> int:
     raise SmokeError(f"cannot find item where {field}={value!r}")
 
 
+def decode_base64url_json(part: str) -> dict[str, Any]:
+    padding = "=" * (-len(part) % 4)
+    try:
+        raw = base64.urlsafe_b64decode((part + padding).encode("ascii"))
+        payload = json.loads(raw.decode("utf-8"))
+    except (ValueError, json.JSONDecodeError) as exc:
+        raise SmokeError("login token contains invalid JWT JSON") from exc
+    if not isinstance(payload, dict):
+        raise SmokeError("login token JWT payload is not an object")
+    return payload
+
+
+def assert_jwt_claims(token: str) -> None:
+    parts = token.split(".")
+    if len(parts) != 3:
+        raise SmokeError("login token is not a JWT")
+    header = decode_base64url_json(parts[0])
+    payload = decode_base64url_json(parts[1])
+    if header.get("alg") != "HS256" or header.get("typ") != "JWT":
+        raise SmokeError(f"login token JWT header is unexpected: {header!r}")
+    required = ("sid", "adminId", "tenantId", "iat", "exp", "iss")
+    missing = [key for key in required if key not in payload]
+    if missing:
+        raise SmokeError(f"login token JWT payload missing claims: {missing!r}")
+    if not payload["sid"] or int(payload["adminId"]) <= 0 or int(payload["exp"]) <= int(payload["iat"]):
+        raise SmokeError(f"login token JWT payload has invalid claims: {payload!r}")
+    print("OK: JWT claims")
+
+
 def require_env(name: str) -> str:
     value = os.environ.get(name, "")
     if not value:
@@ -234,6 +265,7 @@ def run() -> None:
         if not token:
             raise SmokeError("login did not return data.token")
         client.token = str(token)
+        assert_jwt_claims(client.token)
 
         client.api_json("GET", "/system/admin/self", label="admin self")
         client.api_json("GET", "/system/menu/route", label="menu route")
@@ -484,6 +516,11 @@ def run() -> None:
                 print(f"WARN: cleanup failed: {exc}", file=sys.stderr)
         if failed_cleanups:
             print(f"WARN: {failed_cleanups} cleanup step(s) failed", file=sys.stderr)
+        if client.token:
+            try:
+                client.api_json("POST", "/system/logout", label="logout")
+            except Exception as exc:  # noqa: BLE001 - keep cleanup best-effort.
+                print(f"WARN: logout failed: {exc}", file=sys.stderr)
 
     print("==> p1-smoke completed")
 

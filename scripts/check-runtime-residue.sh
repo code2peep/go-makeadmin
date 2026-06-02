@@ -59,6 +59,11 @@ check_no_match \
     server/generator
 
 check_no_match \
+    "P2 auth runtime must not use old makeadmin opaque token session keys" \
+    'SessionToken(Key|Set)Prefix|makeadmin:token:' \
+    "${runtime_paths[@]}"
+
+check_no_match \
     "P1 routes and middleware must not branch on adapter Available fallback" \
     '\.Available\(' \
     server/admin/routers \

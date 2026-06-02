@@ -139,7 +139,7 @@ func (adapter systemAdapter) authService(withSession bool) makeadminsvc.AuthServ
 	return makeadminsvc.NewAuthServiceWithDependencies(
 		repo,
 		nil,
-		makeadminsvc.RandomTokenGenerator{},
+		makeadminsvc.NewJWTTokenCodec(config.Config.Secret),
 		sessionStore,
 		makeadminsvc.DefaultSessionTTLSeconds,
 	)

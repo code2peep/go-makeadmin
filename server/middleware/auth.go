@@ -2,6 +2,10 @@ package middleware
 
 import (
 	"errors"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go-makeadmin/config"
@@ -12,20 +16,27 @@ import (
 	makeadminsvc "go-makeadmin/makeadmin/service"
 	"go-makeadmin/model/makeadmin"
 	"go-makeadmin/util"
-	"strconv"
-	"strings"
-	"sync"
 )
 
 var (
-	authServiceOnce sync.Once
-	makeadminAuth   makeadminsvc.AuthService
+	authServiceOnce      sync.Once
+	makeadminAuth        makeadminsvc.AuthService
+	makeadminTokenCodec  makeadminsvc.TokenCodec
+	makeadminSessionRepo makeadminsvc.SessionStore
 )
 
 func initAuthServices() {
 	authServiceOnce.Do(func() {
 		db := core.GetDB()
-		makeadminAuth = makeadminsvc.NewAuthServiceWithPasswordHasher(repository.NewAuthRepository(db), nil)
+		makeadminTokenCodec = makeadminsvc.NewJWTTokenCodec(config.Config.Secret)
+		makeadminSessionRepo = makeadminsvc.NewRedisSessionStore(core.GetRedis(), config.Config.RedisPrefix)
+		makeadminAuth = makeadminsvc.NewAuthServiceWithDependencies(
+			repository.NewAuthRepository(db),
+			nil,
+			makeadminTokenCodec,
+			makeadminsvc.UnavailableSessionStore{},
+			makeadminsvc.DefaultSessionTTLSeconds,
+		)
 	})
 }
 
@@ -57,28 +68,39 @@ func TokenAuth() gin.HandlerFunc {
 }
 
 func handleMakeAdminToken(c *gin.Context, auths string, token string) bool {
-	tokenKey := makeadminsvc.SessionTokenKeyPrefix + token
-	existCnt := util.RedisUtil.Exists(tokenKey)
-	if existCnt < 0 {
-		response.Fail(c, response.SystemError)
-		c.Abort()
-		return true
-	}
-	if existCnt == 0 {
-		return false
-	}
-
 	initAuthServices()
-	uidStr := util.RedisUtil.Get(tokenKey)
-	uid64, err := strconv.ParseUint(uidStr, 10, 64)
+
+	claims, err := makeadminTokenCodec.Parse(token)
 	if err != nil {
-		core.Logger.Errorf("MakeAdminTokenAuth ParseUint uidStr err: err=[%+v]", err)
+		core.Logger.Errorf("MakeAdminTokenAuth Parse JWT err: err=[%+v]", err)
 		response.Fail(c, response.TokenInvalid)
 		c.Abort()
 		return true
 	}
 
-	identity, err := makeadminAuth.BuildIdentityByAdminID(c.Request.Context(), makeadmin.GlobalTenantID, uid64)
+	adminID, err := makeadminSessionRepo.FindAdminID(c.Request.Context(), claims.SessionID)
+	if err != nil {
+		core.Logger.Errorf("MakeAdminTokenAuth FindAdminID err: err=[%+v]", err)
+		if errors.Is(err, makeadminsvc.ErrSessionStore) {
+			response.Fail(c, response.SystemError)
+		} else {
+			response.Fail(c, response.TokenInvalid)
+		}
+		c.Abort()
+		return true
+	}
+	if adminID != claims.AdminID {
+		core.Logger.Errorf("MakeAdminTokenAuth admin mismatch: claim=[%d] state=[%d]", claims.AdminID, adminID)
+		response.Fail(c, response.TokenInvalid)
+		c.Abort()
+		return true
+	}
+
+	tenantID := claims.TenantID
+	if tenantID == 0 {
+		tenantID = makeadmin.GlobalTenantID
+	}
+	identity, err := makeadminAuth.BuildIdentityByAdminID(c.Request.Context(), tenantID, adminID)
 	if err != nil {
 		core.Logger.Errorf("MakeAdminTokenAuth BuildIdentityByAdminID err: err=[%+v]", err)
 		if errors.Is(err, makeadminsvc.ErrAdminDisabled) {
@@ -90,8 +112,10 @@ func handleMakeAdminToken(c *gin.Context, auths string, token string) bool {
 		return true
 	}
 
-	if util.RedisUtil.TTL(tokenKey) < 1800 {
-		util.RedisUtil.Expire(tokenKey, makeadminsvc.DefaultSessionTTLSeconds)
+	if remainingTTL := int(claims.ExpiresAt - time.Now().Unix()); remainingTTL > 0 {
+		if err := makeadminSessionRepo.Refresh(c.Request.Context(), claims.SessionID, remainingTTL); err != nil {
+			core.Logger.Errorf("MakeAdminTokenAuth Refresh session err: err=[%+v]", err)
+		}
 	}
 
 	roleID := "0"

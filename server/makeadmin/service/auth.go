@@ -75,7 +75,7 @@ type AuthService interface {
 type authService struct {
 	repo           repository.AuthRepository
 	passwordHasher security.PasswordHasher
-	tokenGenerator TokenGenerator
+	tokenCodec     TokenCodec
 	sessionStore   SessionStore
 	sessionTTL     int
 }
@@ -88,7 +88,7 @@ func NewAuthServiceWithPasswordHasher(repo repository.AuthRepository, passwordHa
 	return NewAuthServiceWithDependencies(
 		repo,
 		passwordHasher,
-		RandomTokenGenerator{},
+		NewJWTTokenCodec("go-makeadmin-dev-secret"),
 		UnavailableSessionStore{},
 		DefaultSessionTTLSeconds,
 	)
@@ -97,15 +97,15 @@ func NewAuthServiceWithPasswordHasher(repo repository.AuthRepository, passwordHa
 func NewAuthServiceWithDependencies(
 	repo repository.AuthRepository,
 	passwordHasher security.PasswordHasher,
-	tokenGenerator TokenGenerator,
+	tokenCodec TokenCodec,
 	sessionStore SessionStore,
 	sessionTTL int,
 ) AuthService {
 	if passwordHasher == nil {
 		passwordHasher = security.NewBcryptPasswordHasher(0)
 	}
-	if tokenGenerator == nil {
-		tokenGenerator = RandomTokenGenerator{}
+	if tokenCodec == nil {
+		tokenCodec = NewJWTTokenCodec("go-makeadmin-dev-secret")
 	}
 	if sessionStore == nil {
 		sessionStore = UnavailableSessionStore{}
@@ -116,7 +116,7 @@ func NewAuthServiceWithDependencies(
 	return &authService{
 		repo:           repo,
 		passwordHasher: passwordHasher,
-		tokenGenerator: tokenGenerator,
+		tokenCodec:     tokenCodec,
 		sessionStore:   sessionStore,
 		sessionTTL:     sessionTTL,
 	}
@@ -158,12 +158,12 @@ func (srv authService) Login(ctx context.Context, input LoginInput) (LoginResult
 		return LoginResult{}, err
 	}
 
-	token, err := srv.tokenGenerator.Generate()
+	sessionToken, err := srv.tokenCodec.Issue(identity, srv.sessionTTL)
 	if err != nil {
 		_ = srv.recordLoginLog(ctx, loginLogInputFromAdmin(input, admin, err.Error()))
 		return LoginResult{}, err
 	}
-	if err := srv.sessionStore.Save(ctx, token, identity, srv.sessionTTL); err != nil {
+	if err := srv.sessionStore.Save(ctx, sessionToken.SessionID, identity, srv.sessionTTL); err != nil {
 		_ = srv.recordLoginLog(ctx, loginLogInputFromAdmin(input, admin, err.Error()))
 		return LoginResult{}, err
 	}
@@ -178,7 +178,7 @@ func (srv authService) Login(ctx context.Context, input LoginInput) (LoginResult
 		return LoginResult{}, err
 	}
 	return LoginResult{
-		Token:     token,
+		Token:     sessionToken.AccessToken,
 		ExpiresIn: srv.sessionTTL,
 		Identity:  identity,
 	}, nil
@@ -188,7 +188,11 @@ func (srv authService) Logout(ctx context.Context, token string) error {
 	if token == "" {
 		return nil
 	}
-	return srv.sessionStore.Delete(ctx, token)
+	claims, err := srv.tokenCodec.Parse(token)
+	if err != nil {
+		return err
+	}
+	return srv.sessionStore.Delete(ctx, claims.SessionID)
 }
 
 func (srv authService) AuthenticateByUsername(ctx context.Context, tenantID uint64, username string, plainPassword string) (Identity, error) {

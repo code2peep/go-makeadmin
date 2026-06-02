@@ -62,30 +62,52 @@ func (repo *fakeAuthRepository) CreateLoginLog(ctx context.Context, loginLog mak
 	return nil
 }
 
-type fixedTokenGenerator struct {
-	token string
+type fixedTokenCodec struct {
+	token     string
+	sessionID string
 }
 
-func (generator fixedTokenGenerator) Generate() (string, error) {
-	return generator.token, nil
+func (codec fixedTokenCodec) Issue(identity Identity, ttlSeconds int) (SessionToken, error) {
+	return SessionToken{AccessToken: codec.token, SessionID: codec.sessionID}, nil
+}
+
+func (codec fixedTokenCodec) Parse(token string) (TokenClaims, error) {
+	if token != codec.token {
+		return TokenClaims{}, ErrTokenInvalid
+	}
+	return TokenClaims{SessionID: codec.sessionID, AdminID: 1, TenantID: makeadmin.GlobalTenantID}, nil
 }
 
 type fakeSessionStore struct {
-	token    string
-	ttl      int
-	identity Identity
-	deleted  string
+	sessionID string
+	ttl       int
+	identity  Identity
+	deleted   string
+	refreshed string
 }
 
-func (store *fakeSessionStore) Save(ctx context.Context, token string, identity Identity, ttlSeconds int) error {
-	store.token = token
+func (store *fakeSessionStore) Save(ctx context.Context, sessionID string, identity Identity, ttlSeconds int) error {
+	store.sessionID = sessionID
 	store.identity = identity
 	store.ttl = ttlSeconds
 	return nil
 }
 
-func (store *fakeSessionStore) Delete(ctx context.Context, token string) error {
-	store.deleted = token
+func (store *fakeSessionStore) Delete(ctx context.Context, sessionID string) error {
+	store.deleted = sessionID
+	return nil
+}
+
+func (store *fakeSessionStore) FindAdminID(ctx context.Context, sessionID string) (uint64, error) {
+	if sessionID != store.sessionID {
+		return 0, ErrTokenInvalid
+	}
+	return store.identity.AdminID, nil
+}
+
+func (store *fakeSessionStore) Refresh(ctx context.Context, sessionID string, ttlSeconds int) error {
+	store.refreshed = sessionID
+	store.ttl = ttlSeconds
 	return nil
 }
 
@@ -163,7 +185,7 @@ func TestLoginWritesSessionAndAudit(t *testing.T) {
 		},
 	}
 	store := &fakeSessionStore{}
-	srv := NewAuthServiceWithDependencies(repo, hasher, fixedTokenGenerator{token: "fixed-token"}, store, 3600)
+	srv := NewAuthServiceWithDependencies(repo, hasher, fixedTokenCodec{token: "fixed-jwt", sessionID: "fixed-session"}, store, 3600)
 
 	result, err := srv.Login(context.Background(), LoginInput{
 		TenantID: makeadmin.GlobalTenantID,
@@ -176,10 +198,10 @@ func TestLoginWritesSessionAndAudit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Login() error = %v", err)
 	}
-	if result.Token != "fixed-token" || result.ExpiresIn != 3600 {
-		t.Fatalf("Login() result = %#v, want fixed token and ttl", result)
+	if result.Token != "fixed-jwt" || result.ExpiresIn != 3600 {
+		t.Fatalf("Login() result = %#v, want fixed JWT and ttl", result)
 	}
-	if store.token != "fixed-token" || store.identity.AdminID != 1 || store.ttl != 3600 {
+	if store.sessionID != "fixed-session" || store.identity.AdminID != 1 || store.ttl != 3600 {
 		t.Fatalf("session store = %#v, want saved identity", store)
 	}
 	if repo.lastLoginIP != "127.0.0.1" || repo.lastLoginTime == 0 {
@@ -206,7 +228,7 @@ func TestLoginRecordsFailedPassword(t *testing.T) {
 		},
 	}
 	store := &fakeSessionStore{}
-	srv := NewAuthServiceWithDependencies(repo, hasher, fixedTokenGenerator{token: "fixed-token"}, store, 3600)
+	srv := NewAuthServiceWithDependencies(repo, hasher, fixedTokenCodec{token: "fixed-jwt", sessionID: "fixed-session"}, store, 3600)
 
 	_, err = srv.Login(context.Background(), LoginInput{
 		TenantID: makeadmin.GlobalTenantID,
@@ -217,11 +239,29 @@ func TestLoginRecordsFailedPassword(t *testing.T) {
 	if !errors.Is(err, ErrInvalidCredential) {
 		t.Fatalf("Login() error = %v, want ErrInvalidCredential", err)
 	}
-	if store.token != "" || repo.lastLoginTime != 0 {
-		t.Fatalf("failed login touched session/update: token=%q lastLogin=%d", store.token, repo.lastLoginTime)
+	if store.sessionID != "" || repo.lastLoginTime != 0 {
+		t.Fatalf("failed login touched session/update: sessionID=%q lastLogin=%d", store.sessionID, repo.lastLoginTime)
 	}
 	if len(repo.loginLogs) != 1 || repo.loginLogs[0].Status != 0 || repo.loginLogs[0].AdminID != 1 {
 		t.Fatalf("login logs = %#v, want one failure log for admin", repo.loginLogs)
+	}
+}
+
+func TestLogoutDeletesSessionState(t *testing.T) {
+	store := &fakeSessionStore{}
+	srv := NewAuthServiceWithDependencies(
+		&fakeAuthRepository{},
+		nil,
+		fixedTokenCodec{token: "fixed-jwt", sessionID: "fixed-session"},
+		store,
+		3600,
+	)
+
+	if err := srv.Logout(context.Background(), "fixed-jwt"); err != nil {
+		t.Fatalf("Logout() error = %v", err)
+	}
+	if store.deleted != "fixed-session" {
+		t.Fatalf("deleted session = %q, want fixed-session", store.deleted)
 	}
 }
 
