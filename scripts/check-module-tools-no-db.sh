@@ -32,7 +32,7 @@ python3 -m py_compile \
     scripts/module-uninstall-plan.py
 
 echo "==> Module tools: shell syntax"
-bash -n scripts/check-module-lifecycle-smoke.sh scripts/check-module-codegen.sh
+bash -n scripts/check-module-lifecycle-smoke.sh scripts/check-module-codegen.sh scripts/check-module-scaffold-write-smoke.sh
 
 echo "==> Module tools: manifest validation"
 python3 scripts/check-module-manifests.py >/dev/null
@@ -59,5 +59,8 @@ expect_fail_no_db python3 scripts/module-registry-plan.py --apply
 expect_fail_no_db python3 scripts/module-install-plan.py --apply
 expect_fail_no_db python3 scripts/module-uninstall-plan.py --apply
 expect_fail_no_db scripts/check-module-lifecycle-smoke.sh
+
+echo "==> Module tools: filesystem write gates"
+expect_fail_no_db scripts/check-module-scaffold-write-smoke.sh
 
 echo "==> check-module-tools-no-db completed"

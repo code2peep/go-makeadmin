@@ -13,7 +13,6 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-EXAMPLES = ROOT / "examples"
 VALIDATOR = ROOT / "scripts" / "check-module-manifests.py"
 REGISTRY_PLAN = ROOT / "scripts" / "module-registry-plan.py"
 ROLE_GRANT_PLAN = ROOT / "scripts" / "module-role-grant-plan.py"
@@ -47,6 +46,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--component", help="frontend component path, default: <module>/index")
     parser.add_argument("--requires-schema", action="store_true", help="mark manifest as requiring a business table")
     parser.add_argument("--runtime-registered", action="store_true", help="mark runtime routes as already registered")
+    parser.add_argument(
+        "--examples-root",
+        default="examples",
+        help="directory that contains module folders, default: examples",
+    )
     output = parser.add_mutually_exclusive_group()
     output.add_argument("--dry-run", action="store_true", help="print generated files instead of writing them")
     output.add_argument("--print-manifest", action="store_true", help="print generated manifest JSON only")
@@ -155,9 +159,15 @@ def build_manifest(values: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def build_readme(values: dict[str, Any]) -> str:
+def resolve_examples_root(value: str) -> Path:
+    path = (ROOT / value).resolve()
+    if not path.is_relative_to(ROOT):
+        raise ScaffoldError("--examples-root must be inside repository")
+    return path
+
+
+def build_readme(values: dict[str, Any], manifest_path: str) -> str:
     module = values["module"]
-    manifest_path = f"examples/{module}/manifest.json"
     lines = [
         f"# {values['menuName']} Module",
         "",
@@ -222,25 +232,28 @@ def validate_lifecycle_builders(manifest: dict[str, Any]) -> None:
     uninstall.build_sql(registry, manifest)
 
 
-def write_files(module: str, manifest_text: str, readme: str) -> None:
-    output_dir = EXAMPLES / module
+def write_files(examples_root: Path, module: str, manifest_text: str, readme: str) -> Path:
+    output_dir = examples_root / module
     if output_dir.exists():
         raise ScaffoldError(f"module directory already exists: {output_dir.relative_to(ROOT)}")
-    output_dir.mkdir(parents=False)
+    output_dir.mkdir(parents=True)
     (output_dir / "manifest.json").write_text(manifest_text)
     (output_dir / "README.md").write_text(readme)
     print(f"Created {output_dir.relative_to(ROOT)}/manifest.json")
     print(f"Created {output_dir.relative_to(ROOT)}/README.md")
+    return output_dir
 
 
 def main() -> int:
     args = parse_args()
+    examples_root = resolve_examples_root(args.examples_root)
     values = normalize_args(args)
     manifest = build_manifest(values)
     validate_manifest(manifest)
     validate_lifecycle_builders(manifest)
     manifest_text = json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
-    readme = build_readme(values)
+    manifest_rel = (examples_root / values["module"] / "manifest.json").relative_to(ROOT)
+    readme = build_readme(values, str(manifest_rel))
 
     if args.print_manifest:
         print(manifest_text, end="")
@@ -248,18 +261,19 @@ def main() -> int:
 
     if args.dry_run:
         module = values["module"]
-        print(f"# Would write examples/{module}/manifest.json")
+        output_dir = examples_root / module
+        print(f"# Would write {output_dir.relative_to(ROOT)}/manifest.json")
         print(manifest_text)
-        print(f"# Would write examples/{module}/README.md")
+        print(f"# Would write {output_dir.relative_to(ROOT)}/README.md")
         print(readme)
         return 0
 
-    write_files(values["module"], manifest_text, readme)
+    write_files(examples_root, values["module"], manifest_text, readme)
     print()
     print("Next:")
     print("python3 scripts/check-module-manifests.py")
-    print(f"python3 scripts/module-install-plan.py --manifest examples/{values['module']}/manifest.json --tenant-id 0 --role-id 1")
-    print(f"python3 scripts/module-uninstall-plan.py --manifest examples/{values['module']}/manifest.json")
+    print(f"python3 scripts/module-install-plan.py --manifest {manifest_rel} --tenant-id 0 --role-id 1")
+    print(f"python3 scripts/module-uninstall-plan.py --manifest {manifest_rel}")
     return 0
 
 

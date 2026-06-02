@@ -40,6 +40,17 @@ python3 scripts/module-scaffold.py \
   --requires-schema
 ```
 
+写入到仓库内忽略目录：
+
+```bash
+python3 scripts/module-scaffold.py \
+  --module billing_invoice \
+  --entity BillingInvoice \
+  --table ma_billing_invoice \
+  --requires-schema \
+  --examples-root .cache/module-scaffold-smoke/examples
+```
+
 写入后会创建：
 
 ```text
@@ -79,6 +90,12 @@ manifest 默认包含：
 
 脚手架生成内容会复用 `scripts/check-module-manifests.py` 做 manifest 校验，并调用模块注册、角色授权、卸载 SQL 生成器确认 manifest 能进入 P2 生命周期工具。
 
+受控写入 smoke：
+
+```bash
+MAKEADMIN_ALLOW_MODULE_SCAFFOLD_WRITE=1 scripts/check-module-scaffold-write-smoke.sh
+```
+
 默认 no-db 验证已接入：
 
 ```bash
@@ -93,3 +110,4 @@ GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh
 - 脚手架不读取或修改 `.env`。
 - 脚手架不生成真实后端/前端代码文件；P3.2 已通过 `scripts/check-module-codegen.sh` 打通 codegen 验证联动。
 - `requiresSchema=true` 的模块安装 apply 仍会按 P2 边界失败，不自动建表。
+- 受控写入 smoke 只写入 `.cache/module-scaffold-smoke/` 下的忽略目录，不进入 Git 提交。
