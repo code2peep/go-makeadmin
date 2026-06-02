@@ -447,6 +447,41 @@ P2 从 P1 冻结底座继续推进，不再扩大 P1 范围。P2 的重点是把
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有修改 schema、没有读取或修改 `.env`、没有连接真实 zyai 业务库。
 
+## P2.14 当前落地
+
+模块注册角色授权 dry-run 已建立：
+
+- 新增 `scripts/module-role-grant-plan.py`。
+- 脚本读取 manifest 并复用 `scripts/check-module-manifests.py` 做结构校验。
+- 脚本只输出 SQL 预览，不连接数据库、不执行 SQL。
+- SQL 预览包含 `ma_role_permission` 缺失授权插入。
+- 授权目标必须显式传入 `--role-id`，不提供默认角色。
+- `--tenant-id` 默认 `0`，但必须是非负整数。
+- SQL 通过 `ma_permission.code` 查找权限 ID。
+- SQL 校验目标 `ma_role` 存在、启用且未软删除。
+- SQL 使用 `tenant_id + role_id + permission_id` 防止重复授权。
+
+详见 `docs/P2_MODULE_ROLE_GRANT_PLAN.md`。
+
+## P2.14 验收标准
+
+- `python3 -m py_compile scripts/check-module-manifests.py scripts/module-role-grant-plan.py` 通过。
+- `python3 scripts/check-module-manifests.py` 通过。
+- `python3 scripts/module-role-grant-plan.py --role-id 1` 通过，只输出 SQL。
+- `python3 scripts/module-role-grant-plan.py --role-id 0` 失败，且不访问数据库。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不执行数据库写入、不修改 schema、不默认授权任何角色。
+
+## P2.14 验收结果
+
+- 已通过 `python3 -m py_compile scripts/check-module-manifests.py scripts/module-role-grant-plan.py`。
+- 已通过 `python3 scripts/check-module-manifests.py`。
+- 已通过 `python3 scripts/module-role-grant-plan.py --role-id 1`；生成 `ma_role_permission` SQL 预览，没有执行 SQL。
+- 已通过 `python3 scripts/module-role-grant-plan.py --role-id 0` 失败校验；命令在参数解析阶段失败，没有访问数据库。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有执行数据库写入、没有修改 schema、没有默认授权任何角色。
+
 ## 下一步
 
-P2.14：模块注册角色授权策略与 dry-run 计划。该任务先生成 `ma_role_permission` 授权预览，不执行写入。
+P2.15：模块运行时注册闭环。该任务把 demo 模块从 manifest/SQL 预览推进到可控的路由挂载和本地访问验证。
