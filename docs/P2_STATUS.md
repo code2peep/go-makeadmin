@@ -513,6 +513,40 @@ P2 从 P1 冻结底座继续推进，不再扩大 P1 范围。P2 的重点是把
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有执行数据库写入、没有修改 schema、没有开放无认证 demo API。
 
+## P2.16 当前落地
+
+模块安装 dry-run 编排已建立：
+
+- 新增 `scripts/module-install-plan.py`。
+- 脚本读取 manifest 并复用已有 manifest 校验。
+- 脚本只输出安装计划，不连接数据库、不执行 SQL。
+- 安装计划包含 manifest 摘要、后端路由、前端路径、注册 SQL、可选角色授权 SQL 和 runtime 开关。
+- 注册 SQL 复用 `scripts/module-registry-plan.py` 的生成逻辑。
+- 角色授权 SQL 复用 `scripts/module-role-grant-plan.py` 的生成逻辑。
+- 未传 `--role-id` 时不生成角色授权 SQL。
+- runtime 提示当前输出 `MAKEADMIN_ENABLE_DEMO_MODULE=1`。
+
+详见 `docs/P2_MODULE_INSTALL_PLAN.md`。
+
+## P2.16 验收标准
+
+- `python3 -m py_compile scripts/check-module-manifests.py scripts/module-registry-plan.py scripts/module-role-grant-plan.py scripts/module-install-plan.py` 通过。
+- `python3 scripts/module-install-plan.py --manifest examples/demo/manifest.json` 通过，只输出计划。
+- `python3 scripts/module-install-plan.py --manifest examples/demo/manifest.json --tenant-id 0 --role-id 1` 通过，只输出计划。
+- `python3 scripts/module-install-plan.py --role-id 0` 失败，且不访问数据库。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不执行数据库写入、不修改 schema、不修改 `.env`。
+
+## P2.16 验收结果
+
+- 已通过 `python3 -m py_compile scripts/check-module-manifests.py scripts/module-registry-plan.py scripts/module-role-grant-plan.py scripts/module-install-plan.py`。
+- 已通过 `python3 scripts/module-install-plan.py --manifest examples/demo/manifest.json`；生成安装计划，没有执行 SQL。
+- 已通过 `python3 scripts/module-install-plan.py --manifest examples/demo/manifest.json --tenant-id 0 --role-id 1`；生成包含角色授权 SQL 的安装计划，没有执行 SQL。
+- 已通过 `python3 scripts/module-install-plan.py --role-id 0` 失败校验；命令在参数解析阶段失败，没有访问数据库。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有执行数据库写入、没有修改 schema、没有修改 `.env`。
+
 ## 下一步
 
-P2.16：模块安装器编排计划。该任务把 manifest 校验、注册 SQL、角色授权 SQL 和 runtime 开关汇总成一条可审阅的安装计划。
+P2.17：模块安装 apply 边界设计。该任务定义安装执行器的门禁、事务和回滚策略；是否开放真实写入需单独确认。
