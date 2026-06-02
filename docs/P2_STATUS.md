@@ -647,6 +647,35 @@ P2 从 P1 冻结底座继续推进，不再扩大 P1 范围。P2 的重点是把
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有执行数据库删除、没有删除文件、没有修改 schema、没有修改 `.env`。
 
+## P2.20 当前落地
+
+模块卸载 apply/write 边界已定义：
+
+- 新增 `docs/P2_MODULE_UNINSTALL_APPLY_BOUNDARY.md`。
+- 明确未来卸载删除必须使用 `MAKEADMIN_ALLOW_MODULE_UNINSTALL_WRITE=1`。
+- 明确未来删除必须显式传入 `--confirm-module <module>`。
+- 明确未来删除必须显式传入 `--confirm-delete`。
+- 明确执行器不得读取 `.env` 猜测数据库密码。
+- 明确未来删除前必须输出四类快照计数。
+- 明确未来删除必须在单事务内完成。
+- 明确未来删除只按 manifest 权限 code 和菜单 routeName 执行。
+- 明确不删除前端文件、后端代码、runtime 环境变量、schema 或 codegen 元数据。
+
+详见 `docs/P2_MODULE_UNINSTALL_APPLY_BOUNDARY.md`。
+
+## P2.20 验收标准
+
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不开放新的删除命令。
+- 不执行数据库删除、不删除文件、不修改 schema、不修改 `.env`。
+
+## P2.20 验收结果
+
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有开放新的删除命令。
+- 本阶段没有执行数据库删除、没有删除文件、没有修改 schema、没有修改 `.env`。
+
 ## 下一步
 
-P2.20：模块卸载 apply 边界设计。该任务定义删除执行器的门禁、备份和本地 smoke 规则，不直接开放删除。
+P2.21：模块卸载 apply/write 模式与本地安装后卸载 smoke。该任务会触及数据库删除，只允许在本地 `go_makeadmin` 开发库执行。
