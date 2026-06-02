@@ -151,6 +151,41 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有写入 `ma_codegen_*`、没有创建业务 schema、没有执行数据库写入或删除、没有读取或修改 `.env`、没有连接真实 zyai 业务库。
 
+## P3.5 当前落地
+
+模块生成器配置写入边界已建立：
+
+- `scripts/module-codegen-plan.py` 新增保留的 `--apply` 写入入口。
+- 写入必须显式设置 `MAKEADMIN_ALLOW_MODULE_CODEGEN_WRITE=1`。
+- 写入必须显式确认 `--confirm-module <module>` 和 `--confirm-source-table <table>`。
+- 写入必须显式传入 `--confirm-sync-columns`，用于确认未来同步 `ma_codegen_column` 时可能删除 stale 列配置。
+- P3.5 当前即使全部门禁满足，也会在数据库访问前失败；真正写入执行器不在本阶段开放。
+- 新增 `scripts/check-module-codegen-apply-boundary.sh`。
+- `scripts/check-module-tools-no-db.sh` 已接入 codegen apply boundary 验证。
+
+详见 `docs/P3_MODULE_CODEGEN_APPLY_BOUNDARY.md`。
+
+## P3.5 验收标准
+
+- `scripts/check-module-codegen-apply-boundary.sh` 通过。
+- `python3 scripts/module-codegen-plan.py --apply` 失败，且错误说明没有访问数据库。
+- `MAKEADMIN_ALLOW_MODULE_CODEGEN_WRITE=1 python3 scripts/module-codegen-plan.py --apply --confirm-module article --confirm-source-table ma_demo_article --confirm-sync-columns` 失败，且错误说明没有访问数据库。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不写 `ma_codegen_*`、不创建业务 schema、不执行数据库写入或删除、不读取或修改 `.env`、不连接业务项目数据库。
+
+## P3.5 验收结果
+
+- 已通过 `python3 -m py_compile scripts/module-codegen-plan.py scripts/module-scaffold.py scripts/check-module-manifests.py`。
+- 已通过 `bash -n scripts/check-module-codegen-apply-boundary.sh scripts/check-module-tools-no-db.sh scripts/check-module-codegen-plan.sh`。
+- 已通过 `scripts/check-module-codegen-apply-boundary.sh`，覆盖缺少环境变量、缺少确认模块、缺少确认表名、缺少列同步确认和全部门禁满足但执行器未开放的失败路径。
+- 已通过 `scripts/check-module-tools-no-db.sh`，且 no-db guard 已执行 codegen apply boundary。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有写入 `ma_codegen_*`、没有创建业务 schema、没有执行数据库写入或删除、没有读取或修改 `.env`、没有连接业务项目数据库。
+
 ## 下一步
 
-P3.5：模块生成器配置受控写入边界。该任务定义 manifest 转 `ma_codegen_*` 写入前的门禁、事务、幂等和 schema 边界。
+P3.6：模块生成器配置本地受控写入。该任务在 P3.5 门禁基础上实现本地 `ma_codegen_*` 事务写入和幂等 smoke。

@@ -6,12 +6,14 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import os
 from pathlib import Path
 from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
 VALIDATOR = ROOT / "scripts" / "check-module-manifests.py"
+WRITE_ENV = "MAKEADMIN_ALLOW_MODULE_CODEGEN_WRITE"
 DEFAULT_OPTIONS = {
     "treePrimary": "",
     "treeParent": "",
@@ -45,6 +47,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--author", default="codepeep")
     parser.add_argument("--package-name", default="gencode")
     parser.add_argument("--format", choices=("summary", "json"), default="summary")
+    parser.add_argument("--apply", action="store_true", help=f"reserved codegen config write mode; requires {WRITE_ENV}=1")
+    parser.add_argument("--confirm-module", help="required with --apply; must equal manifest module")
+    parser.add_argument("--confirm-source-table", help="required with --apply; must equal manifest table")
+    parser.add_argument("--confirm-sync-columns", action="store_true", help="required with --apply")
+    parser.add_argument("--mysql-host", default=os.environ.get("MYSQL_HOST", "127.0.0.1"))
+    parser.add_argument("--mysql-port", default=os.environ.get("MYSQL_PORT", "3306"))
+    parser.add_argument("--mysql-user", default=os.environ.get("MYSQL_USER", "root"))
+    parser.add_argument("--mysql-database", default=os.environ.get("MYSQL_DATABASE", "go_makeadmin"))
     return parser.parse_args()
 
 
@@ -134,8 +144,29 @@ def build_plan(manifest_path: Path, manifest: dict[str, Any], args: argparse.Nam
             "validateManifest": "python3 scripts/check-module-manifests.py",
             "installPlan": f"python3 scripts/module-install-plan.py --manifest {source} --tenant-id {args.tenant_id} --role-id 1",
             "codegenLink": f"scripts/check-module-codegen.sh --manifest {source}",
+            "codegenApplyBoundary": (
+                f"{WRITE_ENV}=1 python3 scripts/module-codegen-plan.py --manifest {source} "
+                f"--tenant-id {args.tenant_id} --apply --confirm-module {module} "
+                f"--confirm-source-table {manifest['table']} --confirm-sync-columns"
+            ),
         },
     }
+
+
+def validate_apply_gate(args: argparse.Namespace, manifest: dict[str, Any]) -> None:
+    if os.environ.get(WRITE_ENV) != "1":
+        raise PlanError(f"--apply requires {WRITE_ENV}=1; no database access was attempted")
+    if not args.confirm_module:
+        raise PlanError("--apply requires --confirm-module; no database access was attempted")
+    if args.confirm_module != manifest["module"]:
+        raise PlanError("--confirm-module must equal manifest module; no database access was attempted")
+    if not args.confirm_source_table:
+        raise PlanError("--apply requires --confirm-source-table; no database access was attempted")
+    if args.confirm_source_table != manifest["table"]:
+        raise PlanError("--confirm-source-table must equal manifest table; no database access was attempted")
+    if not args.confirm_sync_columns:
+        raise PlanError("--apply requires --confirm-sync-columns; no database access was attempted")
+    raise PlanError("--apply is intentionally disabled until P3.6; no database access was attempted")
 
 
 def build_legacy_columns(manifest: dict[str, Any]) -> list[dict[str, Any]]:
@@ -327,6 +358,8 @@ def main() -> int:
 
     manifest = load_manifest(manifest_path)
     plan = build_plan(manifest_path, manifest, args)
+    if args.apply:
+        validate_apply_gate(args, manifest)
     if args.format == "json":
         print(json.dumps(plan, ensure_ascii=False, indent=2))
     else:
