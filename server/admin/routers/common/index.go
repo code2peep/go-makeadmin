@@ -2,16 +2,16 @@ package common
 
 import (
 	"github.com/gin-gonic/gin"
-	"go-makeadmin/admin/service/common"
 	"go-makeadmin/core"
 	"go-makeadmin/core/response"
+	makeadminadapter "go-makeadmin/makeadmin/adapter"
 	"go-makeadmin/middleware"
 )
 
 var IndexGroup = core.Group("/common", newIndexHandler, regIndex, middleware.TokenAuth())
 
-func newIndexHandler(srv common.IIndexService) *indexHandler {
-	return &indexHandler{srv: srv}
+func newIndexHandler(makeadminIndex makeadminadapter.IndexAdapter) *indexHandler {
+	return &indexHandler{makeadminIndex: makeadminIndex}
 }
 
 func regIndex(rg *gin.RouterGroup, group *core.GroupBase) error {
@@ -22,17 +22,17 @@ func regIndex(rg *gin.RouterGroup, group *core.GroupBase) error {
 }
 
 type indexHandler struct {
-	srv common.IIndexService
+	makeadminIndex makeadminadapter.IndexAdapter
 }
 
-//console 控制台
+// console 控制台
 func (ih indexHandler) console(c *gin.Context) {
-	res, err := ih.srv.Console()
+	res, err := ih.makeadminIndex.Console(c.Request.Context())
 	response.CheckAndRespWithData(c, res, err)
 }
 
-//config 公共配置
+// config 公共配置
 func (ih indexHandler) config(c *gin.Context) {
-	res, err := ih.srv.Config()
+	res, err := ih.makeadminIndex.Config(c.Request.Context())
 	response.CheckAndRespWithData(c, res, err)
 }

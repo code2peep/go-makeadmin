@@ -157,7 +157,7 @@ func (repo menuRepository) DeleteMenu(ctx context.Context, menuID uint64) error 
 		if err := tx.Where("menu_id = ?", menuID).Delete(&makeadmin.MenuPermission{}).Error; err != nil {
 			return err
 		}
-		return pruneOrphanRolePermissions(ctx, tx, permissionIDs)
+		return pruneOrphanPermissions(ctx, tx, permissionIDs)
 	})
 }
 
@@ -221,7 +221,7 @@ func replaceMenuPermission(ctx context.Context, tx *gorm.DB, menuID uint64, perm
 			return err
 		}
 	}
-	return pruneOrphanRolePermissions(ctx, tx, oldPermissionIDs)
+	return pruneOrphanPermissions(ctx, tx, oldPermissionIDs)
 }
 
 func listPermissionIDsByMenuID(ctx context.Context, tx *gorm.DB, menuID uint64) ([]uint64, error) {
@@ -270,7 +270,7 @@ func migrateRolePermissions(ctx context.Context, tx *gorm.DB, oldPermissionIDs [
 	return nil
 }
 
-func pruneOrphanRolePermissions(ctx context.Context, tx *gorm.DB, permissionIDs []uint64) error {
+func pruneOrphanPermissions(ctx context.Context, tx *gorm.DB, permissionIDs []uint64) error {
 	for _, permissionID := range permissionIDs {
 		var count int64
 		if err := tx.WithContext(ctx).
@@ -286,6 +286,12 @@ func pruneOrphanRolePermissions(ctx context.Context, tx *gorm.DB, permissionIDs 
 		if err := tx.WithContext(ctx).
 			Where("permission_id = ?", permissionID).
 			Delete(&makeadmin.RolePermission{}).
+			Error; err != nil {
+			return err
+		}
+		if err := tx.WithContext(ctx).
+			Where("id = ?", permissionID).
+			Delete(&makeadmin.Permission{}).
 			Error; err != nil {
 			return err
 		}

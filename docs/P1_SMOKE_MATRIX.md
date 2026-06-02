@@ -33,7 +33,11 @@ python3 scripts/p1-smoke.py
 | auth | `POST /system/login` | read | 登录返回 token |
 | auth | `GET /system/admin/self` | read | token 能解析当前管理员 |
 | auth | `GET /system/menu/route` | read | token 能解析菜单路由 |
+| common | `GET /common/index/config` | read | 公共配置从 `ma_setting` 返回 |
+| common | `GET /common/index/console` | read | 控制台信息从 `ma_setting` 返回 |
+| log | `GET /system/log/login` | read | 登录日志可查询 |
 | role | `POST /system/role/add` | write | 角色可新增 |
+| log | `GET /system/log/operate` | read | 写操作后操作日志可查询 |
 | role | `POST /system/role/edit` | write | 角色可编辑 |
 | role | `POST /system/role/del` | write | 管理员清理后角色可删除 |
 | admin | `POST /system/admin/add` | write | 管理员可新增 |

@@ -3,7 +3,6 @@ package system
 import (
 	"github.com/gin-gonic/gin"
 	"go-makeadmin/admin/schemas/req"
-	"go-makeadmin/admin/service/system"
 	"go-makeadmin/config"
 	"go-makeadmin/core"
 	"go-makeadmin/core/request"
@@ -15,8 +14,8 @@ import (
 
 var AdminGroup = core.Group("/system", newAdminHandler, regAdmin, middleware.TokenAuth())
 
-func newAdminHandler(srv system.ISystemAuthAdminService, makeadminAdapter makeadminadapter.SystemAdapter, makeadminAdmin makeadminadapter.AdminAdapter) *adminHandler {
-	return &adminHandler{srv: srv, makeadminAdapter: makeadminAdapter, makeadminAdmin: makeadminAdmin}
+func newAdminHandler(makeadminAdapter makeadminadapter.SystemAdapter, makeadminAdmin makeadminadapter.AdminAdapter) *adminHandler {
+	return &adminHandler{makeadminAdapter: makeadminAdapter, makeadminAdmin: makeadminAdmin}
 }
 
 func regAdmin(rg *gin.RouterGroup, group *core.GroupBase) error {
@@ -33,7 +32,6 @@ func regAdmin(rg *gin.RouterGroup, group *core.GroupBase) error {
 }
 
 type adminHandler struct {
-	srv              system.ISystemAuthAdminService
 	makeadminAdapter makeadminadapter.SystemAdapter
 	makeadminAdmin   makeadminadapter.AdminAdapter
 }
@@ -41,12 +39,7 @@ type adminHandler struct {
 // self 管理员信息
 func (ah adminHandler) self(c *gin.Context) {
 	adminId := config.AdminConfig.GetAdminId(c)
-	if makeadminadapter.IsMakeAdminContext(c) {
-		res, err := ah.makeadminAdapter.Self(c.Request.Context(), uint64(adminId))
-		response.CheckAndRespWithData(c, res, err)
-		return
-	}
-	res, err := ah.srv.Self(adminId)
+	res, err := ah.makeadminAdapter.Self(c.Request.Context(), uint64(adminId))
 	response.CheckAndRespWithData(c, res, err)
 }
 
@@ -60,12 +53,7 @@ func (ah adminHandler) list(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &listReq)) {
 		return
 	}
-	if ah.makeadminAdmin.Available(c.Request.Context()) {
-		res, err := ah.makeadminAdmin.List(c.Request.Context(), page, listReq)
-		response.CheckAndRespWithData(c, res, err)
-		return
-	}
-	res, err := ah.srv.List(page, listReq)
+	res, err := ah.makeadminAdmin.List(c.Request.Context(), page, listReq)
 	response.CheckAndRespWithData(c, res, err)
 }
 
@@ -75,12 +63,7 @@ func (ah adminHandler) detail(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &detailReq)) {
 		return
 	}
-	if ah.makeadminAdmin.Available(c.Request.Context()) {
-		res, err := ah.makeadminAdmin.Detail(c.Request.Context(), detailReq.ID)
-		response.CheckAndRespWithData(c, res, err)
-		return
-	}
-	res, err := ah.srv.Detail(detailReq.ID)
+	res, err := ah.makeadminAdmin.Detail(c.Request.Context(), detailReq.ID)
 	response.CheckAndRespWithData(c, res, err)
 }
 
@@ -90,11 +73,7 @@ func (ah adminHandler) add(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &addReq)) {
 		return
 	}
-	if ah.makeadminAdmin.Available(c.Request.Context()) {
-		response.CheckAndResp(c, ah.makeadminAdmin.Add(c.Request.Context(), addReq))
-		return
-	}
-	response.CheckAndResp(c, ah.srv.Add(addReq))
+	response.CheckAndResp(c, ah.makeadminAdmin.Add(c.Request.Context(), addReq))
 }
 
 // edit 管理员编辑
@@ -103,11 +82,7 @@ func (ah adminHandler) edit(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &editReq)) {
 		return
 	}
-	if ah.makeadminAdmin.Available(c.Request.Context()) {
-		response.CheckAndResp(c, ah.makeadminAdmin.Edit(c.Request.Context(), editReq))
-		return
-	}
-	response.CheckAndResp(c, ah.srv.Edit(c, editReq))
+	response.CheckAndResp(c, ah.makeadminAdmin.Edit(c.Request.Context(), editReq))
 }
 
 // upInfo 管理员更新
@@ -116,12 +91,7 @@ func (ah adminHandler) upInfo(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &updateReq)) {
 		return
 	}
-	if makeadminadapter.IsMakeAdminContext(c) && ah.makeadminAdmin.Available(c.Request.Context()) {
-		response.CheckAndResp(c, ah.makeadminAdmin.UpdateSelf(c, updateReq, config.AdminConfig.GetAdminId(c)))
-		return
-	}
-	response.CheckAndResp(c, ah.srv.Update(
-		c, updateReq, config.AdminConfig.GetAdminId(c)))
+	response.CheckAndResp(c, ah.makeadminAdmin.UpdateSelf(c, updateReq, config.AdminConfig.GetAdminId(c)))
 }
 
 // del 管理员删除
@@ -130,11 +100,7 @@ func (ah adminHandler) del(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &delReq)) {
 		return
 	}
-	if ah.makeadminAdmin.Available(c.Request.Context()) {
-		response.CheckAndResp(c, ah.makeadminAdmin.Del(c.Request.Context(), config.AdminConfig.GetAdminId(c), delReq.ID))
-		return
-	}
-	response.CheckAndResp(c, ah.srv.Del(c, delReq.ID))
+	response.CheckAndResp(c, ah.makeadminAdmin.Del(c.Request.Context(), config.AdminConfig.GetAdminId(c), delReq.ID))
 }
 
 // disable 管理员状态切换
@@ -143,9 +109,5 @@ func (ah adminHandler) disable(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &disableReq)) {
 		return
 	}
-	if ah.makeadminAdmin.Available(c.Request.Context()) {
-		response.CheckAndResp(c, ah.makeadminAdmin.Disable(c.Request.Context(), config.AdminConfig.GetAdminId(c), disableReq.ID))
-		return
-	}
-	response.CheckAndResp(c, ah.srv.Disable(c, disableReq.ID))
+	response.CheckAndResp(c, ah.makeadminAdmin.Disable(c.Request.Context(), config.AdminConfig.GetAdminId(c), disableReq.ID))
 }

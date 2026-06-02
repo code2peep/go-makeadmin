@@ -3,7 +3,6 @@ package common
 import (
 	"github.com/gin-gonic/gin"
 	"go-makeadmin/admin/schemas/req"
-	"go-makeadmin/admin/service/common"
 	"go-makeadmin/config"
 	"go-makeadmin/core"
 	"go-makeadmin/core/response"
@@ -14,8 +13,8 @@ import (
 
 var UploadGroup = core.Group("/common", newUploadHandler, regUpload, middleware.TokenAuth())
 
-func newUploadHandler(srv common.IUploadService, makeadminFile makeadminadapter.FileAdapter) *uploadHandler {
-	return &uploadHandler{srv: srv, makeadminFile: makeadminFile}
+func newUploadHandler(makeadminFile makeadminadapter.FileAdapter) *uploadHandler {
+	return &uploadHandler{makeadminFile: makeadminFile}
 }
 
 func regUpload(rg *gin.RouterGroup, group *core.GroupBase) error {
@@ -26,7 +25,6 @@ func regUpload(rg *gin.RouterGroup, group *core.GroupBase) error {
 }
 
 type uploadHandler struct {
-	srv           common.IUploadService
 	makeadminFile makeadminadapter.FileAdapter
 }
 
@@ -40,12 +38,7 @@ func (uh uploadHandler) uploadImage(c *gin.Context) {
 	if response.IsFailWithResp(c, ve) {
 		return
 	}
-	if uh.makeadminFile.Available(c.Request.Context()) {
-		res, err := uh.makeadminFile.UploadImage(c.Request.Context(), file, uReq.Cid, config.AdminConfig.GetAdminId(c))
-		response.CheckAndRespWithData(c, res, err)
-		return
-	}
-	res, err := uh.srv.UploadImage(file, uReq.Cid, config.AdminConfig.GetAdminId(c))
+	res, err := uh.makeadminFile.UploadImage(c.Request.Context(), file, uReq.Cid, config.AdminConfig.GetAdminId(c))
 	response.CheckAndRespWithData(c, res, err)
 }
 
@@ -59,11 +52,6 @@ func (uh uploadHandler) uploadVideo(c *gin.Context) {
 	if response.IsFailWithResp(c, ve) {
 		return
 	}
-	if uh.makeadminFile.Available(c.Request.Context()) {
-		res, err := uh.makeadminFile.UploadVideo(c.Request.Context(), file, uReq.Cid, config.AdminConfig.GetAdminId(c))
-		response.CheckAndRespWithData(c, res, err)
-		return
-	}
-	res, err := uh.srv.UploadVideo(file, uReq.Cid, config.AdminConfig.GetAdminId(c))
+	res, err := uh.makeadminFile.UploadVideo(c.Request.Context(), file, uReq.Cid, config.AdminConfig.GetAdminId(c))
 	response.CheckAndRespWithData(c, res, err)
 }

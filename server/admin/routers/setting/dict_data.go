@@ -3,7 +3,6 @@ package setting
 import (
 	"github.com/gin-gonic/gin"
 	"go-makeadmin/admin/schemas/req"
-	"go-makeadmin/admin/service/setting"
 	"go-makeadmin/core"
 	"go-makeadmin/core/request"
 	"go-makeadmin/core/response"
@@ -14,8 +13,8 @@ import (
 
 var DictDataGroup = core.Group("/setting", newDictDataHandler, regDictData, middleware.TokenAuth())
 
-func newDictDataHandler(srv setting.ISettingDictDataService, makeadminDict makeadminadapter.DictAdapter) *dictDataHandler {
-	return &dictDataHandler{srv: srv, makeadminDict: makeadminDict}
+func newDictDataHandler(makeadminDict makeadminadapter.DictAdapter) *dictDataHandler {
+	return &dictDataHandler{makeadminDict: makeadminDict}
 }
 
 func regDictData(rg *gin.RouterGroup, group *core.GroupBase) error {
@@ -30,7 +29,6 @@ func regDictData(rg *gin.RouterGroup, group *core.GroupBase) error {
 }
 
 type dictDataHandler struct {
-	srv           setting.ISettingDictDataService
 	makeadminDict makeadminadapter.DictAdapter
 }
 
@@ -40,12 +38,7 @@ func (ddh dictDataHandler) all(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &allReq)) {
 		return
 	}
-	if ddh.makeadminDict.Available(c.Request.Context()) {
-		res, err := ddh.makeadminDict.DataAll(c.Request.Context(), allReq)
-		response.CheckAndRespWithData(c, res, err)
-		return
-	}
-	res, err := ddh.srv.All(allReq)
+	res, err := ddh.makeadminDict.DataAll(c.Request.Context(), allReq)
 	response.CheckAndRespWithData(c, res, err)
 }
 
@@ -59,12 +52,7 @@ func (ddh dictDataHandler) list(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &listReq)) {
 		return
 	}
-	if ddh.makeadminDict.Available(c.Request.Context()) {
-		res, err := ddh.makeadminDict.DataList(c.Request.Context(), page, listReq)
-		response.CheckAndRespWithData(c, res, err)
-		return
-	}
-	res, err := ddh.srv.List(page, listReq)
+	res, err := ddh.makeadminDict.DataList(c.Request.Context(), page, listReq)
 	response.CheckAndRespWithData(c, res, err)
 }
 
@@ -74,12 +62,7 @@ func (ddh dictDataHandler) detail(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &detailReq)) {
 		return
 	}
-	if ddh.makeadminDict.Available(c.Request.Context()) {
-		res, err := ddh.makeadminDict.DataDetail(c.Request.Context(), detailReq.ID)
-		response.CheckAndRespWithData(c, res, err)
-		return
-	}
-	res, err := ddh.srv.Detail(detailReq.ID)
+	res, err := ddh.makeadminDict.DataDetail(c.Request.Context(), detailReq.ID)
 	response.CheckAndRespWithData(c, res, err)
 }
 
@@ -89,11 +72,7 @@ func (ddh dictDataHandler) add(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &addReq)) {
 		return
 	}
-	if ddh.makeadminDict.Available(c.Request.Context()) {
-		response.CheckAndResp(c, ddh.makeadminDict.DataAdd(c.Request.Context(), addReq))
-		return
-	}
-	response.CheckAndResp(c, ddh.srv.Add(addReq))
+	response.CheckAndResp(c, ddh.makeadminDict.DataAdd(c.Request.Context(), addReq))
 }
 
 // edit 字典数据编辑
@@ -102,11 +81,7 @@ func (ddh dictDataHandler) edit(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &editReq)) {
 		return
 	}
-	if ddh.makeadminDict.Available(c.Request.Context()) {
-		response.CheckAndResp(c, ddh.makeadminDict.DataEdit(c.Request.Context(), editReq))
-		return
-	}
-	response.CheckAndResp(c, ddh.srv.Edit(editReq))
+	response.CheckAndResp(c, ddh.makeadminDict.DataEdit(c.Request.Context(), editReq))
 }
 
 // del 字典数据删除
@@ -115,9 +90,5 @@ func (ddh dictDataHandler) del(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &delReq)) {
 		return
 	}
-	if ddh.makeadminDict.Available(c.Request.Context()) {
-		response.CheckAndResp(c, ddh.makeadminDict.DataDel(c.Request.Context(), delReq))
-		return
-	}
-	response.CheckAndResp(c, ddh.srv.Del(delReq))
+	response.CheckAndResp(c, ddh.makeadminDict.DataDel(c.Request.Context(), delReq))
 }

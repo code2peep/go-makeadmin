@@ -398,6 +398,19 @@ la_system_log_sms
 - smoke 实跑修正了管理员删除时 `ma_admin_org` 软删标记的唯一索引碰撞问题；组织关系软删使用微秒级 delete marker，避免同一秒内编辑后删除失败。
 - 已通过只读残留计数确认 smoke 产生的 live 测试数据为 0。
 
+## P1.22 当前落地
+
+- 后台认证中间件只接受 `makeadmin:token:*` 新 token，不再回退校验旧 `backstage:*` token。
+- 登录、管理员、菜单、角色、部门、岗位、日志、设置、字典、文件和上传路由已直接调用 `makeadmin` 适配器，不再按 `Available()` 结果回退到旧服务。
+- 新增公共首页 `IndexAdapter`，`/common/index/config` 和 `/common/index/console` 改为从 `ma_setting` 读取框架配置。
+- 操作日志中间件固定写入 `ma_audit_log`，不再回退写旧操作日志表。
+- `scripts/p1-smoke.py` 补充公共首页配置、控制台、登录日志和操作日志查询覆盖。
+
+## P1.22 已定事项
+
+- 旧 `server/admin/service/*` 和 `server/model/{system,setting,common}` 暂保留为蓝本参考代码，不再作为 P1 核心后台运行兜底。
+- 删除或迁入 `legacy` 属于单独清理步骤，本阶段不删除文件。
+
 ## 已定事项
 
 - `la_* -> ma_*` 只支持一次性迁移。

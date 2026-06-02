@@ -3,7 +3,6 @@ package setting
 import (
 	"github.com/gin-gonic/gin"
 	"go-makeadmin/admin/schemas/req"
-	"go-makeadmin/admin/service/setting"
 	"go-makeadmin/core"
 	"go-makeadmin/core/response"
 	makeadminadapter "go-makeadmin/makeadmin/adapter"
@@ -13,8 +12,8 @@ import (
 
 var StorageGroup = core.Group("/setting", newStorageHandler, regStorage, middleware.TokenAuth())
 
-func newStorageHandler(srv setting.ISettingStorageService, makeadminStorage makeadminadapter.StorageAdapter) *storageHandler {
-	return &storageHandler{srv: srv, makeadminStorage: makeadminStorage}
+func newStorageHandler(makeadminStorage makeadminadapter.StorageAdapter) *storageHandler {
+	return &storageHandler{makeadminStorage: makeadminStorage}
 }
 
 func regStorage(rg *gin.RouterGroup, group *core.GroupBase) error {
@@ -27,18 +26,12 @@ func regStorage(rg *gin.RouterGroup, group *core.GroupBase) error {
 }
 
 type storageHandler struct {
-	srv              setting.ISettingStorageService
 	makeadminStorage makeadminadapter.StorageAdapter
 }
 
 // list 存储列表
 func (sh storageHandler) list(c *gin.Context) {
-	if sh.makeadminStorage.Available(c.Request.Context()) {
-		res, err := sh.makeadminStorage.List(c.Request.Context())
-		response.CheckAndRespWithData(c, res, err)
-		return
-	}
-	res, err := sh.srv.List()
+	res, err := sh.makeadminStorage.List(c.Request.Context())
 	response.CheckAndRespWithData(c, res, err)
 }
 
@@ -48,12 +41,7 @@ func (sh storageHandler) detail(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &detailReq)) {
 		return
 	}
-	if sh.makeadminStorage.Available(c.Request.Context()) {
-		res, err := sh.makeadminStorage.Detail(c.Request.Context(), detailReq.Alias)
-		response.CheckAndRespWithData(c, res, err)
-		return
-	}
-	res, err := sh.srv.Detail(detailReq.Alias)
+	res, err := sh.makeadminStorage.Detail(c.Request.Context(), detailReq.Alias)
 	response.CheckAndRespWithData(c, res, err)
 }
 
@@ -63,11 +51,7 @@ func (sh storageHandler) edit(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyBody(c, &editReq)) {
 		return
 	}
-	if sh.makeadminStorage.Available(c.Request.Context()) {
-		response.CheckAndResp(c, sh.makeadminStorage.Edit(c.Request.Context(), editReq))
-		return
-	}
-	response.CheckAndResp(c, sh.srv.Edit(editReq))
+	response.CheckAndResp(c, sh.makeadminStorage.Edit(c.Request.Context(), editReq))
 }
 
 // change 存储切换
@@ -76,9 +60,5 @@ func (sh storageHandler) change(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyBody(c, &changeReq)) {
 		return
 	}
-	if sh.makeadminStorage.Available(c.Request.Context()) {
-		response.CheckAndResp(c, sh.makeadminStorage.Change(c.Request.Context(), changeReq.Alias, changeReq.Status))
-		return
-	}
-	response.CheckAndResp(c, sh.srv.Change(changeReq.Alias, changeReq.Status))
+	response.CheckAndResp(c, sh.makeadminStorage.Change(c.Request.Context(), changeReq.Alias, changeReq.Status))
 }

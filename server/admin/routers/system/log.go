@@ -3,7 +3,6 @@ package system
 import (
 	"github.com/gin-gonic/gin"
 	"go-makeadmin/admin/schemas/req"
-	"go-makeadmin/admin/service/system"
 	"go-makeadmin/core"
 	"go-makeadmin/core/request"
 	"go-makeadmin/core/response"
@@ -14,8 +13,8 @@ import (
 
 var LogGroup = core.Group("/system", newLogHandler, regLog, middleware.TokenAuth())
 
-func newLogHandler(srv system.ISystemLogsServer, makeadminLog makeadminadapter.LogAdapter) *logHandler {
-	return &logHandler{srv: srv, makeadminLog: makeadminLog}
+func newLogHandler(makeadminLog makeadminadapter.LogAdapter) *logHandler {
+	return &logHandler{makeadminLog: makeadminLog}
 }
 
 func regLog(rg *gin.RouterGroup, group *core.GroupBase) error {
@@ -26,7 +25,6 @@ func regLog(rg *gin.RouterGroup, group *core.GroupBase) error {
 }
 
 type logHandler struct {
-	srv          system.ISystemLogsServer
 	makeadminLog makeadminadapter.LogAdapter
 }
 
@@ -40,12 +38,7 @@ func (lh logHandler) operate(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &logReq)) {
 		return
 	}
-	if lh.makeadminLog.Available(c.Request.Context()) {
-		res, err := lh.makeadminLog.Operate(c.Request.Context(), page, logReq)
-		response.CheckAndRespWithData(c, res, err)
-		return
-	}
-	res, err := lh.srv.Operate(page, logReq)
+	res, err := lh.makeadminLog.Operate(c.Request.Context(), page, logReq)
 	response.CheckAndRespWithData(c, res, err)
 }
 
@@ -59,11 +52,6 @@ func (lh logHandler) login(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &logReq)) {
 		return
 	}
-	if lh.makeadminLog.Available(c.Request.Context()) {
-		res, err := lh.makeadminLog.Login(c.Request.Context(), page, logReq)
-		response.CheckAndRespWithData(c, res, err)
-		return
-	}
-	res, err := lh.srv.Login(page, logReq)
+	res, err := lh.makeadminLog.Login(c.Request.Context(), page, logReq)
 	response.CheckAndRespWithData(c, res, err)
 }

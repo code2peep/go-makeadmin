@@ -3,7 +3,6 @@ package setting
 import (
 	"github.com/gin-gonic/gin"
 	"go-makeadmin/admin/schemas/req"
-	"go-makeadmin/admin/service/setting"
 	"go-makeadmin/core"
 	"go-makeadmin/core/response"
 	makeadminadapter "go-makeadmin/makeadmin/adapter"
@@ -13,8 +12,8 @@ import (
 
 var CopyrightGroup = core.Group("/setting", newCopyrightHandler, regCopyright, middleware.TokenAuth())
 
-func newCopyrightHandler(srv setting.ISettingCopyrightService, makeadminCopyright makeadminadapter.CopyrightAdapter) *copyrightHandler {
-	return &copyrightHandler{srv: srv, makeadminCopyright: makeadminCopyright}
+func newCopyrightHandler(makeadminCopyright makeadminadapter.CopyrightAdapter) *copyrightHandler {
+	return &copyrightHandler{makeadminCopyright: makeadminCopyright}
 }
 
 func regCopyright(rg *gin.RouterGroup, group *core.GroupBase) error {
@@ -25,18 +24,12 @@ func regCopyright(rg *gin.RouterGroup, group *core.GroupBase) error {
 }
 
 type copyrightHandler struct {
-	srv                setting.ISettingCopyrightService
 	makeadminCopyright makeadminadapter.CopyrightAdapter
 }
 
 // detail 获取备案信息
 func (ch copyrightHandler) detail(c *gin.Context) {
-	if ch.makeadminCopyright.Available(c.Request.Context()) {
-		res, err := ch.makeadminCopyright.Detail(c.Request.Context())
-		response.CheckAndRespWithData(c, res, err)
-		return
-	}
-	res, err := ch.srv.Detail()
+	res, err := ch.makeadminCopyright.Detail(c.Request.Context())
 	response.CheckAndRespWithData(c, res, err)
 }
 
@@ -46,9 +39,5 @@ func (ch copyrightHandler) save(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSONArray(c, &cReqs)) {
 		return
 	}
-	if ch.makeadminCopyright.Available(c.Request.Context()) {
-		response.CheckAndResp(c, ch.makeadminCopyright.Save(c.Request.Context(), cReqs))
-		return
-	}
-	response.CheckAndResp(c, ch.srv.Save(cReqs))
+	response.CheckAndResp(c, ch.makeadminCopyright.Save(c.Request.Context(), cReqs))
 }

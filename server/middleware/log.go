@@ -8,7 +8,6 @@ import (
 	"go-makeadmin/core"
 	"go-makeadmin/core/response"
 	"go-makeadmin/model/makeadmin"
-	"go-makeadmin/model/system"
 	"go-makeadmin/util"
 	"go.uber.org/zap"
 	"net/url"
@@ -136,30 +135,24 @@ func recordOperateLog(
 	taskTime int64,
 ) error {
 	db := core.GetDB()
-	if db.Migrator().HasTable(&makeadmin.AuditLog{}) {
-		auditStatus := uint8(0)
-		if status == 1 {
-			auditStatus = 1
-		}
-		return db.Create(&makeadmin.AuditLog{
-			TenantID:     makeadmin.GlobalTenantID,
-			AdminID:      uint64(adminID),
-			Action:       title,
-			Method:       reqMethod,
-			Path:         urlPath,
-			IP:           ip,
-			RequestBody:  args,
-			ResponseCode: c.Writer.Status(),
-			Error:        errStr,
-			Status:       auditStatus,
-			StartTime:    startTime / 1000,
-			EndTime:      endTime / 1000,
-			DurationMS:   taskTime,
-		}).Error
+	auditStatus := uint8(0)
+	if status == 1 {
+		auditStatus = 1
 	}
-	return db.Create(&system.SystemLogOperate{
-		AdminId: adminID, Type: reqMethod, Title: title, Ip: ip,
-		Url: urlPath, Method: handlerName, Args: args, Error: errStr, Status: status,
-		StartTime: startTime / 1000, EndTime: endTime / 1000, TaskTime: taskTime,
+	_ = handlerName
+	return db.Create(&makeadmin.AuditLog{
+		TenantID:     makeadmin.GlobalTenantID,
+		AdminID:      uint64(adminID),
+		Action:       title,
+		Method:       reqMethod,
+		Path:         urlPath,
+		IP:           ip,
+		RequestBody:  args,
+		ResponseCode: c.Writer.Status(),
+		Error:        errStr,
+		Status:       auditStatus,
+		StartTime:    startTime / 1000,
+		EndTime:      endTime / 1000,
+		DurationMS:   taskTime,
 	}).Error
 }

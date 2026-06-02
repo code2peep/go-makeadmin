@@ -3,7 +3,6 @@ package system
 import (
 	"github.com/gin-gonic/gin"
 	"go-makeadmin/admin/schemas/req"
-	"go-makeadmin/admin/service/system"
 	"go-makeadmin/core"
 	"go-makeadmin/core/request"
 	"go-makeadmin/core/response"
@@ -14,8 +13,8 @@ import (
 
 var PostGroup = core.Group("/system", newPostHandler, regPost, middleware.TokenAuth())
 
-func newPostHandler(srv system.ISystemAuthPostService, makeadminPosition makeadminadapter.PositionAdapter) *postHandler {
-	return &postHandler{srv: srv, makeadminPosition: makeadminPosition}
+func newPostHandler(makeadminPosition makeadminadapter.PositionAdapter) *postHandler {
+	return &postHandler{makeadminPosition: makeadminPosition}
 }
 
 func regPost(rg *gin.RouterGroup, group *core.GroupBase) error {
@@ -30,18 +29,12 @@ func regPost(rg *gin.RouterGroup, group *core.GroupBase) error {
 }
 
 type postHandler struct {
-	srv               system.ISystemAuthPostService
 	makeadminPosition makeadminadapter.PositionAdapter
 }
 
 // all 岗位所有
 func (ph postHandler) all(c *gin.Context) {
-	if ph.makeadminPosition.Available(c.Request.Context()) {
-		res, err := ph.makeadminPosition.All(c.Request.Context())
-		response.CheckAndRespWithData(c, res, err)
-		return
-	}
-	res, err := ph.srv.All()
+	res, err := ph.makeadminPosition.All(c.Request.Context())
 	response.CheckAndRespWithData(c, res, err)
 }
 
@@ -55,12 +48,7 @@ func (ph postHandler) list(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &listReq)) {
 		return
 	}
-	if ph.makeadminPosition.Available(c.Request.Context()) {
-		res, err := ph.makeadminPosition.List(c.Request.Context(), page, listReq)
-		response.CheckAndRespWithData(c, res, err)
-		return
-	}
-	res, err := ph.srv.List(page, listReq)
+	res, err := ph.makeadminPosition.List(c.Request.Context(), page, listReq)
 	response.CheckAndRespWithData(c, res, err)
 }
 
@@ -70,12 +58,7 @@ func (ph postHandler) detail(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &detailReq)) {
 		return
 	}
-	if ph.makeadminPosition.Available(c.Request.Context()) {
-		res, err := ph.makeadminPosition.Detail(c.Request.Context(), detailReq.ID)
-		response.CheckAndRespWithData(c, res, err)
-		return
-	}
-	res, err := ph.srv.Detail(detailReq.ID)
+	res, err := ph.makeadminPosition.Detail(c.Request.Context(), detailReq.ID)
 	response.CheckAndRespWithData(c, res, err)
 }
 
@@ -85,11 +68,7 @@ func (ph postHandler) add(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyBody(c, &addReq)) {
 		return
 	}
-	if ph.makeadminPosition.Available(c.Request.Context()) {
-		response.CheckAndResp(c, ph.makeadminPosition.Add(c.Request.Context(), addReq))
-		return
-	}
-	response.CheckAndResp(c, ph.srv.Add(addReq))
+	response.CheckAndResp(c, ph.makeadminPosition.Add(c.Request.Context(), addReq))
 }
 
 // edit 岗位编辑
@@ -98,11 +77,7 @@ func (ph postHandler) edit(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyBody(c, &editReq)) {
 		return
 	}
-	if ph.makeadminPosition.Available(c.Request.Context()) {
-		response.CheckAndResp(c, ph.makeadminPosition.Edit(c.Request.Context(), editReq))
-		return
-	}
-	response.CheckAndResp(c, ph.srv.Edit(editReq))
+	response.CheckAndResp(c, ph.makeadminPosition.Edit(c.Request.Context(), editReq))
 }
 
 // del 岗位删除
@@ -111,9 +86,5 @@ func (ph postHandler) del(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyBody(c, &delReq)) {
 		return
 	}
-	if ph.makeadminPosition.Available(c.Request.Context()) {
-		response.CheckAndResp(c, ph.makeadminPosition.Del(c.Request.Context(), delReq.ID))
-		return
-	}
-	response.CheckAndResp(c, ph.srv.Del(delReq.ID))
+	response.CheckAndResp(c, ph.makeadminPosition.Del(c.Request.Context(), delReq.ID))
 }

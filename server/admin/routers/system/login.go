@@ -1,11 +1,8 @@
 package system
 
 import (
-	"errors"
-
 	"github.com/gin-gonic/gin"
 	"go-makeadmin/admin/schemas/req"
-	"go-makeadmin/admin/service/system"
 	"go-makeadmin/core"
 	"go-makeadmin/core/response"
 	makeadminadapter "go-makeadmin/makeadmin/adapter"
@@ -15,8 +12,8 @@ import (
 
 var LoginGroup = core.Group("/system", newLoginHandler, regLogin, middleware.TokenAuth())
 
-func newLoginHandler(srv system.ISystemLoginService, makeadminAdapter makeadminadapter.SystemAdapter) *loginHandler {
-	return &loginHandler{srv: srv, makeadminAdapter: makeadminAdapter}
+func newLoginHandler(makeadminAdapter makeadminadapter.SystemAdapter) *loginHandler {
+	return &loginHandler{makeadminAdapter: makeadminAdapter}
 }
 
 func regLogin(rg *gin.RouterGroup, group *core.GroupBase) error {
@@ -27,7 +24,6 @@ func regLogin(rg *gin.RouterGroup, group *core.GroupBase) error {
 }
 
 type loginHandler struct {
-	srv              system.ISystemLoginService
 	makeadminAdapter makeadminadapter.SystemAdapter
 }
 
@@ -37,14 +33,7 @@ func (lh loginHandler) login(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &loginReq)) {
 		return
 	}
-	if lh.makeadminAdapter.Available(c.Request.Context()) {
-		res, err := lh.makeadminAdapter.Login(c, &loginReq)
-		if !errors.Is(err, makeadminadapter.ErrUnavailable) {
-			response.CheckAndRespWithData(c, res, err)
-			return
-		}
-	}
-	res, err := lh.srv.Login(c, &loginReq)
+	res, err := lh.makeadminAdapter.Login(c, &loginReq)
 	response.CheckAndRespWithData(c, res, err)
 }
 
@@ -54,9 +43,5 @@ func (lh loginHandler) logout(c *gin.Context) {
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyHeader(c, &logoutReq)) {
 		return
 	}
-	if makeadminadapter.IsMakeAdminContext(c) {
-		response.CheckAndResp(c, lh.makeadminAdapter.Logout(c.Request.Context(), logoutReq.Token))
-		return
-	}
-	response.CheckAndResp(c, lh.srv.Logout(&logoutReq))
+	response.CheckAndResp(c, lh.makeadminAdapter.Logout(c.Request.Context(), logoutReq.Token))
 }

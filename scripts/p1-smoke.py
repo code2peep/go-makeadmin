@@ -24,7 +24,11 @@ SMOKE_MATRIX = [
     ("auth", "POST /system/login", "read", "login returns a token"),
     ("auth", "GET /system/admin/self", "read", "token resolves current admin"),
     ("auth", "GET /system/menu/route", "read", "token resolves route menus"),
+    ("common", "GET /common/index/config", "read", "public config resolves from ma_setting"),
+    ("common", "GET /common/index/console", "read", "console resolves from ma_setting"),
+    ("log", "GET /system/log/login", "read", "login logs can be queried"),
     ("role", "POST /system/role/add", "write", "role can be created"),
+    ("log", "GET /system/log/operate", "read", "operate logs can be queried after a write action"),
     ("role", "POST /system/role/edit", "write", "role can be edited"),
     ("role", "POST /system/role/del", "write", "role can be deleted after admin cleanup"),
     ("admin", "POST /system/admin/add", "write", "admin can be created"),
@@ -234,6 +238,9 @@ def run() -> None:
         client.api_json("GET", "/system/admin/self", label="admin self")
         client.api_json("GET", "/system/menu/route", label="menu route")
         client.api_json("GET", "/system/menu/detail", params={"id": 120}, label="menu detail seed")
+        client.api_json("GET", "/common/index/config", label="common index config")
+        client.api_json("GET", "/common/index/console", label="common index console")
+        client.api_json("GET", "/system/log/login", params={"pageNo": 1, "pageSize": 20}, label="login log list")
 
         role_name = f"P1SmokeRole{suffix}"
         client.api_json(
@@ -242,6 +249,7 @@ def run() -> None:
             body={"name": role_name, "sort": 91, "isDisable": 0, "remark": "p1 smoke", "menuIds": "120"},
             label="role add",
         )
+        client.api_json("GET", "/system/log/operate", params={"pageNo": 1, "pageSize": 20}, label="operate log list")
         role_items = data_list(client.api_json("GET", "/system/role/list", params={"pageNo": 1, "pageSize": 60}, label="role list"))
         role_id = find_id(role_items, "name", role_name)
         cleanups.append(lambda role_id=role_id: client.api_json("POST", "/system/role/del", body={"id": role_id}, label="cleanup role"))
