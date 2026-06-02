@@ -365,6 +365,19 @@ la_system_log_sms
 - 旧树表和子表字段 `treePrimary`、`treeParent`、`treeName`、`subTableName`、`subTableFk` 暂存在 `ma_codegen_table.options` JSON 中；不扩展 SQL。
 - 删除代码生成配置时，`ma_codegen_table` 走 `delete_time` 软删除，`ma_codegen_column` 因无软删除字段仍按表配置删除列配置。
 
+## P1.20 当前落地
+
+- 新增 `docs/P1_RUNTIME_RESIDUE_AUDIT.md`，明确 P1 运行链路中 `la_*` 残留的允许范围和后续移除条件。
+- `server/config/config.go` 默认表前缀从 `la_` 调整为 `ma_`，避免代码生成器和 Gorm 默认表名前缀继续偏向蓝本库。
+- `server/config/config.go` 增加 `DB_TABLE_PREFIX` 环境变量映射，可在兼容旧库或特殊本地调试时显式覆盖。
+- `server/config/config_test.go` 覆盖默认表前缀和 `-c` 配置路径参数解析，保证 Go test 内部参数不会再次打断配置初始化。
+
+## P1.20 已定事项
+
+- P1 默认运行目标是 `ma_*`；P0 蓝本 SQL 和脚本仍可保留，但不再代表框架默认运行模型。
+- 旧 `server/admin/service/*` 和 `server/model/{system,setting,common}` 暂作为过渡兜底保留，等 P1 smoke 覆盖核心写操作后再移除。
+- 不再新增任何直接读写 `la_*` 的 P1 功能。
+
 ## 已定事项
 
 - `la_* -> ma_*` 只支持一次性迁移。

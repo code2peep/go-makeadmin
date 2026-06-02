@@ -2,13 +2,14 @@ package config
 
 import (
 	"errors"
-	"github.com/spf13/viper"
 	"log"
 	"os"
 	"path"
 	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/spf13/viper"
 )
 
 var Config = loadConfig(".")
@@ -25,8 +26,8 @@ type envConfig struct {
 	UploadDirectory        string   `mapstructure:"UPLOAD_DIRECTORY"` // 上传文件路径
 	RedisUrl               string   `mapstructure:"REDIS_URL"`        // Redis源配置
 	RedisPoolSize          int      // Redis连接池大小
-	DatabaseUrl            string   `mapstructure:"DATABASE_URL"` // 数据源配置
-	DbTablePrefix          string   // Mysql表前缀
+	DatabaseUrl            string   `mapstructure:"DATABASE_URL"`    // 数据源配置
+	DbTablePrefix          string   `mapstructure:"DB_TABLE_PREFIX"` // Mysql表前缀
 	DbDefaultStringSize    uint     // 数据库string类型字段的默认长度
 	DbMaxIdleConns         int      // 数据库空闲连接池最大值
 	DbMaxOpenConns         int      // 数据库连接池最大值
@@ -74,7 +75,7 @@ func loadConfig(envPath string) envConfig {
 		RedisPoolSize: 100,
 		// 数据源配置
 		DatabaseUrl:            "root:root@tcp(localhost:3306)/go_makeadmin?charset=utf8mb4&parseTime=True&loc=Local",
-		DbTablePrefix:          "la_",
+		DbTablePrefix:          "ma_",
 		DbDefaultStringSize:    256,
 		DbMaxIdleConns:         10,
 		DbMaxOpenConns:         100,

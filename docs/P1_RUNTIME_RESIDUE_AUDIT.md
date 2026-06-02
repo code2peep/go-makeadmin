@@ -1,0 +1,45 @@
+# P1 Runtime Residue Audit
+
+## 目标
+
+P1.20 的目标是明确 `la_*` 残留边界：P1 运行默认值和已接管模块应面向 `ma_*`，旧 `la_*` 只作为蓝本资料、P0 本地验证脚本和过渡兜底代码存在。
+
+## 当前结论
+
+- P1 默认表前缀应为 `ma_`。
+- `DB_TABLE_PREFIX` 可通过环境变量覆盖，默认不再是 `la_`。
+- 代码生成器 `/gen/*` 已在 P1.19 切到 `ma_codegen_table`、`ma_codegen_column`。
+- `server/model/gen` 当前只作为代码生成模板 DTO 保留，不再作为代码生成器持久化模型。
+
+## 已接管运行链路
+
+- 登录、自身信息、菜单路由：优先走 `ma_admin`、`ma_role`、`ma_menu`、`ma_permission`。
+- 设置：网站信息、备案、协议、存储配置走 `ma_setting`。
+- 字典：字典类型和字典项走 `ma_dict_type`、`ma_dict_item`。
+- 文件：图库分类和文件元数据走 `ma_file_category`、`ma_file`。
+- 日志：登录日志和操作审计走 `ma_login_log`、`ma_audit_log`。
+- 权限：角色、部门、岗位、管理员、菜单管理走对应 `ma_*` 表。
+- 代码生成：生成表配置和列配置走 `ma_codegen_table`、`ma_codegen_column`。
+
+## 允许保留的 `la_*` 残留
+
+- `sql/install.sql`、`sql/install.core.sql`：P0 蓝本来源和旧库初始化资料。
+- `scripts/check-db-seed.sh`、`scripts/build-core-sql.sh`、`scripts/init-local-blueprint-db.sh`：P0 蓝本验证和构建脚本。
+- `docs/P0_*`、`docs/DB_INIT_PLAN.md`、`docs/MODULE_PRUNE_PLAN.md`：历史决策与迁移资料。
+- `server/model/system`、`server/model/setting`、`server/model/common`：旧接口兜底模型，后续移除兜底时再清理。
+- `server/admin/service/*` 旧服务：旧接口兜底服务，后续移除兜底时再清理。
+
+## 不再允许新增的残留
+
+- 新 P1 功能直接读写 `la_*` 表。
+- 新 P1 运行默认值使用 `la_` 前缀。
+- 新增需要长期双写 `la_*` 和 `ma_*` 的接口。
+- 新增 `la_*` 初始化种子作为框架默认数据。
+
+## 下一步移除条件
+
+移除旧兜底代码前，需要先完成：
+
+- P1 初始化脚本可稳定生成完整 `ma_*` 开发库。
+- 登录、权限、菜单、设置、文件、日志、代码生成的 smoke 覆盖核心写操作。
+- 明确不再支持 P0 蓝本库直接作为运行库。
