@@ -407,6 +407,46 @@ P2 从 P1 冻结底座继续推进，不再扩大 P1 范围。P2 的重点是把
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有执行数据库写入、没有修改 schema、没有默认注册 demo 运行时路由。
 
+## P2.13 当前落地
+
+模块注册 apply/write 模式已开放为本地受控写入：
+
+- `scripts/module-registry-plan.py --apply` 现在支持执行 manifest 注册 SQL。
+- 写入必须同时满足 `MAKEADMIN_ALLOW_MODULE_REGISTRY_WRITE=1` 和 `--confirm-module <module>`。
+- 缺少环境变量或确认参数时，脚本会在数据库访问前失败。
+- 写入 SQL 复用 dry-run 同一套生成逻辑。
+- 写入内容限定为 `ma_permission`、`ma_menu`、`ma_menu_permission`。
+- 权限、菜单、菜单权限关联均使用缺失插入方式保证幂等。
+- 本阶段不写 `ma_role_permission`，不自动给角色授权。
+- 本阶段不创建 demo 表、不注册 demo 运行时路由、不修改 schema。
+
+详见 `docs/P2_MODULE_REGISTRY_APPLY.md`。
+
+## P2.13 验收标准
+
+- `python3 -m py_compile scripts/check-module-manifests.py scripts/module-registry-plan.py` 通过。
+- `python3 scripts/check-module-manifests.py` 通过。
+- `python3 scripts/module-registry-plan.py --apply` 失败，且错误说明没有访问数据库。
+- `MAKEADMIN_ALLOW_MODULE_REGISTRY_WRITE=1 python3 scripts/module-registry-plan.py --apply` 失败，且错误说明没有访问数据库。
+- `python3 scripts/module-registry-plan.py --manifest examples/demo/manifest.json` 继续通过，只输出 SQL。
+- 对本地 `go_makeadmin` 执行一次 demo article 注册写入 smoke，并清理临时行。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不修改 schema、不读取或修改 `.env`、不连接真实 zyai 业务库。
+
+## P2.13 验收结果
+
+- 已通过 `python3 -m py_compile scripts/check-module-manifests.py scripts/module-registry-plan.py`。
+- 已通过 `python3 scripts/check-module-manifests.py`。
+- 已通过 `python3 scripts/module-registry-plan.py --apply` 失败门禁；失败文案明确没有访问数据库。
+- 已通过 `MAKEADMIN_ALLOW_MODULE_REGISTRY_WRITE=1 python3 scripts/module-registry-plan.py --apply` 失败门禁；失败文案明确没有访问数据库。
+- 已通过 `python3 scripts/module-registry-plan.py --manifest examples/demo/manifest.json`；dry-run SQL 预览继续可用。
+- 已对本地 `go_makeadmin` 完成 demo article 注册写入 smoke：第一次 apply 后得到 5 条权限、1 条菜单、1 条菜单权限关联。
+- 已第二次执行 apply，计数仍为 5 条权限、1 条菜单、1 条菜单权限关联，确认幂等。
+- 已清理 demo article 注册行，清理后残留计数为 0。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有修改 schema、没有读取或修改 `.env`、没有连接真实 zyai 业务库。
+
 ## 下一步
 
-P2.13：模块注册 SQL apply/write 模式与本地写入 smoke。该任务会触及数据库写入红线，进入前需要明确授权。
+P2.14：模块注册角色授权策略与 dry-run 计划。该任务先生成 `ma_role_permission` 授权预览，不执行写入。

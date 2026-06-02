@@ -8,6 +8,8 @@ P2.12 根据模块 manifest 生成菜单和权限初始化 SQL 预览。
 
 本阶段只输出 SQL，不连接数据库，不执行写入。
 
+当前更新：P2.13 已在该 dry-run 生成逻辑基础上开放本地受控写入模式；现行写入规则见 `docs/P2_MODULE_REGISTRY_APPLY.md`。
+
 ## 命令
 
 ```bash
