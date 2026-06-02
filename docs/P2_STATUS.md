@@ -547,6 +547,35 @@ P2 从 P1 冻结底座继续推进，不再扩大 P1 范围。P2 的重点是把
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有执行数据库写入、没有修改 schema、没有修改 `.env`。
 
+## P2.17 当前落地
+
+模块安装 apply/write 边界已定义：
+
+- 新增 `docs/P2_MODULE_INSTALL_APPLY_BOUNDARY.md`。
+- 明确未来安装写入必须使用 `MAKEADMIN_ALLOW_MODULE_INSTALL_WRITE=1`。
+- 明确未来写入必须显式传入 `--confirm-module <module>`。
+- 如果传入 `--role-id`，还必须显式传入 `--confirm-role-id <id>`。
+- 明确执行器不得读取 `.env` 猜测数据库密码。
+- 明确未来写入必须在单事务内完成。
+- 明确本阶段不自动建表，`requiresSchema=true` 时直接失败。
+- 明确 runtime 开关只输出提示，不修改 `.env` 或系统环境变量。
+- 明确未来本地 smoke 写入前必须确认 demo article 注册行不存在，避免误删已有数据。
+
+详见 `docs/P2_MODULE_INSTALL_APPLY_BOUNDARY.md`。
+
+## P2.17 验收标准
+
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不开放新的写入命令。
+- 不执行数据库写入、不修改 schema、不修改 `.env`。
+
+## P2.17 验收结果
+
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有开放新的写入命令。
+- 本阶段没有执行数据库写入、没有修改 schema、没有修改 `.env`。
+
 ## 下一步
 
-P2.17：模块安装 apply 边界设计。该任务定义安装执行器的门禁、事务和回滚策略；是否开放真实写入需单独确认。
+P2.18：模块安装 apply/write 模式与本地写入 smoke。该任务会触及数据库写入，只允许在本地 `go_makeadmin` 开发库执行。
