@@ -32,7 +32,7 @@ python3 -m py_compile \
     scripts/module-uninstall-plan.py
 
 echo "==> Module tools: shell syntax"
-bash -n scripts/check-module-lifecycle-smoke.sh
+bash -n scripts/check-module-lifecycle-smoke.sh scripts/check-module-codegen.sh
 
 echo "==> Module tools: manifest validation"
 python3 scripts/check-module-manifests.py >/dev/null
@@ -44,6 +44,9 @@ python3 scripts/module-scaffold.py \
     --table ma_billing_invoice \
     --requires-schema \
     --dry-run >/dev/null
+
+echo "==> Module tools: scaffold codegen link"
+scripts/check-module-codegen.sh >/dev/null
 
 echo "==> Module tools: dry-run previews"
 python3 scripts/module-registry-plan.py --manifest examples/demo/manifest.json >/dev/null

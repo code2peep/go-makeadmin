@@ -19,6 +19,17 @@ python3 scripts/module-scaffold.py \
   --dry-run
 ```
 
+只输出 manifest JSON：
+
+```bash
+python3 scripts/module-scaffold.py \
+  --module billing_invoice \
+  --entity BillingInvoice \
+  --table ma_billing_invoice \
+  --requires-schema \
+  --print-manifest
+```
+
 写入脚手架文件：
 
 ```bash
@@ -80,5 +91,5 @@ GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh
 - 脚手架不创建业务 schema。
 - 脚手架不连接数据库。
 - 脚手架不读取或修改 `.env`。
-- 脚手架不生成真实后端/前端代码文件；P3.2 再打通 codegen 联动。
+- 脚手架不生成真实后端/前端代码文件；P3.2 已通过 `scripts/check-module-codegen.sh` 打通 codegen 验证联动。
 - `requiresSchema=true` 的模块安装 apply 仍会按 P2 边界失败，不自动建表。

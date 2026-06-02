@@ -43,6 +43,40 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有创建业务 schema、没有执行数据库写入或删除、没有读取或修改 `.env`、没有连接真实 zyai 业务库。
 
+## P3.2 当前落地
+
+脚手架输出与代码生成器验证链路已打通：
+
+- `scripts/module-scaffold.py` 新增 `--print-manifest`，用于输出纯 manifest JSON。
+- 新增 `scripts/check-module-codegen.sh`。
+- 新增 `TestGeneratedCrudCodeMatchesModuleManifest`，通过 `MAKEADMIN_CODEGEN_MANIFEST` 读取 manifest。
+- 测试会使用 manifest 渲染 Go model、schema、service、route 模板，并编译临时生成的 Go 包。
+- 测试会渲染 Vue API、列表页和编辑页模板，并检查 route URL 与 add/edit/del 权限和 manifest 对齐。
+- `scripts/check-module-tools-no-db.sh` 已接入 `scripts/check-module-codegen.sh`。
+
+详见 `docs/P3_MODULE_CODEGEN_LINK.md`。
+
+## P3.2 验收标准
+
+- `scripts/check-module-codegen.sh` 通过。
+- `cd server && MAKEADMIN_CODEGEN_MANIFEST=<manifest> go test ./generator -run TestGeneratedCrudCodeMatchesModuleManifest -count=1` 通过。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不创建业务 schema、不执行数据库写入或删除、不读取或修改 `.env`、不连接真实 zyai 业务库。
+
+## P3.2 验收结果
+
+- 已通过 `scripts/check-module-codegen.sh`。
+- 已通过临时 manifest 驱动的 `MAKEADMIN_CODEGEN_MANIFEST=<manifest> GOCACHE=/private/tmp/go-makeadmin-gocache go test ./generator -run TestGeneratedCrudCodeMatchesModuleManifest -count=1`。
+- 已通过 `python3 -m py_compile scripts/module-scaffold.py`。
+- 已通过 `bash -n scripts/check-module-codegen.sh scripts/check-module-tools-no-db.sh`。
+- 已通过 `scripts/check-module-tools-no-db.sh`，且 no-db guard 已执行 `scaffold codegen link`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有创建业务 schema、没有执行数据库写入或删除、没有读取或修改 `.env`、没有连接真实 zyai 业务库。
+
 ## 下一步
 
-P3.2：脚手架输出与代码生成器联动。该任务把 `module-scaffold` 输出的 manifest 与现有 Go/Vue 代码生成器验证链路进一步打通。
+P3.3：模块脚手架生成文件受控写入 smoke。该任务验证 `module-scaffold` 非 dry-run 写入到临时模块目录后的 manifest、README 和生命周期 dry-run 命令。

@@ -47,7 +47,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--component", help="frontend component path, default: <module>/index")
     parser.add_argument("--requires-schema", action="store_true", help="mark manifest as requiring a business table")
     parser.add_argument("--runtime-registered", action="store_true", help="mark runtime routes as already registered")
-    parser.add_argument("--dry-run", action="store_true", help="print generated files instead of writing them")
+    output = parser.add_mutually_exclusive_group()
+    output.add_argument("--dry-run", action="store_true", help="print generated files instead of writing them")
+    output.add_argument("--print-manifest", action="store_true", help="print generated manifest JSON only")
     return parser.parse_args()
 
 
@@ -239,6 +241,10 @@ def main() -> int:
     validate_lifecycle_builders(manifest)
     manifest_text = json.dumps(manifest, ensure_ascii=False, indent=2) + "\n"
     readme = build_readme(values)
+
+    if args.print_manifest:
+        print(manifest_text, end="")
+        return 0
 
     if args.dry_run:
         module = values["module"]
