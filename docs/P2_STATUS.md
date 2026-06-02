@@ -778,6 +778,28 @@ P2 从 P1 冻结底座继续推进，不再扩大 P1 范围。P2 的重点是把
 - 本阶段没有把写库 smoke 放入 `verify-no-db.sh`。
 - 本阶段没有修改 schema、没有读取或修改 `.env`、没有连接真实 zyai 业务库。
 
+## P2.24 当前落地
+
+模块文档入口已收敛：
+
+- 新增 `docs/P2_MODULE_GUIDE.md`。
+- README 已补充 P2 模块使用指南入口。
+- 模块使用指南覆盖 manifest 校验、注册预览、角色授权预览、安装计划、安装写入、卸载预览、卸载删除、runtime 开关、默认 no-db 验证、本地生命周期 smoke 和红线边界。
+- P2 模块生命周期的详细文档继续保留，统一由 `docs/P2_MODULE_GUIDE.md` 汇总进入。
+
+## P2.24 验收标准
+
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- `git diff --check` 通过。
+- 不修改 schema、不执行数据库写入或删除、不读取或修改 `.env`、不连接真实 zyai 业务库。
+
+## P2.24 验收结果
+
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `git diff --check`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有修改 schema、没有执行数据库写入或删除、没有读取或修改 `.env`、没有连接真实 zyai 业务库。
+
 ## 下一步
 
-P2.24：模块文档收敛与使用入口整理。该任务把模块注册、安装、卸载、runtime 和验证入口整理成一份模块使用指南。
+P2.25：P2 模块生命周期冻结验收与最终状态文档。该任务冻结 P2 模块能力边界，汇总当前可用命令、验证结果、剩余风险和后续 P3 入口。
