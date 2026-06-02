@@ -1,20 +1,93 @@
 {
+  "version": 1,
   "module": "article",
   "entity": "DemoArticle",
   "table": "ma_demo_article",
   "backendPackage": "gencode",
-  "routes": [
-    "GET /article/list",
-    "GET /article/detail",
-    "POST /article/add",
-    "POST /article/edit",
-    "POST /article/del"
-  ],
+  "backend": {
+    "routes": [
+      {
+        "method": "GET",
+        "path": "/article/list",
+        "permission": "article:list"
+      },
+      {
+        "method": "GET",
+        "path": "/article/detail",
+        "permission": "article:detail"
+      },
+      {
+        "method": "POST",
+        "path": "/article/add",
+        "permission": "article:add"
+      },
+      {
+        "method": "POST",
+        "path": "/article/edit",
+        "permission": "article:edit"
+      },
+      {
+        "method": "POST",
+        "path": "/article/del",
+        "permission": "article:del"
+      }
+    ]
+  },
+  "frontend": {
+    "api": "admin/src/api/article.ts",
+    "views": [
+      "admin/src/views/article/index.vue",
+      "admin/src/views/article/edit.vue"
+    ]
+  },
+  "menu": {
+    "code": "demo.article",
+    "parent": "dev_tools",
+    "type": "page",
+    "name": "Demo Article",
+    "routePath": "/demo/article",
+    "routeName": "demo.article",
+    "component": "article/index",
+    "permission": "article:list",
+    "visible": false,
+    "sort": 10
+  },
   "permissions": [
-    "article:list",
-    "article:add",
-    "article:edit",
-    "article:del"
+    {
+      "code": "article:list",
+      "name": "Article list",
+      "module": "article",
+      "resource": "article",
+      "action": "list"
+    },
+    {
+      "code": "article:detail",
+      "name": "Article detail",
+      "module": "article",
+      "resource": "article",
+      "action": "detail"
+    },
+    {
+      "code": "article:add",
+      "name": "Article add",
+      "module": "article",
+      "resource": "article",
+      "action": "add"
+    },
+    {
+      "code": "article:edit",
+      "name": "Article edit",
+      "module": "article",
+      "resource": "article",
+      "action": "edit"
+    },
+    {
+      "code": "article:del",
+      "name": "Article delete",
+      "module": "article",
+      "resource": "article",
+      "action": "del"
+    }
   ],
   "runtimeRegistered": false,
   "requiresSchema": false

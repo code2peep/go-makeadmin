@@ -23,9 +23,21 @@
 ## 权限标识
 
 - `article:list`
+- `article:detail`
 - `article:add`
 - `article:edit`
 - `article:del`
+
+## 注册清单
+
+`manifest.json` 描述本模块接入后台所需的注册信息：
+
+- 后端路由和权限映射。
+- 前端 API 和页面路径。
+- 菜单节点。
+- 权限元数据。
+- 是否默认注册运行时路由。
+- 是否需要 schema。
 
 ## 生成器闭环
 

@@ -348,6 +348,34 @@ P2 从 P1 冻结底座继续推进，不再扩大 P1 范围。P2 的重点是把
 - 已确认临时生成的 `admin/src/api/article.ts` 和 `admin/src/views/article/` 没有残留。
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 
+## P2.11 当前落地
+
+模块注册清单规范已建立：
+
+- `examples/<module>/manifest.json` 作为模块注册清单。
+- manifest 统一描述后端路由、前端 API、前端页面、菜单节点、权限元数据、运行时注册状态和 schema 需求。
+- `examples/demo/manifest.json` 已升级为结构化注册清单。
+- 新增 `scripts/check-module-manifests.py`，校验 examples 下所有 manifest。
+- 新增 `docs/P2_MODULE_REGISTRY.md`，记录字段、路由、权限、菜单和校验规则。
+- 本阶段不写数据库、不创建 demo 表、不写菜单或权限种子。
+
+详见 `docs/P2_MODULE_REGISTRY.md`。
+
+## P2.11 验收标准
+
+- `python3 -m py_compile scripts/check-module-manifests.py` 通过。
+- `python3 scripts/check-module-manifests.py` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不执行数据库写入、不修改 schema、不默认注册 demo 运行时路由。
+
+## P2.11 验收结果
+
+- 已通过 `python3 -m py_compile scripts/check-module-manifests.py`。
+- 已通过 `python3 scripts/check-module-manifests.py`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有执行数据库写入、没有修改 schema、没有默认注册 demo 运行时路由。
+
 ## 下一步
 
-P2.11：模块注册清单，沉淀后端路由、前端菜单、权限和初始化数据的接入规范。
+P2.12：模块注册 SQL dry-run，根据 manifest 生成菜单和权限初始化 SQL 预览，不直接写库。
