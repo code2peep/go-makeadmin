@@ -1,0 +1,48 @@
+# P3 Status
+
+更新时间：2026-06-02
+
+## 当前阶段
+
+P3：业务模块产品化。
+
+P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装/卸载和验证命令串成可重复的模块开发体验。
+
+## P3.1 当前落地
+
+业务模块脚手架入口已建立：
+
+- 新增 `scripts/module-scaffold.py`。
+- 脚手架默认在 `examples/<module>/` 下生成 `manifest.json` 和 `README.md`。
+- `manifest.json` 覆盖标准 CRUD 后端路由、前端 API、前端页面、菜单节点、权限元数据、runtime 状态和 schema 需求。
+- `README.md` 输出模块约定、标准验证命令和后续 codegen 接入说明。
+- 脚手架默认不覆盖已存在模块目录。
+- `--dry-run` 模式只打印生成内容，不写文件、不连接数据库。
+- 脚手架会校验生成 manifest，并确认它能进入注册、角色授权和卸载 SQL 生成器。
+- `scripts/check-module-tools-no-db.sh` 已接入脚手架 dry-run 验证。
+
+详见 `docs/P3_MODULE_SCAFFOLD.md`。
+
+## P3.1 验收标准
+
+- `python3 -m py_compile scripts/module-scaffold.py` 通过。
+- `python3 scripts/module-scaffold.py --module billing_invoice --entity BillingInvoice --table ma_billing_invoice --requires-schema --dry-run` 通过。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不创建业务 schema、不执行数据库写入或删除、不读取或修改 `.env`、不连接真实 zyai 业务库。
+
+## P3.1 验收结果
+
+- 已通过 `python3 -m py_compile scripts/module-scaffold.py scripts/check-module-manifests.py scripts/module-registry-plan.py scripts/module-role-grant-plan.py scripts/module-uninstall-plan.py`。
+- 已通过 `python3 scripts/module-scaffold.py --module billing_invoice --entity BillingInvoice --table ma_billing_invoice --requires-schema --dry-run`。
+- 已通过 `python3 scripts/check-module-manifests.py`。
+- 已通过 `scripts/check-module-tools-no-db.sh`，且 no-db guard 已执行脚手架 dry-run。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有创建业务 schema、没有执行数据库写入或删除、没有读取或修改 `.env`、没有连接真实 zyai 业务库。
+
+## 下一步
+
+P3.2：脚手架输出与代码生成器联动。该任务把 `module-scaffold` 输出的 manifest 与现有 Go/Vue 代码生成器验证链路进一步打通。

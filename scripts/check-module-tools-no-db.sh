@@ -25,6 +25,7 @@ expect_fail_no_db() {
 echo "==> Module tools: python syntax"
 python3 -m py_compile \
     scripts/check-module-manifests.py \
+    scripts/module-scaffold.py \
     scripts/module-registry-plan.py \
     scripts/module-role-grant-plan.py \
     scripts/module-install-plan.py \
@@ -35,6 +36,14 @@ bash -n scripts/check-module-lifecycle-smoke.sh
 
 echo "==> Module tools: manifest validation"
 python3 scripts/check-module-manifests.py >/dev/null
+
+echo "==> Module tools: scaffold dry-run"
+python3 scripts/module-scaffold.py \
+    --module billing_invoice \
+    --entity BillingInvoice \
+    --table ma_billing_invoice \
+    --requires-schema \
+    --dry-run >/dev/null
 
 echo "==> Module tools: dry-run previews"
 python3 scripts/module-registry-plan.py --manifest examples/demo/manifest.json >/dev/null

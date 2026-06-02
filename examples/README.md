@@ -16,6 +16,19 @@
 python3 scripts/check-module-manifests.py
 ```
 
+## 脚手架
+
+```bash
+python3 scripts/module-scaffold.py \
+  --module billing_invoice \
+  --entity BillingInvoice \
+  --table ma_billing_invoice \
+  --requires-schema \
+  --dry-run
+```
+
+去掉 `--dry-run` 后会创建 `examples/billing_invoice/manifest.json` 和 `examples/billing_invoice/README.md`；如果目录已存在会失败，不覆盖已有文件。
+
 ## 当前示例
 
 - `demo/`：标准后台 CRUD 模块约定，用于 P2.9/P2.10 代码生成器闭环。
