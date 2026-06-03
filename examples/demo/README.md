@@ -8,7 +8,9 @@
 - 模块名：`article`
 - 实体名：`DemoArticle`
 - 表名：`ma_demo_article`
-- 路由前缀：`/article`
+- 后端路由前缀：`/article`
+- 管理端运行路由：`/demo/article`
+- 数据库菜单路径：`/dev_tools/demo/article`
 - 前端 API：`admin/src/api/article.ts`
 - 前端页面目录：`admin/src/views/article`
 
@@ -55,4 +57,21 @@ P2.10 已用显式脚本验证前端模板闭环：
 - 执行 `npm run type-check`。
 - 测试结束后清理临时生成文件。
 
-该示例目前只作为模块接入标准，不默认注册进运行时路由，不创建表，不写入菜单或权限种子。
+## P5.1 可见安装
+
+P5.1 起，该示例可以作为本地可见模块安装到 `go_makeadmin`：
+
+- manifest 菜单 `visible=true`。
+- manifest 运行时 `runtimeRegistered=true`。
+- 前端真实产物位于 `admin/src/api/article.ts` 和 `admin/src/views/article/`。
+- 菜单安装后挂在开发工具下，访问路径为 `/demo/article`。
+- 后端运行时仍需显式设置 `MAKEADMIN_ENABLE_DEMO_MODULE=1`。
+- 示例模块不创建 `ma_demo_article` 表，列表接口返回空分页，写接口保持只读。
+
+本地写入验证：
+
+```bash
+MAKEADMIN_ALLOW_DEMO_MODULE_VISIBLE_WRITE=1 scripts/check-demo-module-visible.sh
+```
+
+该脚本只写入 demo article 的菜单、权限、菜单权限和角色授权，不创建或迁移业务 schema。

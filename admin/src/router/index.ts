@@ -5,7 +5,7 @@ import { isExternal } from '@/utils/validate'
 import { constantRoutes, INDEX_ROUTE_NAME, LAYOUT } from './routes'
 import useUserStore from '@/stores/modules/user'
 
-// P0 core admin views only. Legacy demo modules stay in source but are not routable.
+// Core admin views and explicitly enabled demo module views.
 const modules = {
     ...import.meta.glob('/src/views/workbench/**/*.vue'),
     ...import.meta.glob('/src/views/permission/**/*.vue'),
@@ -15,7 +15,8 @@ const modules = {
     ...import.meta.glob('/src/views/setting/storage/**/*.vue'),
     ...import.meta.glob('/src/views/setting/system/**/*.vue'),
     ...import.meta.glob('/src/views/setting/website/**/*.vue'),
-    ...import.meta.glob('/src/views/dev_tools/**/*.vue')
+    ...import.meta.glob('/src/views/dev_tools/**/*.vue'),
+    ...import.meta.glob('/src/views/article/**/*.vue')
 }
 
 //

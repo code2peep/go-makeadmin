@@ -45,11 +45,11 @@
     "parent": "dev_tools",
     "type": "page",
     "name": "Demo Article",
-    "routePath": "/demo/article",
+    "routePath": "/dev_tools/demo/article",
     "routeName": "demo.article",
     "component": "article/index",
     "permission": "article:list",
-    "visible": false,
+    "visible": true,
     "sort": 10
   },
   "permissions": [
@@ -89,6 +89,6 @@
       "action": "del"
     }
   ],
-  "runtimeRegistered": false,
+  "runtimeRegistered": true,
   "requiresSchema": false
 }
