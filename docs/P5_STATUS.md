@@ -102,3 +102,46 @@ P5.2：示例模块安装/卸载后台操作闭环。建议让模块中心在开
 ## 下一步
 
 P5.3：模块中心安装状态回读。建议让模块中心读取当前 demo 模块的安装状态，直接显示已安装、未安装、权限数、菜单可见和运行时状态，减少人工判断。
+
+## P5.3 当前落地
+
+模块中心安装状态回读已建立：
+
+- 新增 `POST /api/gen/previewCode/status` 只读接口。
+- 状态接口复用 manifest 加载和本地库目标校验。
+- 状态响应包含 `status`、`snapshot`、`expected`、`missing`、`runtimeEnv`、`runtimeEnabled`、`runtimeRegistered` 和 `menuVisible`。
+- 模块中心内置模块清单阶段标记更新为 `P5.3`。
+- 模块中心增加 `刷新状态`、安装状态、安装快照和运行时状态列。
+- 进入模块中心自动回读状态，安装 apply 或卸载 apply 后自动刷新状态。
+
+详见 `docs/P5_MODULE_STATUS_READBACK.md`。
+
+## P5.3 验收标准
+
+- `go test ./generator/service/gen ./generator/routers/gen` 通过。
+- `cd admin && npm run type-check` 通过。
+- `cd admin && npm run build` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 本地 API 用 demo runtime 和 install/uninstall apply env 启动。
+- 浏览器能打开 `/module`。
+- 模块中心显示 `P5.3`、`已安装`、`权限 5/5`、`角色授权 5/5`、`已开启` 和 `MAKEADMIN_ENABLE_DEMO_MODULE=1`。
+- 卸载 apply 后模块中心状态变为 `未安装`，快照回到 `0/5`。
+- 重新安装 apply 后模块中心状态恢复为 `已安装`，快照恢复为 `5/5`。
+- 不创建 `ma_demo_article` 表、不改数据库 schema、不改 `.env`、不连接真实 zyai 业务库。
+
+## P5.3 验收结果
+
+- 已通过 `go test ./generator/service/gen ./generator/routers/gen`。
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `cd admin && npm run build`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 本地 API 已用 `MAKEADMIN_ENABLE_DEMO_MODULE=1 MAKEADMIN_ALLOW_MODULE_INSTALL_APPLY=1 MAKEADMIN_ALLOW_MODULE_UNINSTALL_APPLY=1 ./scripts/dev-api.sh` 启动，并确认注册 `/api/gen/previewCode/status`。
+- 已通过浏览器人工验证模块中心显示 `P5.3`、`已安装`、`权限 5/5`、`角色授权 5/5`、`已开启` 和 `MAKEADMIN_ENABLE_DEMO_MODULE=1`。
+- 已通过浏览器人工验证卸载 apply 后状态变为 `未安装`，快照显示 `权限 0/5` 和 `角色授权 0/5`。
+- 已通过浏览器人工验证重新安装 apply 后状态恢复为 `已安装`，快照显示 `权限 5/5` 和 `角色授权 5/5`。
+- `npm run build` 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有创建 `ma_demo_article` 表、没有改数据库 schema、没有改 `.env`、没有连接真实 zyai 业务库。
+
+## 下一步
+
+P5.4：模块中心安装状态筛选与多模块兼容。建议把状态回读从 Demo Article 单行扩展为多模块列表能力，支持 installed/partial/uninstalled 筛选，并为后续非 demo 模块接入统一展示。

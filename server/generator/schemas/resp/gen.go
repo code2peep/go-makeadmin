@@ -150,6 +150,26 @@ type ModuleManifestInstallSnapshotResp struct {
 	RolePermissions int64 `json:"rolePermissions" structs:"rolePermissions"` // 角色授权数
 }
 
+// ModuleManifestInstallStatusResp 模块清单安装状态
+type ModuleManifestInstallStatusResp struct {
+	Source            string                            `json:"source" structs:"source"`                       // manifest 来源
+	Manifest          ModuleManifestSummaryResp         `json:"manifest" structs:"manifest"`                   // manifest 摘要
+	TenantID          uint64                            `json:"tenantId" structs:"tenantId"`                   // 租户ID
+	RoleID            uint64                            `json:"roleId" structs:"roleId"`                       // 角色ID
+	Status            string                            `json:"status" structs:"status"`                       // 安装状态
+	Message           string                            `json:"message" structs:"message"`                     // 状态说明
+	RuntimeHint       string                            `json:"runtimeHint" structs:"runtimeHint"`             // 运行时提示
+	RuntimeEnv        string                            `json:"runtimeEnv" structs:"runtimeEnv"`               // 运行时环境变量
+	RuntimeRegistered bool                              `json:"runtimeRegistered" structs:"runtimeRegistered"` // manifest 是否声明运行时注册
+	RuntimeEnabled    bool                              `json:"runtimeEnabled" structs:"runtimeEnabled"`       // 当前运行时环境是否启用
+	MenuVisible       bool                              `json:"menuVisible" structs:"menuVisible"`             // 菜单是否可见
+	Summary           ModuleManifestApplySummaryResp    `json:"summary" structs:"summary"`                     // 模块摘要
+	Snapshot          ModuleManifestInstallSnapshotResp `json:"snapshot" structs:"snapshot"`                   // 当前快照
+	Expected          ModuleManifestInstallSnapshotResp `json:"expected" structs:"expected"`                   // 期望快照
+	Missing           ModuleManifestInstallSnapshotResp `json:"missing" structs:"missing"`                     // 缺失快照
+	Checks            []ModuleManifestInstallCheckResp  `json:"checks" structs:"checks"`                       // 检查结果
+}
+
 // ModuleManifestUninstallApplyResp 模块清单卸载写入门禁结果
 type ModuleManifestUninstallApplyResp struct {
 	Source      string                            `json:"source" structs:"source"`           // manifest 来源

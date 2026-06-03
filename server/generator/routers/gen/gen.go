@@ -29,6 +29,7 @@ func regGen(rg *gin.RouterGroup, group *core.GroupBase) error {
 		rg.POST("/editTable", handle.editTable)
 		rg.POST("/delTable", handle.delTable)
 		rg.GET("/previewCode", handle.previewCode)
+		rg.POST("/previewCode/status", handle.readModuleManifestInstallStatus)
 		rg.POST("/previewCode", handle.previewModuleManifest)
 		rg.PUT("/previewCode", handle.applyModuleManifestInstall)
 		rg.DELETE("/previewCode", handle.applyModuleManifestUninstall)
@@ -136,6 +137,16 @@ func (gh genHandler) previewModuleManifest(c *gin.Context) {
 		return
 	}
 	res, err := gh.srv.PreviewModuleManifest(previewReq)
+	response.CheckAndRespWithData(c, res, err)
+}
+
+// readModuleManifestInstallStatus 读取模块 manifest 当前安装状态
+func (gh genHandler) readModuleManifestInstallStatus(c *gin.Context) {
+	var previewReq req.ModuleManifestPreviewReq
+	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &previewReq)) {
+		return
+	}
+	res, err := gh.srv.ReadModuleManifestInstallStatus(previewReq)
 	response.CheckAndRespWithData(c, res, err)
 }
 

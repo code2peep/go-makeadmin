@@ -47,6 +47,7 @@ type IGenerateService interface {
 	DelTable(ids []uint) (e error)
 	PreviewCode(id uint) (res map[string]string, e error)
 	PreviewModuleManifest(previewReq req.ModuleManifestPreviewReq) (res resp.ModuleManifestPreviewResp, e error)
+	ReadModuleManifestInstallStatus(previewReq req.ModuleManifestPreviewReq) (res resp.ModuleManifestInstallStatusResp, e error)
 	ApplyModuleManifestInstall(applyReq req.ModuleManifestInstallApplyReq) (res resp.ModuleManifestInstallApplyResp, e error)
 	ApplyModuleManifestUninstall(applyReq req.ModuleManifestUninstallApplyReq) (res resp.ModuleManifestUninstallApplyResp, e error)
 	GenCode(tableName string) (e error)

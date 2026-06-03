@@ -236,7 +236,12 @@
             <template #header>
                 <div class="section-header">
                     <span class="card-title">内置模块清单</span>
-                    <el-tag type="success" size="small">P5.2</el-tag>
+                    <div class="section-actions">
+                        <el-tag type="success" size="small">P5.3</el-tag>
+                        <el-button type="primary" link :loading="statusLoading" @click="loadModuleStatuses">
+                            刷新状态
+                        </el-button>
+                    </div>
                 </div>
             </template>
             <el-table :data="modules" size="large">
@@ -245,6 +250,31 @@
                 <el-table-column label="表名" prop="table" min-width="160" />
                 <el-table-column label="运行时" prop="runtime" min-width="260" />
                 <el-table-column label="页面" prop="entry" min-width="160" />
+                <el-table-column label="安装" min-width="180">
+                    <template #default="{ row }">
+                        <div class="status-stack">
+                            <el-tag :type="row.installStatusType" size="small">
+                                {{ row.installStatus }}
+                            </el-tag>
+                            <span class="status-detail">{{ row.statusDetail }}</span>
+                        </div>
+                    </template>
+                </el-table-column>
+                <el-table-column label="快照" min-width="220">
+                    <template #default="{ row }">
+                        <span class="wrap-text">{{ row.snapshotText }}</span>
+                    </template>
+                </el-table-column>
+                <el-table-column label="运行时状态" min-width="220">
+                    <template #default="{ row }">
+                        <div class="status-stack">
+                            <el-tag :type="row.runtimeStatusType" size="small">
+                                {{ row.runtimeStatus }}
+                            </el-tag>
+                            <span class="status-detail">{{ row.runtimeDetail }}</span>
+                        </div>
+                    </template>
+                </el-table-column>
                 <el-table-column label="状态" width="120">
                     <template #default="{ row }">
                         <el-tag :type="row.statusType" size="small">{{ row.status }}</el-tag>
@@ -278,8 +308,11 @@ import {
     applyModuleManifestUninstall,
     normalizeModuleManifestApplyError,
     previewModuleManifest,
+    readModuleManifestInstallStatus,
     type ModuleManifestApplyResult,
+    type ModuleManifestApplySnapshotResult,
     type ModuleManifestInstallApplyParams,
+    type ModuleManifestInstallStatusResult,
     type ModuleManifestPreviewParams,
     type ModuleManifestPreviewResult,
     type ModuleManifestUninstallApplyParams
@@ -304,6 +337,7 @@ const installResult = ref<ModuleManifestApplyResult>()
 const uninstallResult = ref<ModuleManifestApplyResult>()
 const resultTab = ref<'install' | 'uninstall'>('install')
 const previewLoading = ref(false)
+const statusLoading = ref(false)
 const installApplyLoading = ref(false)
 const uninstallApplyLoading = ref(false)
 const planPreviewOpened = ref(false)
@@ -342,7 +376,24 @@ const capabilityCards = [
     }
 ]
 
-const modules = [
+type ModuleCenterModule = {
+    name: string
+    manifest: string
+    table: string
+    runtime: string
+    entry: string
+    status: string
+    statusType: string
+    installStatus: string
+    installStatusType: string
+    statusDetail: string
+    snapshotText: string
+    runtimeStatus: string
+    runtimeStatusType: string
+    runtimeDetail: string
+}
+
+const modules = reactive<ModuleCenterModule[]>([
     {
         name: 'Demo Article',
         manifest: 'examples/demo/manifest.json',
@@ -350,9 +401,16 @@ const modules = [
         runtime: 'MAKEADMIN_ENABLE_DEMO_MODULE=1',
         entry: '/demo/article',
         status: '可安装',
-        statusType: 'success'
+        statusType: 'success',
+        installStatus: '读取中',
+        installStatusType: 'info',
+        statusDetail: '-',
+        snapshotText: '-',
+        runtimeStatus: '读取中',
+        runtimeStatusType: 'info',
+        runtimeDetail: '-'
     }
-]
+])
 
 const manifestParams = (): ModuleManifestPreviewParams =>
     inputMode.value === 'path'
@@ -557,6 +615,113 @@ const goTo = (url: string) => {
     router.push(url)
 }
 
+const statusTypeMap: Record<string, string> = {
+    installed: 'success',
+    partial: 'warning',
+    uninstalled: 'info',
+    blocked: 'danger',
+    failed: 'danger'
+}
+
+const statusLabelMap: Record<string, string> = {
+    installed: '已安装',
+    partial: '部分安装',
+    uninstalled: '未安装',
+    blocked: '已阻断',
+    failed: '读取失败'
+}
+
+const moduleSnapshotValue = (
+    snapshot: ModuleManifestApplySnapshotResult | undefined,
+    key: keyof ModuleManifestApplySnapshotResult
+) => snapshot?.[key] || 0
+
+const moduleSnapshotText = (status: ModuleManifestInstallStatusResult) => {
+    const snapshot = status.snapshot || {}
+    const expected = status.expected || {}
+    return [
+        `权限 ${moduleSnapshotValue(snapshot, 'permissions')}/${moduleSnapshotValue(expected, 'permissions')}`,
+        `菜单 ${moduleSnapshotValue(snapshot, 'menus')}/${moduleSnapshotValue(expected, 'menus')}`,
+        `菜单权限 ${moduleSnapshotValue(snapshot, 'menuPermissions')}/${moduleSnapshotValue(expected, 'menuPermissions')}`,
+        `角色授权 ${moduleSnapshotValue(snapshot, 'rolePermissions')}/${moduleSnapshotValue(expected, 'rolePermissions')}`
+    ].join(' · ')
+}
+
+const runtimeStatusFrom = (status: ModuleManifestInstallStatusResult) => {
+    if (!status.runtimeRegistered) {
+        return {
+            label: '未注册',
+            type: 'warning',
+            detail: status.runtimeHint || '-'
+        }
+    }
+    if (status.runtimeEnv && !status.runtimeEnabled) {
+        return {
+            label: '未开启',
+            type: 'warning',
+            detail: `${status.runtimeEnv}=1`
+        }
+    }
+    return {
+        label: '已开启',
+        type: 'success',
+        detail: status.runtimeEnv ? `${status.runtimeEnv}=1` : status.runtimeHint || '-'
+    }
+}
+
+const applyModuleStatusToRow = (row: ModuleCenterModule, status: ModuleManifestInstallStatusResult) => {
+    const rawStatus = status.status || 'failed'
+    const runtimeStatus = runtimeStatusFrom(status)
+    row.installStatus = statusLabelMap[rawStatus] || rawStatus
+    row.installStatusType = statusTypeMap[rawStatus] || 'info'
+    row.statusDetail = status.message || '-'
+    row.snapshotText = moduleSnapshotText(status)
+    row.runtimeStatus = runtimeStatus.label
+    row.runtimeStatusType = runtimeStatus.type
+    row.runtimeDetail = runtimeStatus.detail
+}
+
+const moduleStatusErrorMessage = (error: unknown) => {
+    if (error instanceof Error && error.message) {
+        return error.message
+    }
+    if (typeof error === 'string' && error) {
+        return error
+    }
+    return 'status api failed'
+}
+
+const loadModuleStatuses = async () => {
+    if (statusLoading.value) {
+        return
+    }
+    statusLoading.value = true
+    try {
+        await Promise.all(
+            modules.map(async (item) => {
+                try {
+                    const status = await readModuleManifestInstallStatus({
+                        manifestPath: item.manifest,
+                        tenantId: formData.tenantId,
+                        roleId: formData.roleId
+                    })
+                    applyModuleStatusToRow(item, status)
+                } catch (error) {
+                    item.installStatus = '读取失败'
+                    item.installStatusType = 'danger'
+                    item.statusDetail = moduleStatusErrorMessage(error)
+                    item.snapshotText = '-'
+                    item.runtimeStatus = '未知'
+                    item.runtimeStatusType = 'info'
+                    item.runtimeDetail = '-'
+                }
+            })
+        )
+    } finally {
+        statusLoading.value = false
+    }
+}
+
 const handlePlanPreview = () => {
     const currentPreview = preview.value
     if (!hasCurrentPreview.value || !currentPreview) {
@@ -604,6 +769,7 @@ const handleInstallApply = async () => {
     } finally {
         installApplyLoading.value = false
     }
+    await loadModuleStatuses()
     resultTab.value = 'install'
 }
 
@@ -626,8 +792,13 @@ const handleUninstallApply = async () => {
     } finally {
         uninstallApplyLoading.value = false
     }
+    await loadModuleStatuses()
     resultTab.value = 'uninstall'
 }
+
+onMounted(() => {
+    loadModuleStatuses()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -704,6 +875,12 @@ const handleUninstallApply = async () => {
     justify-content: space-between;
 }
 
+.section-actions {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+}
+
 .section-label {
     color: #111827;
     font-size: 15px;
@@ -734,6 +911,20 @@ const handleUninstallApply = async () => {
 .wrap-text {
     overflow-wrap: anywhere;
     white-space: normal;
+}
+
+.status-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.status-detail {
+    color: #667085;
+    font-size: 12px;
+    line-height: 18px;
+    overflow-wrap: anywhere;
 }
 
 .module-center :deep(.el-table .cell) {

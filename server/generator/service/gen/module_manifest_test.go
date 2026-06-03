@@ -8,6 +8,7 @@ import (
 
 	"go-makeadmin/config"
 	"go-makeadmin/generator/schemas/req"
+	"go-makeadmin/generator/schemas/resp"
 )
 
 func TestPreviewModuleManifestFromInlineJSON(t *testing.T) {
@@ -137,6 +138,37 @@ func TestPreviewModuleManifestIncludesInstallPlan(t *testing.T) {
 	assertContains(t, res.Plan.UninstallSQL, "DELETE rp FROM `ma_role_permission`")
 	assertContains(t, res.Plan.UninstallSQL, "DELETE FROM `ma_menu`")
 	assertContains(t, res.Plan.RuntimeHint, "MAKEADMIN_ENABLE_DEMO_MODULE=1")
+}
+
+func TestModuleManifestInstallStatusHelpers(t *testing.T) {
+	manifest, _, err := loadModuleManifest(req.ModuleManifestPreviewReq{ManifestPath: "examples/demo/manifest.json"})
+	if err != nil {
+		t.Fatalf("load demo manifest: %v", err)
+	}
+
+	expected := moduleInstallExpectedSnapshot(manifest)
+	want := int64(len(manifest.Permissions))
+	if expected.Permissions != want || expected.RolePermissions != want || expected.Menus != 1 || expected.MenuPermissions != 1 {
+		t.Fatalf("unexpected expected snapshot: %+v", expected)
+	}
+	if moduleRuntimeEnv(moduleRuntimeHint(manifest)) != "MAKEADMIN_ENABLE_DEMO_MODULE" {
+		t.Fatalf("unexpected runtime env")
+	}
+	if moduleInstallStatus(expected, expected) != "installed" {
+		t.Fatalf("expected installed")
+	}
+	if moduleInstallStatus(expected, resp.ModuleManifestInstallSnapshotResp{}) != "uninstalled" {
+		t.Fatalf("expected uninstalled")
+	}
+	partial := expected
+	partial.RolePermissions--
+	if moduleInstallStatus(expected, partial) != "partial" {
+		t.Fatalf("expected partial")
+	}
+	missing := moduleInstallMissingSnapshot(expected, partial)
+	if missing.RolePermissions != 1 || moduleManifestSnapshotTotal(missing) != 1 {
+		t.Fatalf("unexpected missing snapshot: %+v", missing)
+	}
 }
 
 func TestPreviewModuleManifestRejectsUnsafePath(t *testing.T) {

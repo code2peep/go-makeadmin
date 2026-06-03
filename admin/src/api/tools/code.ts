@@ -138,6 +138,25 @@ export interface ModuleManifestApplyResult {
     after?: ModuleManifestApplySnapshotResult
 }
 
+export interface ModuleManifestInstallStatusResult {
+    source?: string
+    manifest?: ModuleManifestSummaryResult
+    tenantId?: number
+    roleId?: number
+    status?: string
+    message?: string
+    runtimeHint?: string
+    runtimeEnv?: string
+    runtimeRegistered?: boolean
+    runtimeEnabled?: boolean
+    menuVisible?: boolean
+    summary?: ModuleManifestApplySummaryResult
+    snapshot?: ModuleManifestApplySnapshotResult
+    expected?: ModuleManifestApplySnapshotResult
+    missing?: ModuleManifestApplySnapshotResult
+    checks?: ModuleManifestApplyCheckResult[]
+}
+
 export interface ModuleManifestApplyAuditActorResult {
     id?: number
     name?: string
@@ -351,6 +370,13 @@ export function previewModuleManifest(
     params: ModuleManifestPreviewParams
 ): Promise<ModuleManifestPreviewResult> {
     return request.post({ url: '/gen/previewCode', params })
+}
+
+// 模块 manifest 安装状态回读
+export function readModuleManifestInstallStatus(
+    params: ModuleManifestPreviewParams
+): Promise<ModuleManifestInstallStatusResult> {
+    return request.post({ url: '/gen/previewCode/status', params })
 }
 
 // 模块 manifest 安装写入门禁
