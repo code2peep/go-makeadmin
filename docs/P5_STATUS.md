@@ -595,3 +595,33 @@ P5.17：模块中心登录后人工验收清单压缩。建议把当前反复出
 ## 下一步
 
 P5.18：模块中心 registry UI 截图验收准备。建议补一个本地浏览器验收说明或脚本输出，明确默认 registry 和 broken fixture 两种启动方式下页面应出现的关键文字，等你登录后就能一次性人工确认。
+
+## P5.18 当前落地
+
+模块中心 registry UI 契约检查已建立：
+
+- 新增 `scripts/check-module-center-ui-contract.sh`。
+- 脚本检查模块中心阶段标识、registry checklist、helper、fixture 和 P5.18 文档关键字。
+- `scripts/check-module-tools-no-db.sh` 接入 `Module tools: module center UI contract`。
+- 模块中心阶段标识更新为 `P5.18`。
+- README 和 registry 文档索引增加 P5.18 入口。
+
+详见 `docs/P5_MODULE_CENTER_UI_CONTRACT.md`。
+
+## P5.18 验收标准
+
+- `scripts/check-module-center-ui-contract.sh` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 登录后模块中心可按默认 registry 和 broken fixture 关键字完成一次人工确认。
+
+## P5.18 验收结果
+
+- 已通过 `scripts/check-module-center-ui-contract.sh`。
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 全量验证里的前端 build 仍有 Rolldown 对 `@vueuse/core` pure annotation 的已知 warning，命令退出码为 0。
+- 浏览器当前位于登录页，旧 token 已过期；本机未设置 `ADMIN_PASSWORD` 或 `P1_SMOKE_ADMIN_PASSWORD`，因此登录后页面截图验收需要你重新登录后执行。
+
+## 下一步
+
+P5.19：模块中心 registry 进入真实模块接入前的冻结清单。建议整理当前 registry、manifest、UI、smoke 和人工验收边界，判断 P5 是否可以从 Demo Article 过渡到第二个示例模块或模块市场雏形。

@@ -33,7 +33,7 @@ python3 -m py_compile \
     scripts/module-uninstall-plan.py
 
 echo "==> Module tools: shell syntax"
-bash -n scripts/check-module-lifecycle-smoke.sh scripts/check-module-codegen.sh scripts/check-module-codegen-plan.sh scripts/check-module-codegen-apply-boundary.sh scripts/check-module-codegen-apply-smoke.sh scripts/check-module-codegen-readback-smoke.sh scripts/check-module-install-plan-preview.sh scripts/check-module-install-apply-boundary.sh scripts/check-module-install-apply-smoke.sh scripts/check-module-uninstall-apply-boundary.sh scripts/check-module-uninstall-apply-smoke.sh scripts/check-module-manifest-preview.sh scripts/check-module-scaffold-write-smoke.sh scripts/check-module-registry-smoke.sh
+bash -n scripts/check-module-lifecycle-smoke.sh scripts/check-module-codegen.sh scripts/check-module-codegen-plan.sh scripts/check-module-codegen-apply-boundary.sh scripts/check-module-codegen-apply-smoke.sh scripts/check-module-codegen-readback-smoke.sh scripts/check-module-install-plan-preview.sh scripts/check-module-install-apply-boundary.sh scripts/check-module-install-apply-smoke.sh scripts/check-module-uninstall-apply-boundary.sh scripts/check-module-uninstall-apply-smoke.sh scripts/check-module-manifest-preview.sh scripts/check-module-scaffold-write-smoke.sh scripts/check-module-registry-smoke.sh scripts/check-module-center-ui-contract.sh
 
 echo "==> Module tools: manifest validation"
 python3 scripts/check-module-manifests.py >/dev/null
@@ -57,6 +57,9 @@ scripts/check-module-manifest-preview.sh >/dev/null
 
 echo "==> Module tools: registry smoke"
 scripts/check-module-registry-smoke.sh >/dev/null
+
+echo "==> Module tools: module center UI contract"
+scripts/check-module-center-ui-contract.sh >/dev/null
 
 echo "==> Module tools: install plan preview"
 scripts/check-module-install-plan-preview.sh >/dev/null
