@@ -18,4 +18,9 @@ MAKEADMIN_ENABLE_BROKEN_MODULE_REGISTRY_FIXTURE=1 \
     -run '^TestListModuleRegistryIncludesBrokenFixtureWhenEnabled$' \
     -count=1
 
-echo "OK: module registry default and broken fixture contracts passed"
+echo "==> Module registry smoke: route response"
+GOPROXY="${GOPROXY:-https://goproxy.cn,direct}" go test ./generator/routers/gen \
+    -run '^TestListModuleRegistryRoute(DefaultResponse|BrokenFixtureResponse)$' \
+    -count=1
+
+echo "OK: module registry service and route contracts passed"
