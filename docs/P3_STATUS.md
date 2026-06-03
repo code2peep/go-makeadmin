@@ -611,6 +611,38 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 - 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
 - 本阶段没有修改后端写入门禁、没有新增后端接口、没有创建业务 schema、没有读取或修改 `.env`、没有新增权限 SQL。
 
+## P3.17 当前落地
+
+模块 manifest 前端 API 类型已收敛：
+
+- `admin/src/api/tools/code.ts` 新增 manifest preview、install apply、uninstall apply 请求参数类型。
+- `admin/src/api/tools/code.ts` 新增 manifest preview、apply result、plan、summary、check、snapshot 响应类型。
+- `previewModuleManifest` 返回 `Promise<ModuleManifestPreviewResult>`。
+- `applyModuleManifestInstall` 返回 `Promise<ModuleManifestApplyResult>`。
+- `applyModuleManifestUninstall` 返回 `Promise<ModuleManifestApplyResult>`。
+- `Manifest 预览` 弹窗使用 API 类型替换核心 `any`。
+- 快照表格行使用本地 `SnapshotRow` 类型。
+- 失败响应仍保留兜底对象，兼容 request 拦截器 reject 后端 `data` 的现有行为。
+
+详见 `docs/P3_MODULE_MANIFEST_API_TYPES.md`。
+
+## P3.17 验收标准
+
+- `cd admin && npm run type-check` 通过。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不修改请求 URL、method 或字段名，不修改 request 封装，不修改后端响应结构，不创建业务 schema，不读取或修改 `.env`，不新增权限 SQL。
+
+## P3.17 验收结果
+
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `scripts/check-module-tools-no-db.sh`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
+- 本阶段没有修改请求 URL、method 或字段名，没有修改 request 封装，没有修改后端响应结构，没有创建业务 schema，没有读取或修改 `.env`，没有新增权限 SQL。
+
 ## 下一步
 
-P3.17：模块 manifest 前端 API 类型收敛。建议为 preview、install apply、uninstall apply 响应补充前端类型，减少 `any` 扩散，不改变接口协议和后端写入逻辑。
+P3.18：模块 manifest apply 错误响应归一化。建议把安装/卸载 catch 中的后端业务失败、网络错误和兜底结果统一为可渲染结构，不改变接口协议和后端写入逻辑。

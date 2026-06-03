@@ -1,5 +1,143 @@
 import request from '@/utils/request'
 
+export interface ModuleManifestPreviewParams {
+    manifestPath?: string
+    manifestBody?: string
+    authorName?: string
+    tenantId?: number
+    roleId?: number
+}
+
+export interface ModuleManifestInstallApplyParams extends ModuleManifestPreviewParams {
+    confirmModule: string
+    confirmTenantId: number
+    confirmRoleId: number
+    confirmInstall: boolean
+    confirmSchemaRisk: boolean
+}
+
+export interface ModuleManifestUninstallApplyParams extends ModuleManifestPreviewParams {
+    confirmModule: string
+    confirmDelete: boolean
+}
+
+export interface GenTableBaseResult {
+    id?: number
+    tableName: string
+    tableComment?: string
+    entityName?: string
+    authorName?: string
+    remarks?: string
+    createTime?: string
+    updateTime?: string
+}
+
+export interface GenTableGenResult {
+    genTpl: string
+    genType?: number
+    genPath?: string
+    moduleName?: string
+    functionName: string
+    treePrimary?: string
+    treeParent?: string
+    treeName?: string
+    subTableName?: string
+    subTableFk?: string
+}
+
+export interface GenColumnResult {
+    id?: number
+    columnName: string
+    columnComment?: string
+    columnLength?: number
+    columnType?: string
+    goType: string
+    goField: string
+    isRequired?: number
+    isInsert?: number
+    isEdit?: number
+    isList?: number
+    isQuery?: number
+    queryType: string
+    htmlType: string
+    dictType: string
+    createTime?: string
+    updateTime?: string
+}
+
+export interface GenTableDetailResult {
+    base: GenTableBaseResult
+    gen: GenTableGenResult
+    column: GenColumnResult[]
+}
+
+export interface ModuleManifestSummaryResult {
+    module: string
+    entity: string
+    table: string
+    menuName: string
+    requiresSchema: boolean
+}
+
+export interface ModuleManifestPlanResult {
+    tenantId: number
+    roleId: number
+    registrySql: string
+    roleGrantSql: string
+    installSql: string
+    uninstallSql: string
+    runtimeHint: string
+}
+
+export interface ModuleManifestPreviewResult {
+    source: string
+    warning: string
+    manifest: ModuleManifestSummaryResult
+    detail: GenTableDetailResult
+    code: Record<string, string>
+    plan: ModuleManifestPlanResult
+}
+
+export interface ModuleManifestApplySummaryResult {
+    operation?: 'install' | 'uninstall' | string
+    module?: string
+    entity?: string
+    table?: string
+    routeName?: string
+    permissionCodes?: string[]
+    requiresSchema?: boolean
+    databaseScope?: string
+    runtimeHint?: string
+}
+
+export interface ModuleManifestApplyCheckResult {
+    name: string
+    status: string
+    message: string
+}
+
+export interface ModuleManifestApplySnapshotResult {
+    permissions?: number
+    menus?: number
+    menuPermissions?: number
+    rolePermissions?: number
+}
+
+export interface ModuleManifestApplyResult {
+    source?: string
+    manifest?: ModuleManifestSummaryResult
+    tenantId?: number
+    roleId?: number
+    status?: string
+    message?: string
+    requiredEnv?: string
+    plan?: ModuleManifestPlanResult
+    summary?: ModuleManifestApplySummaryResult
+    checks?: ModuleManifestApplyCheckResult[]
+    before?: ModuleManifestApplySnapshotResult
+    after?: ModuleManifestApplySnapshotResult
+}
+
 // 代码生成已选数据表列表接口
 export function generateTable(params: any) {
     return request.get({ url: '/gen/list', params })
@@ -51,17 +189,23 @@ export function generatePreview(params: any) {
 }
 
 // 模块 manifest 预览代码
-export function previewModuleManifest(params: any) {
+export function previewModuleManifest(
+    params: ModuleManifestPreviewParams
+): Promise<ModuleManifestPreviewResult> {
     return request.post({ url: '/gen/previewCode', params })
 }
 
 // 模块 manifest 安装写入门禁
-export function applyModuleManifestInstall(params: any) {
+export function applyModuleManifestInstall(
+    params: ModuleManifestInstallApplyParams
+): Promise<ModuleManifestApplyResult> {
     return request.request({ url: '/gen/previewCode', method: 'PUT', data: params })
 }
 
 // 模块 manifest 卸载写入门禁
-export function applyModuleManifestUninstall(params: any) {
+export function applyModuleManifestUninstall(
+    params: ModuleManifestUninstallApplyParams
+): Promise<ModuleManifestApplyResult> {
     return request.request({ url: '/gen/previewCode', method: 'DELETE', data: params })
 }
 

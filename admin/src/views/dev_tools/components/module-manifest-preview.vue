@@ -309,9 +309,20 @@ import CodePreview from './code-preview.vue'
 import {
     applyModuleManifestInstall,
     applyModuleManifestUninstall,
-    previewModuleManifest
+    previewModuleManifest,
+    type ModuleManifestApplyResult,
+    type ModuleManifestInstallApplyParams,
+    type ModuleManifestPreviewParams,
+    type ModuleManifestPreviewResult,
+    type ModuleManifestUninstallApplyParams
 } from '@/api/tools/code'
 import feedback from '@/utils/feedback'
+
+interface SnapshotRow {
+    name: string
+    before: number
+    after: number
+}
 
 const popupRef = shallowRef<InstanceType<typeof Popup>>()
 const inputMode = ref<'path' | 'body'>('path')
@@ -323,10 +334,10 @@ const formData = reactive({
     roleId: 1
 })
 
-const preview = ref<any>()
+const preview = ref<ModuleManifestPreviewResult>()
 const previewSnapshotKey = ref('')
-const installResult = ref<any>()
-const uninstallResult = ref<any>()
+const installResult = ref<ModuleManifestApplyResult>()
+const uninstallResult = ref<ModuleManifestApplyResult>()
 const resultTab = ref<'install' | 'uninstall'>('install')
 const previewLoading = ref(false)
 const installApplyLoading = ref(false)
@@ -342,7 +353,7 @@ const previewState = reactive({
     code: {} as Record<string, string>
 })
 
-const manifestParams = () =>
+const manifestParams = (): ModuleManifestPreviewParams =>
     inputMode.value === 'path'
         ? {
               manifestPath: formData.manifestPath,
@@ -446,18 +457,20 @@ const handlePreview = async () => {
 }
 
 const handleCodePreview = () => {
-    if (!hasCurrentPreview.value) {
+    const currentPreview = preview.value
+    if (!hasCurrentPreview.value || !currentPreview) {
         return
     }
-    previewState.code = preview.value?.code || {}
+    previewState.code = currentPreview.code
     previewState.show = true
 }
 
 const handlePlanPreview = () => {
-    if (!hasCurrentPreview.value) {
+    const currentPreview = preview.value
+    if (!hasCurrentPreview.value || !currentPreview) {
         return
     }
-    const plan = preview.value?.plan || {}
+    const plan = currentPreview.plan
     previewState.code = {
         'registry.sql': plan.registrySql || '',
         'role_grant.sql': plan.roleGrantSql || '',
@@ -471,7 +484,7 @@ const handleInstallGate = async () => {
     if (!canInstallApply.value) {
         return
     }
-    const params = {
+    const params: ModuleManifestInstallApplyParams = {
         ...manifestParams(),
         confirmModule: confirmData.confirmModule,
         confirmTenantId: formData.tenantId,
@@ -485,7 +498,7 @@ const handleInstallGate = async () => {
         installResult.value = await applyModuleManifestInstall(params)
         feedback.msgSuccess('安装执行完成')
     } catch (error) {
-        installResult.value = error || {
+        installResult.value = (error as ModuleManifestApplyResult) || {
             message: '安装写入已阻断',
             checks: []
         }
@@ -499,7 +512,7 @@ const handleUninstallGate = async () => {
     if (!canUninstallApply.value) {
         return
     }
-    const params = {
+    const params: ModuleManifestUninstallApplyParams = {
         ...manifestParams(),
         confirmModule: confirmData.confirmModule,
         confirmDelete: confirmData.confirmDelete
@@ -510,7 +523,7 @@ const handleUninstallGate = async () => {
         uninstallResult.value = await applyModuleManifestUninstall(params)
         feedback.msgSuccess('卸载执行完成')
     } catch (error) {
-        uninstallResult.value = error || {
+        uninstallResult.value = (error as ModuleManifestApplyResult) || {
             message: '卸载写入已阻断',
             checks: []
         }
@@ -520,17 +533,20 @@ const handleUninstallGate = async () => {
     resultTab.value = 'uninstall'
 }
 
-const resultTitle = (result: any, fallback: string) => result?.message || fallback
+const resultTitle = (result: ModuleManifestApplyResult | undefined, fallback: string) =>
+    result?.message || fallback
 
-const resultAlertType = (result: any) => (result?.status === 'applied' ? 'success' : 'warning')
+const resultAlertType = (result: ModuleManifestApplyResult | undefined) =>
+    result?.status === 'applied' ? 'success' : 'warning'
 
-const permissionCodes = (result: any) => result?.summary?.permissionCodes || []
+const permissionCodes = (result: ModuleManifestApplyResult | undefined) =>
+    result?.summary?.permissionCodes || []
 
-const hasSnapshot = (result: any) =>
+const hasSnapshot = (result: ModuleManifestApplyResult | undefined) =>
     result?.status === 'applied' ||
     snapshotRows(result).some((row) => Number(row.before) > 0 || Number(row.after) > 0)
 
-const snapshotRows = (result: any) => {
+const snapshotRows = (result: ModuleManifestApplyResult | undefined): SnapshotRow[] => {
     const before = result?.before || {}
     const after = result?.after || {}
     return [
