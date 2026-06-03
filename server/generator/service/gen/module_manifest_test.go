@@ -232,7 +232,7 @@ func TestModuleManifestInstallApplyGateRequiresConfirmations(t *testing.T) {
 	assertContains(t, err.Error(), "no database access was attempted")
 }
 
-func TestModuleManifestInstallApplyGateBlocksExecutorWhenConfirmed(t *testing.T) {
+func TestModuleManifestInstallApplyGateRequiresDatabaseWhenConfirmed(t *testing.T) {
 	t.Setenv(moduleManifestInstallApplyEnv, "1")
 	srv := generateService{}
 	tenantID := uint64(0)
@@ -246,15 +246,15 @@ func TestModuleManifestInstallApplyGateBlocksExecutorWhenConfirmed(t *testing.T)
 		ConfirmInstall:  true,
 	})
 	if err == nil {
-		t.Fatalf("expected P3.10 executor boundary to fail")
+		t.Fatalf("expected missing database to fail")
 	}
-	assertContains(t, err.Error(), "module install apply executor is not open in P3.10")
+	assertContains(t, err.Error(), "module install apply requires configured database")
 	assertContains(t, err.Error(), "no database access was attempted")
 	if res.Manifest.Module != "article" || res.Plan.InstallSQL == "" {
 		t.Fatalf("unexpected install gate response: %+v", res)
 	}
-	if res.Checks[len(res.Checks)-1].Name != "executor" || res.Checks[len(res.Checks)-1].Status != "blocked" {
-		t.Fatalf("unexpected executor check: %+v", res.Checks)
+	if res.Checks[len(res.Checks)-1].Name != "database" || res.Checks[len(res.Checks)-1].Status != "failed" {
+		t.Fatalf("unexpected database check: %+v", res.Checks)
 	}
 }
 

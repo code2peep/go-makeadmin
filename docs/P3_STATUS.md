@@ -393,4 +393,49 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 
 ## 下一步
 
-P3.11：后台模块安装受控本地写入 smoke。建议在 P3.10 门禁稳定后，开放仅限本地 `go_makeadmin` 的 demo article 安装 smoke，验证权限、菜单、菜单权限和角色授权写入的幂等与清理残留。
+## P3.11 当前落地
+
+后台模块安装受控本地写入 smoke 已建立：
+
+- `PUT /gen/previewCode` 在 P3.10 门禁基础上开放本地受控写入。
+- 写入仍必须显式设置 `MAKEADMIN_ALLOW_MODULE_INSTALL_APPLY=1`。
+- 写入前会校验数据库目标必须是本地 `go_makeadmin`。
+- 写入前后返回 `permissions`、`menus`、`menuPermissions`、`rolePermissions` 快照。
+- 写入在单事务内完成。
+- 权限按 `ma_permission.code` 幂等。
+- 菜单按 `ma_menu.route_name + delete_time=0` 幂等。
+- 菜单权限按 `menu_id + permission_id` 幂等。
+- 角色授权按 `tenant_id + role_id + permission_id` 幂等。
+- 目标角色不存在时跳过角色授权，不影响菜单和权限注册。
+- 新增 `TestModuleManifestInstallApplyLocalSmoke`。
+- 新增 `scripts/check-module-install-apply-smoke.sh`。
+- `scripts/check-module-tools-no-db.sh` 已覆盖 install apply smoke 缺环境变量门禁。
+
+详见 `docs/P3_MODULE_INSTALL_APPLY.md`。
+
+## P3.11 验收标准
+
+- `scripts/check-module-install-apply-boundary.sh` 通过。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `MAKEADMIN_ALLOW_MODULE_INSTALL_SMOKE_WRITE=1 scripts/check-module-install-apply-smoke.sh` 通过。
+- `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./generator/service/gen -run 'TestModuleManifestInstallApplyGate|TestModuleManifestInstallApplyLocalSmoke' -count=1` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- smoke 清理后 demo article 注册行和角色授权残留为 0。
+- 不执行卸载接口、不创建业务 schema、不读取或修改 `.env`、不新增权限 SQL、不连接业务项目数据库。
+
+## P3.11 验收结果
+
+- 已通过 `scripts/check-module-install-apply-boundary.sh`。
+- 已通过 `scripts/check-module-tools-no-db.sh`，且 no-db guard 已覆盖 install apply smoke 缺环境变量门禁。
+- 已通过 `MAKEADMIN_ALLOW_MODULE_INSTALL_SMOKE_WRITE=1 scripts/check-module-install-apply-smoke.sh`。
+- smoke 已完成第一次安装、第二次幂等安装、最终清理和残留检查。
+- 已通过 `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./generator/service/gen -run 'TestModuleManifestInstallApplyGate|TestModuleManifestInstallApplyLocalSmoke' -count=1`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有执行卸载接口、没有创建业务 schema、没有读取或修改 `.env`、没有新增权限 SQL、没有连接业务项目数据库。
+
+## 下一步
+
+P3.12：后台模块卸载写入门禁与确认参数。建议先做只门禁不写库的后台卸载入口，覆盖环境变量、模块名、删除确认和结构化检查结果，再进入受控卸载 smoke。

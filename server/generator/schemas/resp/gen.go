@@ -115,13 +115,23 @@ type ModuleManifestInstallCheckResp struct {
 
 // ModuleManifestInstallApplyResp 模块清单安装写入门禁结果
 type ModuleManifestInstallApplyResp struct {
-	Source      string                           `json:"source" structs:"source"`           // manifest 来源
-	Manifest    ModuleManifestSummaryResp        `json:"manifest" structs:"manifest"`       // manifest 摘要
-	TenantID    uint64                           `json:"tenantId" structs:"tenantId"`       // 租户ID
-	RoleID      uint64                           `json:"roleId" structs:"roleId"`           // 角色ID
-	Status      string                           `json:"status" structs:"status"`           // 门禁状态
-	Message     string                           `json:"message" structs:"message"`         // 门禁说明
-	RequiredEnv string                           `json:"requiredEnv" structs:"requiredEnv"` // 写入环境变量
-	Plan        ModuleManifestPlanResp           `json:"plan" structs:"plan"`               // 安装计划预览
-	Checks      []ModuleManifestInstallCheckResp `json:"checks" structs:"checks"`           // 检查结果
+	Source      string                            `json:"source" structs:"source"`           // manifest 来源
+	Manifest    ModuleManifestSummaryResp         `json:"manifest" structs:"manifest"`       // manifest 摘要
+	TenantID    uint64                            `json:"tenantId" structs:"tenantId"`       // 租户ID
+	RoleID      uint64                            `json:"roleId" structs:"roleId"`           // 角色ID
+	Status      string                            `json:"status" structs:"status"`           // 门禁状态
+	Message     string                            `json:"message" structs:"message"`         // 门禁说明
+	RequiredEnv string                            `json:"requiredEnv" structs:"requiredEnv"` // 写入环境变量
+	Plan        ModuleManifestPlanResp            `json:"plan" structs:"plan"`               // 安装计划预览
+	Checks      []ModuleManifestInstallCheckResp  `json:"checks" structs:"checks"`           // 检查结果
+	Before      ModuleManifestInstallSnapshotResp `json:"before" structs:"before"`           // 写入前快照
+	After       ModuleManifestInstallSnapshotResp `json:"after" structs:"after"`             // 写入后快照
+}
+
+// ModuleManifestInstallSnapshotResp 模块清单安装写入快照
+type ModuleManifestInstallSnapshotResp struct {
+	Permissions     int64 `json:"permissions" structs:"permissions"`         // 权限数
+	Menus           int64 `json:"menus" structs:"menus"`                     // 菜单数
+	MenuPermissions int64 `json:"menuPermissions" structs:"menuPermissions"` // 菜单权限关联数
+	RolePermissions int64 `json:"rolePermissions" structs:"rolePermissions"` // 角色授权数
 }
