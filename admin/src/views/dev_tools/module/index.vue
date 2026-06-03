@@ -87,7 +87,43 @@
                     {{ preview.detail.gen.functionName }}
                 </el-descriptions-item>
                 <el-descriptions-item label="模板">{{ preview.detail.gen.genTpl }}</el-descriptions-item>
-                <el-descriptions-item label="运行时">{{ preview.plan.runtimeHint }}</el-descriptions-item>
+                <el-descriptions-item label="运行时">
+                    <span class="wrap-text">{{ preview.plan.runtimeHint }}</span>
+                </el-descriptions-item>
+            </el-descriptions>
+
+            <div class="section-label">模块状态</div>
+            <el-descriptions :column="2" border>
+                <el-descriptions-item label="预览">
+                    <el-tag :type="previewStatusType" size="small">{{ previewStatus }}</el-tag>
+                </el-descriptions-item>
+                <el-descriptions-item label="安装">
+                    <el-tag :type="installStatusType" size="small">{{ installStatus }}</el-tag>
+                </el-descriptions-item>
+                <el-descriptions-item label="卸载">
+                    <el-tag :type="uninstallStatusType" size="small">{{ uninstallStatus }}</el-tag>
+                </el-descriptions-item>
+                <el-descriptions-item label="写入门禁" :span="2">
+                    <div class="gate-tags">
+                        <el-tag v-if="!writeGateEnvList.length" :type="writeGateStatusType" size="small">
+                            {{ writeGateStatus }}
+                        </el-tag>
+                        <template v-else>
+                            <el-tag
+                                v-for="env in writeGateEnvList"
+                                :key="env"
+                                class="gate-tag"
+                                type="warning"
+                                size="small"
+                            >
+                                {{ env }}
+                            </el-tag>
+                        </template>
+                    </div>
+                </el-descriptions-item>
+                <el-descriptions-item label="运行时" :span="2">
+                    <span class="wrap-text">{{ preview.plan.runtimeHint }}</span>
+                </el-descriptions-item>
             </el-descriptions>
 
             <el-form class="apply-form" :model="confirmData" label-width="90px">
@@ -175,6 +211,17 @@
                 </el-tabs>
             </div>
 
+            <div class="section-label">人工测试清单</div>
+            <el-table :data="testChecklistRows" size="large">
+                <el-table-column label="项目" prop="name" min-width="130" />
+                <el-table-column label="状态" min-width="120">
+                    <template #default="{ row }">
+                        <el-tag :type="row.statusType" size="small">{{ row.status }}</el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column label="结果" prop="detail" min-width="280" />
+            </el-table>
+
             <el-table class="mt-4" :data="preview.detail.column" size="large">
                 <el-table-column label="字段" prop="columnName" min-width="130" />
                 <el-table-column label="Go 字段" prop="goField" min-width="120" />
@@ -189,7 +236,7 @@
             <template #header>
                 <div class="section-header">
                     <span class="card-title">内置模块清单</span>
-                    <el-tag type="success" size="small">P4.4</el-tag>
+                    <el-tag type="success" size="small">P4.5</el-tag>
                 </div>
             </template>
             <el-table :data="modules" size="large">
@@ -256,6 +303,8 @@ const resultTab = ref<'install' | 'uninstall'>('install')
 const previewLoading = ref(false)
 const installApplyLoading = ref(false)
 const uninstallApplyLoading = ref(false)
+const planPreviewOpened = ref(false)
+const codePreviewOpened = ref(false)
 const confirmData = reactive({
     confirmModule: '',
     confirmInstall: false,
@@ -356,6 +405,90 @@ const canUninstallApply = computed(
         !isApplyLoading.value
 )
 
+const applyStatusText = (result?: ModuleManifestApplyResult) => result?.status || '未执行'
+
+const applyStatusType = (status?: string) => {
+    if (status === 'applied') {
+        return 'success'
+    }
+    if (status === 'blocked') {
+        return 'warning'
+    }
+    return 'info'
+}
+
+const previewStatus = computed(() => (hasCurrentPreview.value ? '已生成' : '未生成'))
+const previewStatusType = computed(() => (hasCurrentPreview.value ? 'success' : 'info'))
+const installStatus = computed(() => applyStatusText(installResult.value))
+const installStatusType = computed(() => applyStatusType(installResult.value?.status))
+const uninstallStatus = computed(() => applyStatusText(uninstallResult.value))
+const uninstallStatusType = computed(() => applyStatusType(uninstallResult.value?.status))
+
+const writeGateEnvList = computed(() =>
+    Array.from(
+        new Set([installResult.value?.requiredEnv, uninstallResult.value?.requiredEnv].filter(Boolean))
+    )
+)
+
+const writeGateStatus = computed(() => {
+    if (writeGateEnvList.value.length) {
+        return '门禁阻断'
+    }
+    if (installResult.value?.status === 'applied' || uninstallResult.value?.status === 'applied') {
+        return '已执行本地写入'
+    }
+    return '未执行'
+})
+
+const writeGateStatusType = computed(() => {
+    if (installResult.value?.requiredEnv || uninstallResult.value?.requiredEnv) {
+        return 'warning'
+    }
+    if (installResult.value?.status === 'applied' || uninstallResult.value?.status === 'applied') {
+        return 'success'
+    }
+    return 'info'
+})
+
+const testChecklistRows = computed(() => [
+    {
+        name: 'Manifest 预览',
+        status: hasCurrentPreview.value ? '通过' : '待执行',
+        statusType: hasCurrentPreview.value ? 'success' : 'info',
+        detail: preview.value?.source || '-'
+    },
+    {
+        name: '安装计划',
+        status: planPreviewOpened.value ? '已打开' : '待打开',
+        statusType: planPreviewOpened.value ? 'success' : 'info',
+        detail: preview.value?.plan?.runtimeHint || '-'
+    },
+    {
+        name: '代码预览',
+        status: codePreviewOpened.value ? '已打开' : '待打开',
+        statusType: codePreviewOpened.value ? 'success' : 'info',
+        detail: preview.value ? `${Object.keys(preview.value.code || {}).length} files` : '-'
+    },
+    {
+        name: '安装执行',
+        status: installStatus.value,
+        statusType: installStatusType.value,
+        detail: installResult.value?.message || installResult.value?.requiredEnv || '-'
+    },
+    {
+        name: '卸载执行',
+        status: uninstallStatus.value,
+        statusType: uninstallStatusType.value,
+        detail: uninstallResult.value?.message || uninstallResult.value?.requiredEnv || '-'
+    },
+    {
+        name: '审计预览',
+        status: installResult.value || uninstallResult.value ? '可展开' : '待结果',
+        statusType: installResult.value || uninstallResult.value ? 'success' : 'info',
+        detail: installResult.value || uninstallResult.value ? 'apply result' : '-'
+    }
+])
+
 const resetConfirmState = (module = '') => {
     confirmData.confirmModule = module
     confirmData.confirmInstall = false
@@ -369,11 +502,17 @@ const clearApplyResults = () => {
     resultTab.value = 'install'
 }
 
+const clearTestState = () => {
+    planPreviewOpened.value = false
+    codePreviewOpened.value = false
+    clearApplyResults()
+}
+
 const clearPreviewState = () => {
     preview.value = undefined
     previewSnapshotKey.value = ''
     resetConfirmState()
-    clearApplyResults()
+    clearTestState()
 }
 
 watch(manifestInputKey, () => {
@@ -397,7 +536,7 @@ const handlePreview = async () => {
         preview.value = data
         previewSnapshotKey.value = snapshotKey
         resetConfirmState(preview.value?.manifest?.module || '')
-        clearApplyResults()
+        clearTestState()
         feedback.msgSuccess('预览生成成功')
     } finally {
         previewLoading.value = false
@@ -422,6 +561,7 @@ const handlePlanPreview = () => {
         'install.sql': plan.installSql || '',
         'uninstall.sql': plan.uninstallSql || ''
     }
+    planPreviewOpened.value = true
     previewState.show = true
 }
 
@@ -430,6 +570,7 @@ const handleCodePreview = () => {
         return
     }
     previewState.code = preview.value.code
+    codePreviewOpened.value = true
     previewState.show = true
 }
 
@@ -553,6 +694,47 @@ const handleUninstallApply = async () => {
     align-items: center;
     display: flex;
     justify-content: space-between;
+}
+
+.section-label {
+    color: #111827;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 22px;
+    margin: 18px 0 10px;
+}
+
+.gate-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 0;
+}
+
+.gate-tag {
+    height: auto;
+    max-width: 100%;
+    padding: 4px 8px;
+
+    :deep(.el-tag__content) {
+        line-height: 18px;
+        overflow-wrap: anywhere;
+        white-space: normal;
+    }
+}
+
+.wrap-text {
+    overflow-wrap: anywhere;
+    white-space: normal;
+}
+
+.module-center :deep(.el-table .cell) {
+    overflow-wrap: anywhere;
+}
+
+.module-center :deep(.el-descriptions__label) {
+    min-width: 76px;
+    white-space: nowrap;
 }
 
 .preview-actions {
