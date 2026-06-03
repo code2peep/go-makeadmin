@@ -131,3 +131,48 @@ P4.3：模块中心预览结果页面化。建议把 manifest 预览结果从弹
 ## 下一步
 
 P4.4：模块中心安装/卸载 apply 结果内嵌化。建议把安装执行、卸载执行、apply 结果摘要和审计预览从弹窗迁到模块中心页面状态。
+
+## P4.4 当前落地
+
+模块中心 apply 结果已内嵌化：
+
+- 模块中心复用已有 install/uninstall apply API，不新增后端接口。
+- 预览结果区新增 `确认模块`、`安装写入`、`Schema 风险`、`删除确认`。
+- 预览结果区新增 `安装执行` 和 `卸载执行`。
+- 安装和卸载结果以内嵌 tabs 展示。
+- apply 结果复用 `module-manifest-apply-result.vue`，包含状态、环境变量、权限、快照、检查项和审计预览。
+- manifest 输入变化时会清空旧预览和旧 apply 结果，避免展示过期结果。
+
+详见 `docs/P4_MODULE_CENTER_APPLY_RESULT.md`。
+
+## P4.4 验收标准
+
+- `cd admin && npm run type-check` 通过。
+- `cd admin && npm run build` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 浏览器能打开 `http://127.0.0.1:5173/module`。
+- 模块中心能在页面内生成 demo manifest 预览。
+- 勾选 `安装写入` 后，`安装执行` 能在页面内展示 apply 结果。
+- 安装结果能展开 `审计预览`。
+- 勾选 `删除确认` 后，`卸载执行` 能在页面内展示 apply 结果。
+- 不开启写入 env、不实际写入数据库、不改数据库 schema、不改 `.env`、不连接真实 zyai 业务库。
+
+## P4.4 验收结果
+
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `cd admin && npm run build`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
+- 已通过浏览器人工验证 `http://127.0.0.1:5173/module`。
+- 已通过浏览器人工验证 demo manifest 预览生成。
+- 已通过浏览器人工验证 `安装执行` 返回页面内 `安装结果`。
+- 已通过浏览器人工验证 `安装结果` 的 `审计预览` 展开。
+- 已通过浏览器人工验证 `卸载执行` 返回页面内 `卸载结果`。
+- 本地未开启 `MAKEADMIN_ALLOW_MODULE_INSTALL_APPLY=1` 和 `MAKEADMIN_ALLOW_MODULE_UNINSTALL_APPLY=1`，安装和卸载 apply 均返回门禁阻断结果，未访问数据库。
+- `npm run build` 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有改数据库 schema、没有改 `.env`、没有连接真实 zyai 业务库。
+
+## 下一步
+
+P4.5：模块中心安装状态探测与测试清单。建议增加模块当前安装状态、门禁条件状态和人工测试步骤，让模块中心成为早期框架验收的主操作台。
