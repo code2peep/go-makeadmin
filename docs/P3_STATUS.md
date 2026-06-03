@@ -228,6 +228,47 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有创建业务 schema、没有读取或修改 `.env`、没有连接业务项目数据库。
 
+## P3.7 当前落地
+
+生成器配置回读与模板生成闭环已建立：
+
+- 新增 `TestCodegenConfigReadbackAndTemplateGenerationSmoke`。
+- 新增 `scripts/check-module-codegen-readback-smoke.sh`。
+- smoke 必须显式设置 `MAKEADMIN_ALLOW_MODULE_CODEGEN_READBACK_WRITE=1`。
+- smoke 会先确认本地没有 `tenant_id=0 + ma_demo_article + delete_time=0` live codegen 表配置。
+- smoke 复用 P3.6 的受控 apply，把 demo manifest 写入 `ma_codegen_table` 和 `ma_codegen_column`。
+- 测试会通过生成器服务回读 `List`、`Detail`、`PreviewCode` 和 `DownloadCode`。
+- `Detail` 验证旧 `/gen/*` 兼容响应字段仍保持可用。
+- `PreviewCode` 验证 Go 和 Vue 模板可以由回读配置渲染。
+- `DownloadCode` 验证 zip 中包含按模块目录组织的生成文件。
+- smoke 完成后清理本次列配置并软删本次表配置，确认 live 残留为 0。
+- `scripts/check-module-tools-no-db.sh` 已覆盖 readback smoke 缺环境变量门禁。
+
+详见 `docs/P3_MODULE_CODEGEN_READBACK.md`。
+
+## P3.7 验收标准
+
+- `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./generator/service/gen -run 'TestCodegenConfigReadbackAndTemplateGenerationSmoke|TestCodegenTableLegacyConversionPreservesOldFields|TestCodegenColumnLegacyConversionPreservesOldFields' -count=1` 通过。
+- `bash -n scripts/check-module-codegen-readback-smoke.sh scripts/check-module-tools-no-db.sh` 通过。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `MAKEADMIN_ALLOW_MODULE_CODEGEN_READBACK_WRITE=1 scripts/check-module-codegen-readback-smoke.sh` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- smoke 清理后 `ma_demo_article` live codegen 表配置残留为 0。
+- 不创建业务 schema、不读取或修改 `.env`、不连接业务项目数据库。
+
+## P3.7 验收结果
+
+- 已通过 `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./generator/service/gen -run 'TestCodegenConfigReadbackAndTemplateGenerationSmoke|TestCodegenTableLegacyConversionPreservesOldFields|TestCodegenColumnLegacyConversionPreservesOldFields' -count=1`。
+- 已通过 `bash -n scripts/check-module-codegen-readback-smoke.sh scripts/check-module-tools-no-db.sh`。
+- 已通过 `scripts/check-module-tools-no-db.sh`，且 no-db guard 已执行 readback smoke 缺环境变量门禁。
+- 已通过 `MAKEADMIN_ALLOW_MODULE_CODEGEN_READBACK_WRITE=1 scripts/check-module-codegen-readback-smoke.sh`。
+- 已确认清理后 `tenant_id=0 + ma_demo_article + delete_time=0` live codegen 表配置残留为 0。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有创建业务 schema、没有读取或修改 `.env`、没有连接业务项目数据库。
+
 ## 下一步
 
-P3.7：生成器配置回读与模板生成闭环。该任务验证写入后的 `ma_codegen_*` 能被现有生成器服务按旧 `/gen/*` 兼容形状回读并驱动模板生成。
+P3.8：后台生成器页面与模块 manifest 的操作闭环。建议把当前脚本级闭环继续向后台页面收敛，让模块 manifest 能在管理端生成器界面完成回读、预览和下载路径的人工验收。
