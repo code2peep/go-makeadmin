@@ -301,7 +301,7 @@ func TestModuleManifestUninstallApplyGateRequiresConfirmations(t *testing.T) {
 	assertContains(t, err.Error(), "no database access was attempted")
 }
 
-func TestModuleManifestUninstallApplyGateBlocksExecutorWhenConfirmed(t *testing.T) {
+func TestModuleManifestUninstallApplyGateRequiresDatabaseWhenConfirmed(t *testing.T) {
 	t.Setenv(moduleManifestUninstallApplyEnv, "1")
 	srv := generateService{}
 
@@ -311,15 +311,15 @@ func TestModuleManifestUninstallApplyGateBlocksExecutorWhenConfirmed(t *testing.
 		ConfirmDelete: true,
 	})
 	if err == nil {
-		t.Fatalf("expected P3.12 executor boundary to fail")
+		t.Fatalf("expected missing database to fail")
 	}
-	assertContains(t, err.Error(), "module uninstall apply executor is not open in P3.12")
+	assertContains(t, err.Error(), "module uninstall apply requires configured database")
 	assertContains(t, err.Error(), "no database access was attempted")
 	if res.Manifest.Module != "article" || res.Plan.UninstallSQL == "" {
 		t.Fatalf("unexpected uninstall gate response: %+v", res)
 	}
-	if res.Checks[len(res.Checks)-1].Name != "executor" || res.Checks[len(res.Checks)-1].Status != "blocked" {
-		t.Fatalf("unexpected executor check: %+v", res.Checks)
+	if res.Checks[len(res.Checks)-1].Name != "database" || res.Checks[len(res.Checks)-1].Status != "failed" {
+		t.Fatalf("unexpected database check: %+v", res.Checks)
 	}
 }
 

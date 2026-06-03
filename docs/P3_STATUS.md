@@ -475,4 +475,46 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 
 ## 下一步
 
-P3.13：后台模块卸载受控本地删除 smoke。建议在 P3.12 门禁稳定后，开放仅限本地 `go_makeadmin` 的 demo article 卸载 smoke，验证删除顺序、幂等 no-op 和残留为 0。
+## P3.13 当前落地
+
+后台模块卸载受控本地删除 smoke 已建立：
+
+- `DELETE /gen/previewCode` 在 P3.12 门禁基础上开放本地受控删除。
+- 删除仍必须显式设置 `MAKEADMIN_ALLOW_MODULE_UNINSTALL_APPLY=1`。
+- 删除前会校验数据库目标必须是本地 `go_makeadmin`。
+- 删除前后返回 `permissions`、`menus`、`menuPermissions`、`rolePermissions` 快照。
+- 删除在单事务内完成。
+- 删除顺序为角色授权、菜单权限、菜单、权限。
+- 删除范围只来自 manifest 的 permission codes 和 `menu.routeName`。
+- 新增 `TestModuleManifestUninstallApplyLocalSmoke`。
+- 新增 `scripts/check-module-uninstall-apply-smoke.sh`。
+- `scripts/check-module-tools-no-db.sh` 已覆盖 uninstall apply smoke 缺环境变量门禁。
+
+详见 `docs/P3_MODULE_UNINSTALL_APPLY.md`。
+
+## P3.13 验收标准
+
+- `scripts/check-module-uninstall-apply-boundary.sh` 通过。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `MAKEADMIN_ALLOW_MODULE_UNINSTALL_SMOKE_WRITE=1 scripts/check-module-uninstall-apply-smoke.sh` 通过。
+- `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./generator/service/gen -run 'TestModuleManifestUninstallApplyGate|TestModuleManifestUninstallApplyLocalSmoke' -count=1` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- smoke 清理后 demo article 注册行和角色授权残留为 0。
+- 不删除业务表、不创建业务 schema、不读取或修改 `.env`、不新增权限 SQL、不连接业务项目数据库。
+
+## P3.13 验收结果
+
+- 已通过 `scripts/check-module-uninstall-apply-boundary.sh`。
+- 已通过 `scripts/check-module-tools-no-db.sh`，且 no-db guard 已覆盖 uninstall apply smoke 缺环境变量门禁。
+- 已通过 `MAKEADMIN_ALLOW_MODULE_UNINSTALL_SMOKE_WRITE=1 scripts/check-module-uninstall-apply-smoke.sh`。
+- smoke 已完成安装种子、第一次卸载、第二次 no-op 卸载和最终残留检查。
+- 已通过 `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./generator/service/gen -run 'TestModuleManifestUninstallApplyGate|TestModuleManifestUninstallApplyLocalSmoke' -count=1`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有删除业务表、没有创建业务 schema、没有读取或修改 `.env`、没有新增权限 SQL、没有连接业务项目数据库。
+
+## 下一步
+
+P3.14：后台模块安装/卸载门禁结果页面闭环。建议把 P3.11/P3.13 的结构化结果完整接入 `Manifest 预览` 弹窗，展示安装和卸载的门禁检查、写入前后快照和失败原因。

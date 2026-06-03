@@ -138,11 +138,13 @@ type ModuleManifestInstallSnapshotResp struct {
 
 // ModuleManifestUninstallApplyResp 模块清单卸载写入门禁结果
 type ModuleManifestUninstallApplyResp struct {
-	Source      string                           `json:"source" structs:"source"`           // manifest 来源
-	Manifest    ModuleManifestSummaryResp        `json:"manifest" structs:"manifest"`       // manifest 摘要
-	Status      string                           `json:"status" structs:"status"`           // 门禁状态
-	Message     string                           `json:"message" structs:"message"`         // 门禁说明
-	RequiredEnv string                           `json:"requiredEnv" structs:"requiredEnv"` // 写入环境变量
-	Plan        ModuleManifestPlanResp           `json:"plan" structs:"plan"`               // 卸载计划预览
-	Checks      []ModuleManifestInstallCheckResp `json:"checks" structs:"checks"`           // 检查结果
+	Source      string                            `json:"source" structs:"source"`           // manifest 来源
+	Manifest    ModuleManifestSummaryResp         `json:"manifest" structs:"manifest"`       // manifest 摘要
+	Status      string                            `json:"status" structs:"status"`           // 门禁状态
+	Message     string                            `json:"message" structs:"message"`         // 门禁说明
+	RequiredEnv string                            `json:"requiredEnv" structs:"requiredEnv"` // 写入环境变量
+	Plan        ModuleManifestPlanResp            `json:"plan" structs:"plan"`               // 卸载计划预览
+	Checks      []ModuleManifestInstallCheckResp  `json:"checks" structs:"checks"`           // 检查结果
+	Before      ModuleManifestInstallSnapshotResp `json:"before" structs:"before"`           // 删除前快照
+	After       ModuleManifestInstallSnapshotResp `json:"after" structs:"after"`             // 删除后快照
 }
