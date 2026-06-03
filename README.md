@@ -2,11 +2,11 @@
 
 `go-makeadmin` 是 `makeadmin` 的 Go 版本后台基础框架，目标是沉淀一套可复用、可商业使用、可迁移到多个项目的通用管理后台底座。
 
-本项目早期参考 LikeAdmin Go 的 MIT 开源实现，保留合法来源说明；当前已完成 P3，默认运行链路面向 `ma_*` 自研系统表和独立开发库 `go_makeadmin`。
+本项目早期参考 LikeAdmin Go 的 MIT 开源实现，保留合法来源说明；当前已完成 P4，默认运行链路面向 `ma_*` 自研系统表和独立开发库 `go_makeadmin`。
 
 ## 当前阶段
 
-P3 已冻结，下一阶段进入 P4：可见后台与人工测试闭环。
+P4 已冻结，下一阶段进入 P5：示例模块真实安装与后台菜单可见闭环。
 
 当前目标：
 
@@ -14,7 +14,8 @@ P3 已冻结，下一阶段进入 P4：可见后台与人工测试闭环。
 - 核心后台链路使用 `ma_*` 表：登录、菜单、权限、设置、字典、文件、日志和代码生成器。
 - 旧 `la_*` SQL、模型和服务只作为蓝本参考保留，不再作为 P1 核心运行兜底。
 - P3 已完成模块脚手架、codegen、manifest、安装卸载和管理端 apply 结果闭环。
-- P4 当前入口：把已有底座能力放到后台可见页面里做人工测试和产品化验收。
+- P4 已完成可见后台、模块中心、核心页面入口、空态和失败态验收。
+- P5 当前入口：选一个 demo 模块完成本地受控安装、菜单可见、页面打开、卸载和回读验收。
 
 ## 技术栈
 
@@ -86,7 +87,7 @@ python3 scripts/p1-smoke.py
 
 P3 最终状态见 `docs/P3_FINAL_STATUS.md`。
 
-P4 状态见 `docs/P4_STATUS.md`。P4.1 可见后台工作台见 `docs/P4_VISIBLE_ADMIN_WORKBENCH.md`。P4.2 模块中心见 `docs/P4_MODULE_CENTER.md`。P4.3 模块中心内嵌预览见 `docs/P4_MODULE_CENTER_INLINE_PREVIEW.md`。P4.4 模块中心 apply 结果见 `docs/P4_MODULE_CENTER_APPLY_RESULT.md`。P4.5 模块中心状态清单见 `docs/P4_MODULE_CENTER_STATUS_CHECKLIST.md`。P4.6 核心页面验收见 `docs/P4_CORE_ADMIN_VISIBLE_CHECK.md`。P4.7 核心页面修整见 `docs/P4_CORE_PAGE_POLISH.md`。P4.8 核心表格空态见 `docs/P4_CORE_TABLE_EMPTY_STATE.md`。P4.9 核心页面失败态见 `docs/P4_CORE_PAGE_FAILURE_STATE.md`。
+P4 状态见 `docs/P4_STATUS.md`。P4.1 可见后台工作台见 `docs/P4_VISIBLE_ADMIN_WORKBENCH.md`。P4.2 模块中心见 `docs/P4_MODULE_CENTER.md`。P4.3 模块中心内嵌预览见 `docs/P4_MODULE_CENTER_INLINE_PREVIEW.md`。P4.4 模块中心 apply 结果见 `docs/P4_MODULE_CENTER_APPLY_RESULT.md`。P4.5 模块中心状态清单见 `docs/P4_MODULE_CENTER_STATUS_CHECKLIST.md`。P4.6 核心页面验收见 `docs/P4_CORE_ADMIN_VISIBLE_CHECK.md`。P4.7 核心页面修整见 `docs/P4_CORE_PAGE_POLISH.md`。P4.8 核心表格空态见 `docs/P4_CORE_TABLE_EMPTY_STATE.md`。P4.9 核心页面失败态见 `docs/P4_CORE_PAGE_FAILURE_STATE.md`。P4 最终状态见 `docs/P4_FINAL_STATUS.md`。
 
 ## 授权
 

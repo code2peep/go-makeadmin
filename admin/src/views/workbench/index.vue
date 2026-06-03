@@ -80,7 +80,7 @@
             <template #header>
                 <div class="section-header">
                     <span class="card-title">核心页面验收</span>
-                    <el-tag size="small" type="primary">P4.6</el-tag>
+                    <el-tag size="small" type="success">P4.10</el-tag>
                 </div>
             </template>
             <el-table :data="workbenchData.corePages" size="large">
@@ -162,7 +162,7 @@ const defaultWorkbench = {
         based: 'Go、Gin、Gorm、Vue3、Element Plus、MySQL、Redis'
     } as ConsoleVersion,
     framework: {
-        stage: 'P4.6 核心管理页可见验收',
+        stage: 'P4.10 P4 冻结验收',
         database: 'go_makeadmin',
         tables: 'ma_*',
         auth: 'JWT + Redis session',
@@ -186,8 +186,8 @@ const defaultWorkbench = {
         },
         {
             name: 'P4 可见后台',
-            status: '进行中',
-            summary: '把底座能力沉到后台页面，进入人工测试和产品体验验收。'
+            status: '已冻结',
+            summary: '工作台、模块中心、核心页面入口、空态和失败态完成可见验收。'
         }
     ] as ConsoleMilestone[],
     validation: [
@@ -208,8 +208,13 @@ const defaultWorkbench = {
         },
         {
             name: '核心页面入口',
-            status: '就绪',
-            scope: '菜单、角色、管理员、部门、网站信息'
+            status: '通过',
+            scope: '菜单、角色、管理员、部门、网站信息、缓存、日志'
+        },
+        {
+            name: 'P4 冻结验收',
+            status: '通过',
+            scope: 'P4 完成面、人工测试入口、P5 进入条件已收敛'
         },
         {
             name: '本地 API',
@@ -226,43 +231,43 @@ const defaultWorkbench = {
         {
             name: '菜单权限',
             route: '/menu',
-            status: '入口就绪',
+            status: '已验收',
             scope: '菜单树、权限字符、路由显隐'
         },
         {
             name: '角色管理',
             route: '/role',
-            status: '入口就绪',
+            status: '已验收',
             scope: '角色列表、授权入口、数据权限'
         },
         {
             name: '管理员',
             route: '/admin',
-            status: '入口就绪',
+            status: '已验收',
             scope: '账号列表、组织岗位、启停'
         },
         {
             name: '组织部门',
             route: '/department',
-            status: '入口就绪',
+            status: '已验收',
             scope: '部门树、负责人、状态'
         },
         {
             name: '网站信息',
             route: '/information',
-            status: '入口就绪',
+            status: '已验收',
             scope: '站点名称、Logo、备案基础信息'
         },
         {
             name: '系统缓存',
             route: '/cache',
-            status: '入口就绪',
+            status: '已验收',
             scope: '缓存清理、本地运行状态'
         },
         {
             name: '系统日志',
             route: '/journal',
-            status: '入口就绪',
+            status: '已验收',
             scope: '管理员操作日志、登录日志'
         }
     ] as ConsoleCorePage[]
@@ -292,7 +297,7 @@ const capabilityCards = computed(() => [
     {
         name: '当前版本',
         value: workbenchData.version.version,
-        desc: 'P4 入口：可见后台与人工测试',
+        desc: 'P4 已冻结，下一步进入 P5',
         icon: 'el-icon-Flag'
     }
 ])
@@ -339,6 +344,18 @@ const quickActions = [
         url: '/information',
         icon: 'el-icon-Setting',
         scope: '站点名称、Logo、备案基础信息'
+    },
+    {
+        name: '系统缓存',
+        url: '/cache',
+        icon: 'el-icon-Cpu',
+        scope: '缓存清理、本地运行状态'
+    },
+    {
+        name: '系统日志',
+        url: '/journal',
+        icon: 'el-icon-Document',
+        scope: '管理员操作日志、登录日志'
     }
 ]
 
