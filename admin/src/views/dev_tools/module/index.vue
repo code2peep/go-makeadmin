@@ -237,14 +237,31 @@
                 <div class="section-header">
                     <span class="card-title">内置模块清单</span>
                     <div class="section-actions">
-                        <el-tag type="success" size="small">P5.3</el-tag>
+                        <el-tag type="success" size="small">P5.4</el-tag>
                         <el-button type="primary" link :loading="statusLoading" @click="loadModuleStatuses">
                             刷新状态
                         </el-button>
                     </div>
                 </div>
             </template>
-            <el-table :data="modules" size="large">
+            <div class="module-list-toolbar">
+                <el-radio-group v-model="moduleStatusFilter" size="small">
+                    <el-radio-button
+                        v-for="item in moduleStatusFilterOptions"
+                        :key="item.value"
+                        :label="item.value"
+                    >
+                        {{ item.label }}
+                    </el-radio-button>
+                </el-radio-group>
+                <div class="module-summary">
+                    <div v-for="item in moduleStatusSummary" :key="item.key" class="module-summary-item">
+                        <span>{{ item.label }}</span>
+                        <strong>{{ item.value }}</strong>
+                    </div>
+                </div>
+            </div>
+            <el-table :data="filteredModules" size="large" empty-text="暂无匹配模块">
                 <el-table-column label="模块" prop="name" min-width="130" />
                 <el-table-column label="Manifest" prop="manifest" min-width="240" />
                 <el-table-column label="表名" prop="table" min-width="160" />
@@ -352,6 +369,7 @@ const previewState = reactive({
     show: false,
     code: {} as Record<string, string>
 })
+const moduleStatusFilter = ref('all')
 
 const capabilityCards = [
     {
@@ -384,6 +402,7 @@ type ModuleCenterModule = {
     entry: string
     status: string
     statusType: string
+    installStatusCode: string
     installStatus: string
     installStatusType: string
     statusDetail: string
@@ -402,6 +421,7 @@ const modules = reactive<ModuleCenterModule[]>([
         entry: '/demo/article',
         status: '可安装',
         statusType: 'success',
+        installStatusCode: 'loading',
         installStatus: '读取中',
         installStatusType: 'info',
         statusDetail: '-',
@@ -411,6 +431,14 @@ const modules = reactive<ModuleCenterModule[]>([
         runtimeDetail: '-'
     }
 ])
+
+const moduleStatusFilterOptions = [
+    { label: '全部', value: 'all' },
+    { label: '已安装', value: 'installed' },
+    { label: '部分安装', value: 'partial' },
+    { label: '未安装', value: 'uninstalled' },
+    { label: '异常', value: 'failed' }
+]
 
 const manifestParams = (): ModuleManifestPreviewParams =>
     inputMode.value === 'path'
@@ -510,6 +538,28 @@ const writeGateStatusType = computed(() => {
         return 'success'
     }
     return 'info'
+})
+
+const filteredModules = computed(() => {
+    if (moduleStatusFilter.value === 'all') {
+        return modules
+    }
+    if (moduleStatusFilter.value === 'failed') {
+        return modules.filter((item) => ['blocked', 'failed'].includes(item.installStatusCode))
+    }
+    return modules.filter((item) => item.installStatusCode === moduleStatusFilter.value)
+})
+
+const moduleStatusSummary = computed(() => {
+    const countBy = (codes: string[]) =>
+        modules.filter((item) => codes.includes(item.installStatusCode)).length
+    return [
+        { key: 'total', label: '总数', value: modules.length },
+        { key: 'installed', label: '已安装', value: countBy(['installed']) },
+        { key: 'partial', label: '部分', value: countBy(['partial']) },
+        { key: 'uninstalled', label: '未安装', value: countBy(['uninstalled']) },
+        { key: 'failed', label: '异常', value: countBy(['blocked', 'failed']) }
+    ]
 })
 
 const testChecklistRows = computed(() => [
@@ -672,6 +722,7 @@ const runtimeStatusFrom = (status: ModuleManifestInstallStatusResult) => {
 const applyModuleStatusToRow = (row: ModuleCenterModule, status: ModuleManifestInstallStatusResult) => {
     const rawStatus = status.status || 'failed'
     const runtimeStatus = runtimeStatusFrom(status)
+    row.installStatusCode = rawStatus
     row.installStatus = statusLabelMap[rawStatus] || rawStatus
     row.installStatusType = statusTypeMap[rawStatus] || 'info'
     row.statusDetail = status.message || '-'
@@ -707,6 +758,7 @@ const loadModuleStatuses = async () => {
                     })
                     applyModuleStatusToRow(item, status)
                 } catch (error) {
+                    item.installStatusCode = 'failed'
                     item.installStatus = '读取失败'
                     item.installStatusType = 'danger'
                     item.statusDetail = moduleStatusErrorMessage(error)
@@ -879,6 +931,41 @@ onMounted(() => {
     align-items: center;
     display: flex;
     gap: 10px;
+}
+
+.module-list-toolbar {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.module-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.module-summary-item {
+    align-items: center;
+    border: 1px solid #eaecf0;
+    border-radius: 8px;
+    color: #667085;
+    display: inline-flex;
+    font-size: 12px;
+    gap: 8px;
+    line-height: 18px;
+    min-height: 30px;
+    padding: 4px 10px;
+
+    strong {
+        color: #111827;
+        font-size: 14px;
+        font-weight: 600;
+    }
 }
 
 .section-label {
