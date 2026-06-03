@@ -48,6 +48,7 @@ type IGenerateService interface {
 	PreviewCode(id uint) (res map[string]string, e error)
 	PreviewModuleManifest(previewReq req.ModuleManifestPreviewReq) (res resp.ModuleManifestPreviewResp, e error)
 	ApplyModuleManifestInstall(applyReq req.ModuleManifestInstallApplyReq) (res resp.ModuleManifestInstallApplyResp, e error)
+	ApplyModuleManifestUninstall(applyReq req.ModuleManifestUninstallApplyReq) (res resp.ModuleManifestUninstallApplyResp, e error)
 	GenCode(tableName string) (e error)
 	DownloadCode(tableNames []string) ([]byte, error)
 }

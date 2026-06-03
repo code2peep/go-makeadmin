@@ -31,6 +31,7 @@ func regGen(rg *gin.RouterGroup, group *core.GroupBase) error {
 		rg.GET("/previewCode", handle.previewCode)
 		rg.POST("/previewCode", handle.previewModuleManifest)
 		rg.PUT("/previewCode", handle.applyModuleManifestInstall)
+		rg.DELETE("/previewCode", handle.applyModuleManifestUninstall)
 		rg.GET("/genCode", handle.genCode)
 		rg.GET("/downloadCode", handle.downloadCode)
 	})
@@ -145,6 +146,16 @@ func (gh genHandler) applyModuleManifestInstall(c *gin.Context) {
 		return
 	}
 	res, err := gh.srv.ApplyModuleManifestInstall(applyReq)
+	response.CheckAndRespWithData(c, res, err)
+}
+
+// applyModuleManifestUninstall 校验模块 manifest 卸载写入门禁
+func (gh genHandler) applyModuleManifestUninstall(c *gin.Context) {
+	var applyReq req.ModuleManifestUninstallApplyReq
+	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &applyReq)) {
+		return
+	}
+	res, err := gh.srv.ApplyModuleManifestUninstall(applyReq)
 	response.CheckAndRespWithData(c, res, err)
 }
 

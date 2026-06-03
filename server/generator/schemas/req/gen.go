@@ -99,6 +99,14 @@ type ModuleManifestInstallApplyReq struct {
 	ConfirmSchemaRisk bool    `json:"confirmSchemaRisk"`                         // 确认业务 schema 风险
 }
 
+// ModuleManifestUninstallApplyReq 模块清单卸载写入门禁参数
+type ModuleManifestUninstallApplyReq struct {
+	ManifestPath  string `json:"manifestPath" binding:"omitempty,max=500"`  // 仓库内 manifest 路径
+	ManifestBody  string `json:"manifestBody"`                              // manifest JSON
+	ConfirmModule string `json:"confirmModule" binding:"omitempty,max=100"` // 确认模块名
+	ConfirmDelete bool   `json:"confirmDelete"`                             // 确认删除
+}
+
 // GenCodeReq 生成代码参数
 type GenCodeReq struct {
 	Tables string `form:"tables" binding:"required"` // 生成的表, 用","分隔

@@ -438,4 +438,41 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 
 ## 下一步
 
-P3.12：后台模块卸载写入门禁与确认参数。建议先做只门禁不写库的后台卸载入口，覆盖环境变量、模块名、删除确认和结构化检查结果，再进入受控卸载 smoke。
+## P3.12 当前落地
+
+后台模块卸载写入门禁与确认参数已建立：
+
+- 新增 `DELETE /gen/previewCode`。
+- 新接口复用现有 `gen:previewCode` 权限面，不新增权限 SQL。
+- 新增 `ApplyModuleManifestUninstall` 服务方法。
+- 写入门禁必须显式设置 `MAKEADMIN_ALLOW_MODULE_UNINSTALL_APPLY=1`。
+- 确认参数覆盖 `confirmModule` 和 `confirmDelete`。
+- 门禁响应返回 manifest 摘要、卸载 SQL 预览和结构化检查结果。
+- P3.12 即使全部门禁满足，也会在卸载执行器处阻断，并明确返回 `no database access was attempted`。
+- 新增 `scripts/check-module-uninstall-apply-boundary.sh`。
+- `scripts/check-module-tools-no-db.sh` 已接入 uninstall apply boundary 验证。
+
+详见 `docs/P3_MODULE_UNINSTALL_APPLY_BOUNDARY.md`。
+
+## P3.12 验收标准
+
+- `scripts/check-module-uninstall-apply-boundary.sh` 通过。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./generator/service/gen -run 'TestModuleManifestUninstallApplyGate' -count=1` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不执行卸载 SQL、不删除数据库行、不创建业务 schema、不读取或修改 `.env`、不新增权限 SQL。
+
+## P3.12 验收结果
+
+- 已通过 `scripts/check-module-uninstall-apply-boundary.sh`。
+- 已通过 `scripts/check-module-tools-no-db.sh`，且 no-db guard 已执行 uninstall apply boundary。
+- 已通过 `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./generator/service/gen -run 'TestModuleManifestUninstallApplyGate' -count=1`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有执行卸载 SQL、没有删除数据库行、没有创建业务 schema、没有读取或修改 `.env`、没有新增权限 SQL。
+
+## 下一步
+
+P3.13：后台模块卸载受控本地删除 smoke。建议在 P3.12 门禁稳定后，开放仅限本地 `go_makeadmin` 的 demo article 卸载 smoke，验证删除顺序、幂等 no-op 和残留为 0。

@@ -258,6 +258,71 @@ func TestModuleManifestInstallApplyGateRequiresDatabaseWhenConfirmed(t *testing.
 	}
 }
 
+func TestModuleManifestUninstallApplyGateRequiresEnv(t *testing.T) {
+	srv := generateService{}
+	res, err := srv.ApplyModuleManifestUninstall(req.ModuleManifestUninstallApplyReq{
+		ManifestPath: "examples/demo/manifest.json",
+	})
+	if err == nil {
+		t.Fatalf("expected missing env gate to fail")
+	}
+	assertContains(t, err.Error(), moduleManifestUninstallApplyEnv+"=1 is required")
+	assertContains(t, err.Error(), "no database access was attempted")
+	if res.Status != "blocked" || res.RequiredEnv != moduleManifestUninstallApplyEnv {
+		t.Fatalf("unexpected uninstall gate response: %+v", res)
+	}
+}
+
+func TestModuleManifestUninstallApplyGateRequiresConfirmations(t *testing.T) {
+	t.Setenv(moduleManifestUninstallApplyEnv, "1")
+	srv := generateService{}
+
+	res, err := srv.ApplyModuleManifestUninstall(req.ModuleManifestUninstallApplyReq{
+		ManifestPath:  "examples/demo/manifest.json",
+		ConfirmModule: "wrong",
+	})
+	if err == nil {
+		t.Fatalf("expected confirmModule gate to fail")
+	}
+	assertContains(t, err.Error(), `confirmModule must be "article"`)
+	assertContains(t, err.Error(), "no database access was attempted")
+	if res.Checks[len(res.Checks)-1].Name != "confirmModule" {
+		t.Fatalf("expected confirmModule check, got %+v", res.Checks)
+	}
+
+	res, err = srv.ApplyModuleManifestUninstall(req.ModuleManifestUninstallApplyReq{
+		ManifestPath:  "examples/demo/manifest.json",
+		ConfirmModule: "article",
+	})
+	if err == nil {
+		t.Fatalf("expected confirmDelete gate to fail")
+	}
+	assertContains(t, err.Error(), "confirmDelete must be true")
+	assertContains(t, err.Error(), "no database access was attempted")
+}
+
+func TestModuleManifestUninstallApplyGateBlocksExecutorWhenConfirmed(t *testing.T) {
+	t.Setenv(moduleManifestUninstallApplyEnv, "1")
+	srv := generateService{}
+
+	res, err := srv.ApplyModuleManifestUninstall(req.ModuleManifestUninstallApplyReq{
+		ManifestPath:  "examples/demo/manifest.json",
+		ConfirmModule: "article",
+		ConfirmDelete: true,
+	})
+	if err == nil {
+		t.Fatalf("expected P3.12 executor boundary to fail")
+	}
+	assertContains(t, err.Error(), "module uninstall apply executor is not open in P3.12")
+	assertContains(t, err.Error(), "no database access was attempted")
+	if res.Manifest.Module != "article" || res.Plan.UninstallSQL == "" {
+		t.Fatalf("unexpected uninstall gate response: %+v", res)
+	}
+	if res.Checks[len(res.Checks)-1].Name != "executor" || res.Checks[len(res.Checks)-1].Status != "blocked" {
+		t.Fatalf("unexpected executor check: %+v", res.Checks)
+	}
+}
+
 func moduleManifestBodyWithRequiresSchema(t *testing.T) string {
 	t.Helper()
 	content, err := os.ReadFile(filepath.Join(filepath.Dir(config.Config.RootPath), "examples", "demo", "manifest.json"))

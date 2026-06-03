@@ -135,3 +135,14 @@ type ModuleManifestInstallSnapshotResp struct {
 	MenuPermissions int64 `json:"menuPermissions" structs:"menuPermissions"` // 菜单权限关联数
 	RolePermissions int64 `json:"rolePermissions" structs:"rolePermissions"` // 角色授权数
 }
+
+// ModuleManifestUninstallApplyResp 模块清单卸载写入门禁结果
+type ModuleManifestUninstallApplyResp struct {
+	Source      string                           `json:"source" structs:"source"`           // manifest 来源
+	Manifest    ModuleManifestSummaryResp        `json:"manifest" structs:"manifest"`       // manifest 摘要
+	Status      string                           `json:"status" structs:"status"`           // 门禁状态
+	Message     string                           `json:"message" structs:"message"`         // 门禁说明
+	RequiredEnv string                           `json:"requiredEnv" structs:"requiredEnv"` // 写入环境变量
+	Plan        ModuleManifestPlanResp           `json:"plan" structs:"plan"`               // 卸载计划预览
+	Checks      []ModuleManifestInstallCheckResp `json:"checks" structs:"checks"`           // 检查结果
+}
