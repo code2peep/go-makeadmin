@@ -237,7 +237,7 @@
                 <div class="section-header">
                     <span class="card-title">内置模块清单</span>
                     <div class="section-actions">
-                        <el-tag type="success" size="small">P5.5</el-tag>
+                        <el-tag type="success" size="small">P5.7</el-tag>
                         <el-button
                             type="primary"
                             link
@@ -280,6 +280,17 @@
                             <el-tag :type="row.registryStatusType" size="small">
                                 {{ row.registryStatus }}
                             </el-tag>
+                            <el-button
+                                type="primary"
+                                link
+                                :disabled="!row.registryChecks.length"
+                                @click="handleRegistryCheckDetail(row)"
+                            >
+                                <template #icon>
+                                    <icon name="el-icon-DocumentChecked" />
+                                </template>
+                                明细
+                            </el-button>
                             <span class="status-detail">{{ row.registryDetail }}</span>
                         </div>
                     </template>
@@ -331,6 +342,48 @@
             </el-table>
         </el-card>
 
+        <el-dialog
+            v-model="registryCheckDialog.show"
+            width="760px"
+            title="Manifest 校验明细"
+        >
+            <el-descriptions :column="2" border>
+                <el-descriptions-item label="模块">
+                    {{ registryCheckDialog.row?.name || '-' }}
+                </el-descriptions-item>
+                <el-descriptions-item label="状态">
+                    <el-tag
+                        :type="registryDialogStatusType"
+                        size="small"
+                    >
+                        {{ registryCheckDialog.row?.registryStatus || '-' }}
+                    </el-tag>
+                </el-descriptions-item>
+                <el-descriptions-item label="Manifest">
+                    <span class="wrap-text">{{ registryCheckDialog.row?.manifest || '-' }}</span>
+                </el-descriptions-item>
+                <el-descriptions-item label="说明">
+                    <span class="wrap-text">{{ registryCheckDialog.row?.registryDetail || '-' }}</span>
+                </el-descriptions-item>
+            </el-descriptions>
+            <el-table
+                class="mt-3"
+                :data="registryCheckRows"
+                size="large"
+                empty-text="暂无检查项"
+            >
+                <el-table-column label="检查项" prop="name" min-width="140" />
+                <el-table-column label="状态" min-width="120">
+                    <template #default="{ row }">
+                        <el-tag :type="registryCheckStatusType(row.status)" size="small">
+                            {{ registryCheckStatusLabel(row.status) }}
+                        </el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column label="说明" prop="message" min-width="320" />
+            </el-table>
+        </el-dialog>
+
         <code-preview
             v-if="previewState.show"
             v-model="previewState.show"
@@ -349,6 +402,7 @@ import {
     readModuleManifestInstallStatus,
     type ModuleManifestApplyResult,
     type ModuleManifestApplySnapshotResult,
+    type ModuleManifestApplyCheckResult,
     type ModuleManifestInstallApplyParams,
     type ModuleManifestInstallStatusResult,
     type ModuleManifestPreviewParams,
@@ -429,6 +483,7 @@ type ModuleCenterModule = {
     registryStatus: string
     registryStatusType: string
     registryDetail: string
+    registryChecks: ModuleManifestApplyCheckResult[]
     installStatusCode: string
     installStatus: string
     installStatusType: string
@@ -439,7 +494,15 @@ type ModuleCenterModule = {
     runtimeDetail: string
 }
 
+type ElementTagType = 'primary' | 'success' | 'warning' | 'danger' | 'info'
+
 const modules = reactive<ModuleCenterModule[]>([])
+const registryCheckDialog = reactive<{
+    show: boolean
+    row?: ModuleCenterModule
+}>({
+    show: false
+})
 
 const moduleStatusFilterOptions = [
     { label: '全部', value: 'all' },
@@ -580,6 +643,11 @@ const moduleStatusSummary = computed(() => {
     ]
 })
 
+const registryCheckRows = computed(() => registryCheckDialog.row?.registryChecks || [])
+const registryDialogStatusType = computed<ElementTagType>(() =>
+    moduleRegistryStatusType(registryCheckDialog.row?.registryStatusCode)
+)
+
 const testChecklistRows = computed(() => [
     {
         name: 'Manifest 预览',
@@ -695,6 +763,7 @@ const toModuleCenterModule = (item: ModuleRegistryItemResult): ModuleCenterModul
     registryStatus: moduleRegistryStatusLabel(item.manifestStatus),
     registryStatusType: moduleRegistryStatusType(item.manifestStatus),
     registryDetail: item.manifestMessage || '-',
+    registryChecks: item.manifestChecks || [],
     installStatusCode: 'loading',
     installStatus: '读取中',
     installStatusType: 'info',
@@ -704,6 +773,11 @@ const toModuleCenterModule = (item: ModuleRegistryItemResult): ModuleCenterModul
     runtimeStatusType: 'info',
     runtimeDetail: '-'
 })
+
+const handleRegistryCheckDetail = (row: Record<string, unknown>) => {
+    registryCheckDialog.row = row as ModuleCenterModule
+    registryCheckDialog.show = true
+}
 
 const moduleRegistryStatusLabel = (status?: string) => {
     if (status === 'passed') {
@@ -715,12 +789,38 @@ const moduleRegistryStatusLabel = (status?: string) => {
     return '未知'
 }
 
-const moduleRegistryStatusType = (status?: string) => {
+const moduleRegistryStatusType = (status?: string): ElementTagType => {
     if (status === 'passed') {
         return 'success'
     }
     if (status === 'failed') {
         return 'danger'
+    }
+    return 'info'
+}
+
+const registryCheckStatusLabel = (status?: string) => {
+    if (status === 'passed') {
+        return '通过'
+    }
+    if (status === 'failed') {
+        return '异常'
+    }
+    if (status === 'blocked') {
+        return '阻断'
+    }
+    return status || '未知'
+}
+
+const registryCheckStatusType = (status?: string): ElementTagType => {
+    if (status === 'passed') {
+        return 'success'
+    }
+    if (status === 'failed') {
+        return 'danger'
+    }
+    if (status === 'blocked') {
+        return 'warning'
     }
     return 'info'
 }
