@@ -50,6 +50,11 @@ export function generatePreview(params: any) {
     return request.get({ url: '/gen/previewCode', params })
 }
 
+// 模块 manifest 预览代码
+export function previewModuleManifest(params: any) {
+    return request.post({ url: '/gen/previewCode', params })
+}
+
 //生成代码
 export function generateCode(params: any) {
     return request.get({ url: '/gen/genCode', params })

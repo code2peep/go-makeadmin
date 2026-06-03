@@ -2,13 +2,13 @@ package req
 
 import "time"
 
-//DbTablesReq 库表列表参数
+// DbTablesReq 库表列表参数
 type DbTablesReq struct {
 	TableName    string `form:"tableName"`    // 表名称
 	TableComment string `form:"tableComment"` // 表描述
 }
 
-//ListTableReq 生成列表参数
+// ListTableReq 生成列表参数
 type ListTableReq struct {
 	TableName    string    `form:"tableName"`                          // 表名称
 	TableComment string    `form:"tableComment"`                       // 表描述
@@ -16,22 +16,22 @@ type ListTableReq struct {
 	EndTime      time.Time `form:"endTime" time_format:"2006-01-02"`   // 结束时间
 }
 
-//DetailTableReq 生成详情参数
+// DetailTableReq 生成详情参数
 type DetailTableReq struct {
 	ID uint `form:"id" binding:"required,gt=0"` // 主键
 }
 
-//ImportTableReq 导入表结构参数
+// ImportTableReq 导入表结构参数
 type ImportTableReq struct {
 	Tables string `form:"tables" binding:"required"` // 导入的表, 用","分隔
 }
 
-//SyncTableReq 同步表结构参数
+// SyncTableReq 同步表结构参数
 type SyncTableReq struct {
 	ID uint `form:"id" binding:"required,gt=0"` // 主键
 }
 
-//EditColumn 表编辑列
+// EditColumn 表编辑列
 type EditColumn struct {
 	ID            uint   `form:"id" binding:"required,gt=0"`               // 主键
 	ColumnComment string `form:"columnComment" binding:"required,max=200"` // 列描述
@@ -46,7 +46,7 @@ type EditColumn struct {
 	DictType      string `form:"dictType" binding:"required,max=200"`      // 字典类型
 }
 
-//EditTableReq 编辑表结构参数
+// EditTableReq 编辑表结构参数
 type EditTableReq struct {
 	ID           uint         `form:"id" binding:"required,gt=0"`                    // 主键
 	TableName    string       `form:"tableName" binding:"required,min=1,max=200"`    // 表名称
@@ -67,22 +67,30 @@ type EditTableReq struct {
 	Columns      []EditColumn `form:"columns" binding:"required"`                    // 字段列表
 }
 
-//DelTableReq 删除表结构参数
+// DelTableReq 删除表结构参数
 type DelTableReq struct {
 	Ids []uint `form:"ids" binding:"required"` // 主键
 }
 
-//PreviewCodeReq 预览代码参数
+// PreviewCodeReq 预览代码参数
 type PreviewCodeReq struct {
 	ID uint `form:"id" binding:"required,gt=0"` // 主键
 }
 
-//GenCodeReq 生成代码参数
+// ModuleManifestPreviewReq 模块清单预览参数
+type ModuleManifestPreviewReq struct {
+	ManifestPath string `json:"manifestPath" binding:"omitempty,max=500"` // 仓库内 manifest 路径
+	ManifestBody string `json:"manifestBody"`                             // manifest JSON
+	TenantID     uint64 `json:"tenantId"`                                 // 租户ID
+	AuthorName   string `json:"authorName" binding:"omitempty,max=100"`   // 作者名称
+}
+
+// GenCodeReq 生成代码参数
 type GenCodeReq struct {
 	Tables string `form:"tables" binding:"required"` // 生成的表, 用","分隔
 }
 
-//DownloadReq 下载代码参数
+// DownloadReq 下载代码参数
 type DownloadReq struct {
 	Tables string `form:"tables" binding:"required"` // 下载的表, 用","分隔
 }

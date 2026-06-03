@@ -269,6 +269,45 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有创建业务 schema、没有读取或修改 `.env`、没有连接业务项目数据库。
 
+## P3.8 当前落地
+
+后台生成器页面与模块 manifest 的操作闭环已建立：
+
+- 新增 `POST /gen/previewCode`。
+- 新接口复用现有 `gen:previewCode` 权限面，不新增权限 SQL。
+- 旧 `GET /gen/previewCode?id=...` 保持不变。
+- 新接口支持仓库内 `manifest.json` 路径和 inline manifest JSON。
+- `manifestPath` 限制在仓库内，且文件名必须为 `manifest.json`。
+- 新接口返回 manifest 摘要、兼容 `/gen/detail` 的生成器配置和模板代码预览。
+- 新增 `PreviewModuleManifest` 服务方法和 no-db 单元测试。
+- 新增管理端 `Manifest 预览` 弹窗。
+- 弹窗支持仓库路径模式、JSON 模式、配置摘要、字段表格和代码预览。
+- 新增 `scripts/check-module-manifest-preview.sh`。
+- `scripts/check-module-tools-no-db.sh` 已接入 manifest preview 验证。
+
+详见 `docs/P3_MODULE_MANIFEST_PREVIEW.md`。
+
+## P3.8 验收标准
+
+- `scripts/check-module-manifest-preview.sh` 通过。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./generator/... ./generator/service/gen -run 'TestPreviewModuleManifest|TestGeneratedCrudCodeMatchesModuleManifest|TestCodegenConfigReadbackAndTemplateGenerationSmoke|TestCodegenTableLegacyConversionPreservesOldFields|TestCodegenColumnLegacyConversionPreservesOldFields' -count=1` 通过。
+- `cd admin && npm run type-check` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不写 `ma_codegen_*`、不生成文件、不创建业务 schema、不读取或修改 `.env`、不新增权限 SQL。
+
+## P3.8 验收结果
+
+- 已通过 `scripts/check-module-manifest-preview.sh`。
+- 已通过 `scripts/check-module-tools-no-db.sh`。
+- 已通过 `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./generator/... ./generator/service/gen -run 'TestPreviewModuleManifest|TestGeneratedCrudCodeMatchesModuleManifest|TestCodegenConfigReadbackAndTemplateGenerationSmoke|TestCodegenTableLegacyConversionPreservesOldFields|TestCodegenColumnLegacyConversionPreservesOldFields' -count=1`。
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有写 `ma_codegen_*`、没有生成文件、没有创建业务 schema、没有读取或修改 `.env`、没有新增权限 SQL。
+
 ## 下一步
 
-P3.8：后台生成器页面与模块 manifest 的操作闭环。建议把当前脚本级闭环继续向后台页面收敛，让模块 manifest 能在管理端生成器界面完成回读、预览和下载路径的人工验收。
+P3.9：模块 manifest 预览结果的安装计划联动。建议在后台 manifest 预览弹窗继续补注册 SQL、角色授权 SQL、安装计划和卸载计划的只读预览，让页面从“生成器闭环”推进到“模块生命周期预审闭环”。

@@ -4,7 +4,7 @@ import (
 	"go-makeadmin/core"
 )
 
-//DbTableResp 数据表返回信息
+// DbTableResp 数据表返回信息
 type DbTableResp struct {
 	TableName    string              `json:"tableName" structs:"tableName"`       // 表的名称
 	TableComment string              `json:"tableComment" structs:"tableComment"` // 表的描述
@@ -12,7 +12,7 @@ type DbTableResp struct {
 	UpdateTime   core.OnlyRespTsTime `json:"updateTime" structs:"updateTime"`     // 更新时间
 }
 
-//GenTableResp 生成表返回信息
+// GenTableResp 生成表返回信息
 type GenTableResp struct {
 	ID           uint        `json:"id" structs:"id"`                     // 主键
 	GenType      int         `json:"genType" structs:"genType"`           // 生成类型
@@ -22,7 +22,7 @@ type GenTableResp struct {
 	UpdateTime   core.TsTime `json:"updateTime" structs:"updateTime"`     // 更新时间
 }
 
-//GenTableBaseResp 生成表基本返回信息
+// GenTableBaseResp 生成表基本返回信息
 type GenTableBaseResp struct {
 	ID           uint        `json:"id" structs:"id"`                     // 主键
 	TableName    string      `json:"tableName" structs:"tableName"`       // 表的名称
@@ -34,7 +34,7 @@ type GenTableBaseResp struct {
 	UpdateTime   core.TsTime `json:"updateTime" structs:"updateTime"`     // 更新时间
 }
 
-//GenTableGenResp 生成表生成返回信息
+// GenTableGenResp 生成表生成返回信息
 type GenTableGenResp struct {
 	GenTpl       string `json:"genTpl" structs:"genTpl"`             // 生成模板方式: [crud=单表, tree=树表]
 	GenType      int    `json:"genType" structs:"genType"`           // 生成代码方式: [0=zip压缩包, 1=自定义路径]
@@ -48,7 +48,7 @@ type GenTableGenResp struct {
 	SubTableFk   string `json:"subTableFk" structs:"subTableFk"`     // 关联表外键
 }
 
-//GenColumnResp 生成列返回信息
+// GenColumnResp 生成列返回信息
 type GenColumnResp struct {
 	ID            uint        `json:"id" structs:"id"`                       // 字段主键
 	ColumnName    string      `json:"columnName" structs:"columnName"`       // 字段名称
@@ -69,9 +69,27 @@ type GenColumnResp struct {
 	UpdateTime    core.TsTime `json:"updateTime" structs:"updateTime"`       // 更新时间
 }
 
-//GenTableDetailResp 生成表详情返回信息
+// GenTableDetailResp 生成表详情返回信息
 type GenTableDetailResp struct {
 	Base   GenTableBaseResp `json:"base" structs:"base"`     // 基本信息
 	Gen    GenTableGenResp  `json:"gen" structs:"gen"`       // 生成信息
 	Column []GenColumnResp  `json:"column" structs:"column"` // 字段列表
+}
+
+// ModuleManifestSummaryResp 模块清单摘要
+type ModuleManifestSummaryResp struct {
+	Module         string `json:"module" structs:"module"`                 // 模块名
+	Entity         string `json:"entity" structs:"entity"`                 // 实体名
+	Table          string `json:"table" structs:"table"`                   // 来源表
+	MenuName       string `json:"menuName" structs:"menuName"`             // 菜单名称
+	RequiresSchema bool   `json:"requiresSchema" structs:"requiresSchema"` // 是否需要业务表
+}
+
+// ModuleManifestPreviewResp 模块清单生成器预览
+type ModuleManifestPreviewResp struct {
+	Source   string                    `json:"source" structs:"source"`     // manifest 来源
+	Warning  string                    `json:"warning" structs:"warning"`   // 边界提示
+	Manifest ModuleManifestSummaryResp `json:"manifest" structs:"manifest"` // manifest 摘要
+	Detail   GenTableDetailResp        `json:"detail" structs:"detail"`     // 兼容 /gen/detail 形状
+	Code     map[string]string         `json:"code" structs:"code"`         // 模板预览代码
 }

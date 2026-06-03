@@ -33,7 +33,7 @@ python3 -m py_compile \
     scripts/module-uninstall-plan.py
 
 echo "==> Module tools: shell syntax"
-bash -n scripts/check-module-lifecycle-smoke.sh scripts/check-module-codegen.sh scripts/check-module-codegen-plan.sh scripts/check-module-codegen-apply-boundary.sh scripts/check-module-codegen-apply-smoke.sh scripts/check-module-codegen-readback-smoke.sh scripts/check-module-scaffold-write-smoke.sh
+bash -n scripts/check-module-lifecycle-smoke.sh scripts/check-module-codegen.sh scripts/check-module-codegen-plan.sh scripts/check-module-codegen-apply-boundary.sh scripts/check-module-codegen-apply-smoke.sh scripts/check-module-codegen-readback-smoke.sh scripts/check-module-manifest-preview.sh scripts/check-module-scaffold-write-smoke.sh
 
 echo "==> Module tools: manifest validation"
 python3 scripts/check-module-manifests.py >/dev/null
@@ -51,6 +51,9 @@ scripts/check-module-codegen.sh >/dev/null
 
 echo "==> Module tools: scaffold codegen plan"
 scripts/check-module-codegen-plan.sh >/dev/null
+
+echo "==> Module tools: manifest preview"
+scripts/check-module-manifest-preview.sh >/dev/null
 
 echo "==> Module tools: codegen apply boundary"
 scripts/check-module-codegen-apply-boundary.sh >/dev/null

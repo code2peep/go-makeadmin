@@ -29,6 +29,7 @@ func regGen(rg *gin.RouterGroup, group *core.GroupBase) error {
 		rg.POST("/editTable", handle.editTable)
 		rg.POST("/delTable", handle.delTable)
 		rg.GET("/previewCode", handle.previewCode)
+		rg.POST("/previewCode", handle.previewModuleManifest)
 		rg.GET("/genCode", handle.genCode)
 		rg.GET("/downloadCode", handle.downloadCode)
 	})
@@ -38,7 +39,7 @@ type genHandler struct {
 	srv gen.IGenerateService
 }
 
-//dbTables 数据表列表
+// dbTables 数据表列表
 func (gh genHandler) dbTables(c *gin.Context) {
 	var page request.PageReq
 	var tbReq req.DbTablesReq
@@ -52,7 +53,7 @@ func (gh genHandler) dbTables(c *gin.Context) {
 	response.CheckAndRespWithData(c, res, err)
 }
 
-//list 生成列表
+// list 生成列表
 func (gh genHandler) list(c *gin.Context) {
 	var page request.PageReq
 	var listReq req.ListTableReq
@@ -66,7 +67,7 @@ func (gh genHandler) list(c *gin.Context) {
 	response.CheckAndRespWithData(c, res, err)
 }
 
-//detail 生成详情
+// detail 生成详情
 func (gh genHandler) detail(c *gin.Context) {
 	var detailReq req.DetailTableReq
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &detailReq)) {
@@ -76,7 +77,7 @@ func (gh genHandler) detail(c *gin.Context) {
 	response.CheckAndRespWithData(c, res, err)
 }
 
-//importTable 导入表结构
+// importTable 导入表结构
 func (gh genHandler) importTable(c *gin.Context) {
 	var importReq req.ImportTableReq
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &importReq)) {
@@ -86,7 +87,7 @@ func (gh genHandler) importTable(c *gin.Context) {
 	response.CheckAndResp(c, err)
 }
 
-//syncTable 同步表结构
+// syncTable 同步表结构
 func (gh genHandler) syncTable(c *gin.Context) {
 	var syncReq req.SyncTableReq
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &syncReq)) {
@@ -96,7 +97,7 @@ func (gh genHandler) syncTable(c *gin.Context) {
 	response.CheckAndResp(c, err)
 }
 
-//editTable 编辑表结构
+// editTable 编辑表结构
 func (gh genHandler) editTable(c *gin.Context) {
 	var editReq req.EditTableReq
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &editReq)) {
@@ -106,7 +107,7 @@ func (gh genHandler) editTable(c *gin.Context) {
 	response.CheckAndResp(c, err)
 }
 
-//delTable 删除表结构
+// delTable 删除表结构
 func (gh genHandler) delTable(c *gin.Context) {
 	var delReq req.DelTableReq
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &delReq)) {
@@ -116,7 +117,7 @@ func (gh genHandler) delTable(c *gin.Context) {
 	response.CheckAndResp(c, err)
 }
 
-//previewCode 预览代码
+// previewCode 预览代码
 func (gh genHandler) previewCode(c *gin.Context) {
 	var previewReq req.PreviewCodeReq
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &previewReq)) {
@@ -126,7 +127,17 @@ func (gh genHandler) previewCode(c *gin.Context) {
 	response.CheckAndRespWithData(c, res, err)
 }
 
-//genCode 生成代码
+// previewModuleManifest 预览模块 manifest 生成代码
+func (gh genHandler) previewModuleManifest(c *gin.Context) {
+	var previewReq req.ModuleManifestPreviewReq
+	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &previewReq)) {
+		return
+	}
+	res, err := gh.srv.PreviewModuleManifest(previewReq)
+	response.CheckAndRespWithData(c, res, err)
+}
+
+// genCode 生成代码
 func (gh genHandler) genCode(c *gin.Context) {
 	var genReq req.GenCodeReq
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &genReq)) {
@@ -141,7 +152,7 @@ func (gh genHandler) genCode(c *gin.Context) {
 	response.Ok(c)
 }
 
-//downloadCode 下载代码
+// downloadCode 下载代码
 func (gh genHandler) downloadCode(c *gin.Context) {
 	var downloadReq req.DownloadReq
 	if response.IsFailWithResp(c, util.VerifyUtil.VerifyQuery(c, &downloadReq)) {

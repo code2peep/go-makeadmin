@@ -46,6 +46,7 @@ type IGenerateService interface {
 	EditTable(editReq req.EditTableReq) (e error)
 	DelTable(ids []uint) (e error)
 	PreviewCode(id uint) (res map[string]string, e error)
+	PreviewModuleManifest(previewReq req.ModuleManifestPreviewReq) (res resp.ModuleManifestPreviewResp, e error)
 	GenCode(tableName string) (e error)
 	DownloadCode(tableNames []string) ([]byte, error)
 }
@@ -393,6 +394,19 @@ func (genSrv generateService) renderCodeByTable(genTable legacygen.GenTable) (re
 		if e = response.CheckErr(err, "renderCodeByTable Render err"); e != nil {
 			return
 		}
+	}
+	return
+}
+
+func renderCodeByLegacyTable(genTable legacygen.GenTable, columns []legacygen.GenTableColumn) (res map[string]string, e error) {
+	vars := generator.TemplateUtil.PrepareVars(genTable, columns, legacygen.GenTableColumn{}, nil)
+	res = make(map[string]string)
+	for _, tplPath := range generator.TemplateUtil.GetTemplatePaths(genTable.GenTpl) {
+		tplCode, err := generator.TemplateUtil.Render(tplPath, vars)
+		if e = response.CheckErr(err, "renderCodeByLegacyTable Render err"); e != nil {
+			return
+		}
+		res[strings.ReplaceAll(tplPath, ".tpl", "")] = tplCode
 	}
 	return
 }

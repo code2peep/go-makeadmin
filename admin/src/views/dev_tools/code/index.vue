@@ -38,6 +38,10 @@
                         导入数据表
                     </el-button>
                 </data-table>
+                <module-manifest-preview
+                    v-perms="['gen:previewCode']"
+                    class="inline-block mr-[10px]"
+                />
                 <el-button
                     v-perms="['gen:delTable']"
                     :disabled="!selectData.length"
@@ -160,6 +164,7 @@ import {
 import { usePaging } from '@/hooks/usePaging'
 import DataTable from '../components/data-table.vue'
 import CodePreview from '../components/code-preview.vue'
+import ModuleManifestPreview from '../components/module-manifest-preview.vue'
 import feedback from '@/utils/feedback'
 import { streamFileDownload } from '@/utils/file'
 import { getRoutePath } from '@/router'
