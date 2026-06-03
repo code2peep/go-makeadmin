@@ -436,8 +436,6 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有执行卸载接口、没有创建业务 schema、没有读取或修改 `.env`、没有新增权限 SQL、没有连接业务项目数据库。
 
-## 下一步
-
 ## P3.12 当前落地
 
 后台模块卸载写入门禁与确认参数已建立：
@@ -472,8 +470,6 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 - 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有执行卸载 SQL、没有删除数据库行、没有创建业务 schema、没有读取或修改 `.env`、没有新增权限 SQL。
-
-## 下一步
 
 ## P3.13 当前落地
 
@@ -517,4 +513,39 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 
 ## 下一步
 
-P3.14：后台模块安装/卸载门禁结果页面闭环。建议把 P3.11/P3.13 的结构化结果完整接入 `Manifest 预览` 弹窗，展示安装和卸载的门禁检查、写入前后快照和失败原因。
+## P3.14 当前落地
+
+后台模块安装/卸载门禁结果页面闭环已建立：
+
+- 管理端 `Manifest 预览` 弹窗新增卸载执行入口。
+- 前端新增 `applyModuleManifestUninstall` API。
+- 安装执行结果进入安装结果 tab。
+- 卸载执行结果进入卸载结果 tab。
+- 成功和失败响应都会在页面落地，不只依赖 toast。
+- 页面展示后端返回的状态、模块、来源、写入环境变量。
+- 页面展示门禁检查列表。
+- 页面展示安装/卸载执行前后的权限、菜单、菜单权限和角色授权快照。
+- 安装和卸载继续复用 `gen:previewCode` 权限面。
+
+详见 `docs/P3_MODULE_APPLY_UI_CLOSURE.md`。
+
+## P3.14 验收标准
+
+- `cd admin && npm run type-check` 通过。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不新增后端写入规则、不创建业务 schema、不读取或修改 `.env`、不新增权限 SQL。
+
+## P3.14 验收结果
+
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `scripts/check-module-tools-no-db.sh`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有新增后端写入规则、没有创建业务 schema、没有读取或修改 `.env`、没有新增权限 SQL。
+
+## 下一步
+
+P3.15：模块安装/卸载操作审计与安全提示。建议给后台安装、卸载 apply 响应补更明确的操作摘要，并规划审计日志模型，先不改 schema。

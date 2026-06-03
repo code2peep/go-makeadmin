@@ -106,26 +106,97 @@
                         >
                             Schema 风险
                         </el-checkbox>
+                        <el-checkbox v-model="confirmData.confirmDelete">删除确认</el-checkbox>
                     </el-form-item>
                 </el-form>
 
-                <div v-if="installGate" class="install-gate-result">
-                    <el-alert
-                        :title="installGate.message || '写入门禁已阻断'"
-                        type="warning"
-                        show-icon
-                        :closable="false"
-                    />
-                    <el-table
-                        v-if="installGate.checks?.length"
-                        class="mt-3"
-                        :data="installGate.checks"
-                        size="large"
-                    >
-                        <el-table-column label="检查项" prop="name" min-width="140" />
-                        <el-table-column label="状态" prop="status" min-width="120" />
-                        <el-table-column label="说明" prop="message" min-width="280" />
-                    </el-table>
+                <div v-if="installResult || uninstallResult" class="apply-result">
+                    <el-tabs v-model="resultTab">
+                        <el-tab-pane v-if="installResult" label="安装结果" name="install">
+                            <el-alert
+                                :title="resultTitle(installResult, '安装写入已阻断')"
+                                :type="resultAlertType(installResult)"
+                                show-icon
+                                :closable="false"
+                            />
+                            <el-descriptions class="mt-3" :column="4" border>
+                                <el-descriptions-item label="状态">
+                                    {{ installResult.status || '-' }}
+                                </el-descriptions-item>
+                                <el-descriptions-item label="模块">
+                                    {{ installResult.manifest?.module || '-' }}
+                                </el-descriptions-item>
+                                <el-descriptions-item label="来源">
+                                    {{ installResult.source || '-' }}
+                                </el-descriptions-item>
+                                <el-descriptions-item label="环境变量">
+                                    {{ installResult.requiredEnv || '-' }}
+                                </el-descriptions-item>
+                            </el-descriptions>
+                            <el-table
+                                v-if="hasSnapshot(installResult)"
+                                class="mt-3"
+                                :data="snapshotRows(installResult)"
+                                size="large"
+                            >
+                                <el-table-column label="对象" prop="name" min-width="130" />
+                                <el-table-column label="执行前" prop="before" min-width="100" />
+                                <el-table-column label="执行后" prop="after" min-width="100" />
+                            </el-table>
+                            <el-table
+                                v-if="installResult.checks?.length"
+                                class="mt-3"
+                                :data="installResult.checks"
+                                size="large"
+                            >
+                                <el-table-column label="检查项" prop="name" min-width="140" />
+                                <el-table-column label="状态" prop="status" min-width="120" />
+                                <el-table-column label="说明" prop="message" min-width="280" />
+                            </el-table>
+                        </el-tab-pane>
+                        <el-tab-pane v-if="uninstallResult" label="卸载结果" name="uninstall">
+                            <el-alert
+                                :title="resultTitle(uninstallResult, '卸载写入已阻断')"
+                                :type="resultAlertType(uninstallResult)"
+                                show-icon
+                                :closable="false"
+                            />
+                            <el-descriptions class="mt-3" :column="4" border>
+                                <el-descriptions-item label="状态">
+                                    {{ uninstallResult.status || '-' }}
+                                </el-descriptions-item>
+                                <el-descriptions-item label="模块">
+                                    {{ uninstallResult.manifest?.module || '-' }}
+                                </el-descriptions-item>
+                                <el-descriptions-item label="来源">
+                                    {{ uninstallResult.source || '-' }}
+                                </el-descriptions-item>
+                                <el-descriptions-item label="环境变量">
+                                    {{ uninstallResult.requiredEnv || '-' }}
+                                </el-descriptions-item>
+                            </el-descriptions>
+                            <el-table
+                                v-if="hasSnapshot(uninstallResult)"
+                                class="mt-3"
+                                :data="snapshotRows(uninstallResult)"
+                                size="large"
+                            >
+                                <el-table-column label="对象" prop="name" min-width="130" />
+                                <el-table-column label="执行前" prop="before" min-width="100" />
+                                <el-table-column label="执行后" prop="after" min-width="100" />
+                            </el-table>
+                            <el-table
+                                v-if="uninstallResult.checks?.length"
+                                class="mt-3"
+                                :data="uninstallResult.checks"
+                                size="large"
+                            >
+                                <el-table-column label="检查项" prop="name" min-width="140" />
+                                <el-table-column label="状态" prop="status" min-width="120" />
+                                <el-table-column label="说明" prop="message" min-width="280" />
+                            </el-table>
+                        </el-tab-pane>
+                    </el-tabs>
                 </div>
 
                 <el-table class="mt-4" :data="preview.detail.column" size="large" height="260">
@@ -148,7 +219,13 @@
                         <template #icon>
                             <icon name="el-icon-Lock" />
                         </template>
-                        写入门禁
+                        安装执行
+                    </el-button>
+                    <el-button type="danger" @click="handleUninstallGate">
+                        <template #icon>
+                            <icon name="el-icon-Delete" />
+                        </template>
+                        卸载执行
                     </el-button>
                     <el-button type="primary" @click="handleCodePreview">
                         <template #icon>
@@ -171,7 +248,11 @@
 <script lang="ts" setup>
 import Popup from '@/components/popup/index.vue'
 import CodePreview from './code-preview.vue'
-import { applyModuleManifestInstall, previewModuleManifest } from '@/api/tools/code'
+import {
+    applyModuleManifestInstall,
+    applyModuleManifestUninstall,
+    previewModuleManifest
+} from '@/api/tools/code'
 import feedback from '@/utils/feedback'
 
 const popupRef = shallowRef<InstanceType<typeof Popup>>()
@@ -185,11 +266,14 @@ const formData = reactive({
 })
 
 const preview = ref<any>()
-const installGate = ref<any>()
+const installResult = ref<any>()
+const uninstallResult = ref<any>()
+const resultTab = ref<'install' | 'uninstall'>('install')
 const confirmData = reactive({
     confirmModule: '',
     confirmInstall: false,
-    confirmSchemaRisk: false
+    confirmSchemaRisk: false,
+    confirmDelete: false
 })
 const previewState = reactive({
     show: false,
@@ -217,7 +301,9 @@ const handlePreview = async () => {
     confirmData.confirmModule = preview.value?.manifest?.module || ''
     confirmData.confirmInstall = false
     confirmData.confirmSchemaRisk = false
-    installGate.value = undefined
+    confirmData.confirmDelete = false
+    installResult.value = undefined
+    uninstallResult.value = undefined
     feedback.msgSuccess('预览生成成功')
 }
 
@@ -247,14 +333,68 @@ const handleInstallGate = async () => {
         confirmSchemaRisk: confirmData.confirmSchemaRisk
     }
     try {
-        installGate.value = await applyModuleManifestInstall(params)
-        feedback.msgSuccess('门禁检查通过')
+        installResult.value = await applyModuleManifestInstall(params)
+        feedback.msgSuccess('安装执行完成')
     } catch (error) {
-        installGate.value = error || {
-            message: '写入门禁已阻断',
+        installResult.value = error || {
+            message: '安装写入已阻断',
             checks: []
         }
     }
+    resultTab.value = 'install'
+}
+
+const handleUninstallGate = async () => {
+    const params = {
+        ...manifestParams(),
+        confirmModule: confirmData.confirmModule,
+        confirmDelete: confirmData.confirmDelete
+    }
+    try {
+        uninstallResult.value = await applyModuleManifestUninstall(params)
+        feedback.msgSuccess('卸载执行完成')
+    } catch (error) {
+        uninstallResult.value = error || {
+            message: '卸载写入已阻断',
+            checks: []
+        }
+    }
+    resultTab.value = 'uninstall'
+}
+
+const resultTitle = (result: any, fallback: string) => result?.message || fallback
+
+const resultAlertType = (result: any) => (result?.status === 'applied' ? 'success' : 'warning')
+
+const hasSnapshot = (result: any) =>
+    result?.status === 'applied' ||
+    snapshotRows(result).some((row) => Number(row.before) > 0 || Number(row.after) > 0)
+
+const snapshotRows = (result: any) => {
+    const before = result?.before || {}
+    const after = result?.after || {}
+    return [
+        {
+            name: '权限',
+            before: before.permissions || 0,
+            after: after.permissions || 0
+        },
+        {
+            name: '菜单',
+            before: before.menus || 0,
+            after: after.menus || 0
+        },
+        {
+            name: '菜单权限',
+            before: before.menuPermissions || 0,
+            after: after.menuPermissions || 0
+        },
+        {
+            name: '角色授权',
+            before: before.rolePermissions || 0,
+            after: after.rolePermissions || 0
+        }
+    ]
 }
 </script>
 
@@ -268,7 +408,7 @@ const handleInstallGate = async () => {
 }
 
 .install-gate-form,
-.install-gate-result {
+.apply-result {
     margin-top: 16px;
 }
 </style>

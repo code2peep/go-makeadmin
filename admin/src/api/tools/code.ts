@@ -60,6 +60,11 @@ export function applyModuleManifestInstall(params: any) {
     return request.request({ url: '/gen/previewCode', method: 'PUT', data: params })
 }
 
+// 模块 manifest 卸载写入门禁
+export function applyModuleManifestUninstall(params: any) {
+    return request.request({ url: '/gen/previewCode', method: 'DELETE', data: params })
+}
+
 //生成代码
 export function generateCode(params: any) {
     return request.get({ url: '/gen/genCode', params })
