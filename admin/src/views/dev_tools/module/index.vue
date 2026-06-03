@@ -23,6 +23,7 @@
                     <div class="section-header">
                         <span class="card-title">模块市场</span>
                         <div class="section-actions">
+                            <el-tag type="primary" size="small">P6.2</el-tag>
                             <el-tag type="primary" size="small">P6.1</el-tag>
                             <el-tag type="success" size="small">P5.25</el-tag>
                         </div>
@@ -67,6 +68,14 @@
                     </el-descriptions-item>
                 </el-descriptions>
                 <div class="module-detail-actions">
+                    <el-button
+                        type="primary"
+                        plain
+                        :disabled="!selectedModule"
+                        @click="openSelectedModuleDetail"
+                    >
+                        详情
+                    </el-button>
                     <el-button
                         type="primary"
                         :disabled="!selectedModule"
@@ -341,6 +350,7 @@
                 <div class="section-header">
                     <span class="card-title">内置模块清单</span>
                     <div class="section-actions">
+                        <el-tag type="primary" size="small">P6.2</el-tag>
                         <el-tag type="primary" size="small">P6.1</el-tag>
                         <el-tag type="success" size="small">P5.25</el-tag>
                         <el-button
@@ -481,7 +491,7 @@
                 </el-table-column>
                 <el-table-column label="入口" width="220" fixed="right">
                     <template #default="{ row }">
-                        <el-button type="primary" link @click.stop="selectModule(row)">
+                        <el-button type="primary" link @click.stop="openModuleDetail(row)">
                             详情
                         </el-button>
                         <el-button type="primary" link @click="handleModulePreview(row.manifest)">
@@ -495,6 +505,97 @@
                 </el-table-column>
             </el-table>
         </el-card>
+
+        <el-dialog
+            v-model="moduleDetailDialog.show"
+            width="860px"
+            title="模块详情"
+            class="module-detail-dialog"
+        >
+            <el-descriptions :column="2" border>
+                <el-descriptions-item label="模块">
+                    {{ moduleDetailDialog.row?.name || '-' }}
+                </el-descriptions-item>
+                <el-descriptions-item label="标识">
+                    {{ moduleDetailDialog.row?.module || '-' }}
+                </el-descriptions-item>
+                <el-descriptions-item label="Manifest">
+                    <span class="wrap-text">{{ moduleDetailDialog.row?.manifest || '-' }}</span>
+                </el-descriptions-item>
+                <el-descriptions-item label="表名">
+                    {{ moduleDetailDialog.row?.table || '-' }}
+                </el-descriptions-item>
+                <el-descriptions-item label="安装">
+                    <el-tag :type="moduleDetailStatusType" size="small">
+                        {{ moduleDetailDialog.row?.installStatus || '-' }}
+                    </el-tag>
+                    <span class="status-detail">{{ moduleDetailDialog.row?.statusDetail || '-' }}</span>
+                </el-descriptions-item>
+                <el-descriptions-item label="运行时">
+                    <el-tag :type="moduleDetailRuntimeStatusType" size="small">
+                        {{ moduleDetailDialog.row?.runtimeStatus || '-' }}
+                    </el-tag>
+                    <span class="status-detail">{{ moduleDetailDialog.row?.runtimeDetail || '-' }}</span>
+                </el-descriptions-item>
+                <el-descriptions-item label="快照" :span="2">
+                    <span class="wrap-text">{{ moduleDetailDialog.row?.snapshotText || '-' }}</span>
+                </el-descriptions-item>
+                <el-descriptions-item label="入口" :span="2">
+                    <span class="wrap-text">{{ moduleDetailDialog.row?.entry || '-' }}</span>
+                </el-descriptions-item>
+            </el-descriptions>
+
+            <div class="section-label">安装向导</div>
+            <div class="install-wizard-list">
+                <div
+                    v-for="item in moduleDetailWizardRows"
+                    :key="item.key"
+                    class="install-wizard-item"
+                >
+                    <div>
+                        <div class="install-wizard-label">{{ item.label }}</div>
+                        <div class="install-wizard-detail">{{ item.detail }}</div>
+                    </div>
+                    <el-tag :type="item.type" size="small">{{ item.status }}</el-tag>
+                </div>
+            </div>
+
+            <div class="section-label">Manifest 校验</div>
+            <el-table
+                :data="moduleDetailCheckRows"
+                size="large"
+                empty-text="暂无检查项"
+            >
+                <el-table-column label="检查项" prop="name" min-width="140" />
+                <el-table-column label="状态" min-width="120">
+                    <template #default="{ row }">
+                        <el-tag :type="registryCheckStatusType(row.status)" size="small">
+                            {{ registryCheckStatusLabel(row.status) }}
+                        </el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column label="说明" prop="message" min-width="320" />
+            </el-table>
+
+            <template #footer>
+                <div class="module-detail-actions">
+                    <el-button
+                        :disabled="!moduleDetailDialog.row"
+                        :loading="previewLoading"
+                        @click="handleModulePreview(moduleDetailDialog.row?.manifest || '')"
+                    >
+                        预览
+                    </el-button>
+                    <el-button
+                        type="primary"
+                        :disabled="!moduleDetailDialog.row?.entry"
+                        @click="goTo(moduleDetailDialog.row?.entry || '/')"
+                    >
+                        打开
+                    </el-button>
+                </div>
+            </template>
+        </el-dialog>
 
         <el-dialog
             v-model="registryCheckDialog.show"
@@ -677,6 +778,12 @@ const registryCheckDialog = reactive<{
 }>({
     show: false
 })
+const moduleDetailDialog = reactive<{
+    show: boolean
+    row?: ModuleCenterModule
+}>({
+    show: false
+})
 
 const moduleStatusFilterOptions = [
     { label: '全部', value: 'all' },
@@ -813,18 +920,38 @@ const selectedModuleStatusType = computed<ElementTagType>(() => {
     return (selectedModule.value?.installStatusType as ElementTagType) || 'info'
 })
 
+const moduleInstallWizardInput = (row: ModuleCenterModule) => ({
+    module: row.module,
+    registryStatusCode: row.registryStatusCode,
+    entry: row.entry,
+    registryCheckCount: row.registryChecks.length,
+    installStatusCode: row.installStatusCode
+})
+
 const moduleInstallWizardRows = computed<ModuleInstallWizardRow[]>(() => {
     const selected = selectedModule.value
     if (!selected) {
         return buildModuleInstallWizardRows()
     }
-    return buildModuleInstallWizardRows({
-        module: selected.module,
-        registryStatusCode: selected.registryStatusCode,
-        entry: selected.entry,
-        registryCheckCount: selected.registryChecks.length,
-        installStatusCode: selected.installStatusCode
-    })
+    return buildModuleInstallWizardRows(moduleInstallWizardInput(selected))
+})
+
+const moduleDetailWizardRows = computed<ModuleInstallWizardRow[]>(() => {
+    const row = moduleDetailDialog.row
+    if (!row) {
+        return buildModuleInstallWizardRows()
+    }
+    return buildModuleInstallWizardRows(moduleInstallWizardInput(row))
+})
+
+const moduleDetailCheckRows = computed(() => moduleDetailDialog.row?.registryChecks || [])
+
+const moduleDetailStatusType = computed<ElementTagType>(() => {
+    return (moduleDetailDialog.row?.installStatusType as ElementTagType) || 'info'
+})
+
+const moduleDetailRuntimeStatusType = computed<ElementTagType>(() => {
+    return (moduleDetailDialog.row?.runtimeStatusType as ElementTagType) || 'info'
 })
 
 const registryStateInput = computed<RegistryStateInput>(() => ({
@@ -956,6 +1083,20 @@ const selectModule = (row: Record<string, unknown>) => {
     if (module) {
         selectedModuleKey.value = module
     }
+}
+
+const openModuleDetail = (row: Record<string, unknown>) => {
+    const module = row as ModuleCenterModule
+    selectModule(row)
+    moduleDetailDialog.row = module
+    moduleDetailDialog.show = true
+}
+
+const openSelectedModuleDetail = () => {
+    if (!selectedModule.value) {
+        return
+    }
+    openModuleDetail(selectedModule.value)
 }
 
 const handlePreview = async () => {

@@ -33,7 +33,7 @@ python3 -m py_compile \
     scripts/module-uninstall-plan.py
 
 echo "==> Module tools: shell syntax"
-bash -n scripts/check-module-lifecycle-smoke.sh scripts/check-module-codegen.sh scripts/check-module-codegen-plan.sh scripts/check-module-codegen-apply-boundary.sh scripts/check-module-codegen-apply-smoke.sh scripts/check-module-codegen-readback-smoke.sh scripts/check-module-install-plan-preview.sh scripts/check-module-install-apply-boundary.sh scripts/check-module-install-apply-smoke.sh scripts/check-module-uninstall-apply-boundary.sh scripts/check-module-uninstall-apply-smoke.sh scripts/check-module-manifest-preview.sh scripts/check-module-scaffold-write-smoke.sh scripts/check-module-registry-smoke.sh scripts/check-module-center-ui-contract.sh scripts/check-demo-notice-module.sh scripts/check-module-center-filter-contract.sh scripts/check-module-center-manual-checklist.sh scripts/check-p5-module-center-freeze.sh scripts/check-module-center-product-entry.sh
+bash -n scripts/check-module-lifecycle-smoke.sh scripts/check-module-codegen.sh scripts/check-module-codegen-plan.sh scripts/check-module-codegen-apply-boundary.sh scripts/check-module-codegen-apply-smoke.sh scripts/check-module-codegen-readback-smoke.sh scripts/check-module-install-plan-preview.sh scripts/check-module-install-apply-boundary.sh scripts/check-module-install-apply-smoke.sh scripts/check-module-uninstall-apply-boundary.sh scripts/check-module-uninstall-apply-smoke.sh scripts/check-module-manifest-preview.sh scripts/check-module-scaffold-write-smoke.sh scripts/check-module-registry-smoke.sh scripts/check-module-center-ui-contract.sh scripts/check-demo-notice-module.sh scripts/check-module-center-filter-contract.sh scripts/check-module-center-manual-checklist.sh scripts/check-p5-module-center-freeze.sh scripts/check-module-center-product-entry.sh scripts/check-module-center-detail-dialog.sh
 
 echo "==> Module tools: manifest validation"
 python3 scripts/check-module-manifests.py >/dev/null
@@ -75,6 +75,9 @@ scripts/check-p5-module-center-freeze.sh >/dev/null
 
 echo "==> Module tools: module center product entry contract"
 scripts/check-module-center-product-entry.sh >/dev/null
+
+echo "==> Module tools: module center detail dialog contract"
+scripts/check-module-center-detail-dialog.sh >/dev/null
 
 echo "==> Module tools: install plan preview"
 scripts/check-module-install-plan-preview.sh >/dev/null
