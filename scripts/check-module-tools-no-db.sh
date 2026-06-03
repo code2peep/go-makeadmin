@@ -33,7 +33,7 @@ python3 -m py_compile \
     scripts/module-uninstall-plan.py
 
 echo "==> Module tools: shell syntax"
-bash -n scripts/check-module-lifecycle-smoke.sh scripts/check-module-codegen.sh scripts/check-module-codegen-plan.sh scripts/check-module-codegen-apply-boundary.sh scripts/check-module-codegen-apply-smoke.sh scripts/check-module-codegen-readback-smoke.sh scripts/check-module-install-plan-preview.sh scripts/check-module-install-apply-boundary.sh scripts/check-module-install-apply-smoke.sh scripts/check-module-uninstall-apply-boundary.sh scripts/check-module-uninstall-apply-smoke.sh scripts/check-module-manifest-preview.sh scripts/check-module-scaffold-write-smoke.sh scripts/check-module-registry-smoke.sh scripts/check-module-center-ui-contract.sh scripts/check-demo-notice-module.sh scripts/check-module-center-filter-contract.sh
+bash -n scripts/check-module-lifecycle-smoke.sh scripts/check-module-codegen.sh scripts/check-module-codegen-plan.sh scripts/check-module-codegen-apply-boundary.sh scripts/check-module-codegen-apply-smoke.sh scripts/check-module-codegen-readback-smoke.sh scripts/check-module-install-plan-preview.sh scripts/check-module-install-apply-boundary.sh scripts/check-module-install-apply-smoke.sh scripts/check-module-uninstall-apply-boundary.sh scripts/check-module-uninstall-apply-smoke.sh scripts/check-module-manifest-preview.sh scripts/check-module-scaffold-write-smoke.sh scripts/check-module-registry-smoke.sh scripts/check-module-center-ui-contract.sh scripts/check-demo-notice-module.sh scripts/check-module-center-filter-contract.sh scripts/check-module-center-manual-checklist.sh
 
 echo "==> Module tools: manifest validation"
 python3 scripts/check-module-manifests.py >/dev/null
@@ -66,6 +66,9 @@ scripts/check-demo-notice-module.sh >/dev/null
 
 echo "==> Module tools: module center filter contract"
 scripts/check-module-center-filter-contract.sh >/dev/null
+
+echo "==> Module tools: module center manual checklist contract"
+scripts/check-module-center-manual-checklist.sh >/dev/null
 
 echo "==> Module tools: install plan preview"
 scripts/check-module-install-plan-preview.sh >/dev/null

@@ -127,6 +127,7 @@ export const buildRegistryManualChecklistRows = (
     const failedCount = countRegistryFailures(state.modules)
     const brokenFixtureEnabled = hasBrokenRegistryFixture(state.modules)
     const articleModule = state.modules.find((item) => item.module === 'article')
+    const demoNoticeModule = state.modules.find((item) => item.module === 'demo_notice')
     const hasCheckDetail = state.modules.some((item) => (item.registryCheckCount || 0) > 0)
     const registryReady = state.registryLoaded && !state.registryLoading && !state.registryError
 
@@ -167,6 +168,13 @@ export const buildRegistryManualChecklistRows = (
             detail: `failed=${failedCount}`
         },
         {
+            key: 'multi_module',
+            label: '多模块',
+            status: demoNoticeModule ? '已开启' : registryReady ? '待开启' : '待加载',
+            statusType: demoNoticeModule ? 'success' : registryReady ? 'warning' : 'info',
+            detail: 'MAKEADMIN_ENABLE_DEMO_NOTICE_MODULE=1'
+        },
+        {
             key: 'check_detail',
             label: '校验明细',
             status: hasCheckDetail ? '可打开' : '待返回',
@@ -179,6 +187,13 @@ export const buildRegistryManualChecklistRows = (
             status: articleModule?.entry ? '可打开' : registryReady ? '未配置' : '待加载',
             statusType: articleModule?.entry ? 'success' : registryReady ? 'warning' : 'info',
             detail: articleModule?.entry || '/demo/article'
+        },
+        {
+            key: 'demo_notice_entry',
+            label: 'Demo Notice',
+            status: demoNoticeModule?.entry ? '可打开' : registryReady ? '待开启' : '待加载',
+            statusType: demoNoticeModule?.entry ? 'success' : registryReady ? 'warning' : 'info',
+            detail: demoNoticeModule?.entry || '/demo/notice'
         }
     ]
 }

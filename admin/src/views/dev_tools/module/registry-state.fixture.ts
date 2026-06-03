@@ -37,6 +37,16 @@ const brokenFixtureModules = [
     }
 ] satisfies RegistryStateModule[]
 
+const multiRegistryModules = [
+    ...defaultModules,
+    {
+        module: 'demo_notice',
+        registryStatusCode: 'passed',
+        entry: '/demo/notice',
+        registryCheckCount: 7
+    }
+] satisfies RegistryStateModule[]
+
 const multiStatusModules = [
     {
         module: 'article',
@@ -63,6 +73,13 @@ const defaultRegistryState = {
 
 const brokenRegistryState = {
     modules: brokenFixtureModules,
+    registryLoaded: true,
+    registryLoading: false,
+    registryError: ''
+} satisfies RegistryStateInput
+
+const multiRegistryState = {
+    modules: multiRegistryModules,
     registryLoaded: true,
     registryLoading: false,
     registryError: ''
@@ -96,6 +113,8 @@ const defaultChecklistRows: RegistryManualChecklistRow[] =
     buildRegistryManualChecklistRows(defaultRegistryState)
 const brokenChecklistRows: RegistryManualChecklistRow[] =
     buildRegistryManualChecklistRows(brokenRegistryState)
+const multiChecklistRows: RegistryManualChecklistRow[] =
+    buildRegistryManualChecklistRows(multiRegistryState)
 const emptyChecklistRows: RegistryManualChecklistRow[] =
     buildRegistryManualChecklistRows(emptyRegistryState)
 const defaultFailureCount: number = countRegistryFailures(defaultModules)
@@ -125,6 +144,7 @@ export const registryStateFixture = {
     multiFailedModules,
     defaultChecklistRows,
     brokenChecklistRows,
+    multiChecklistRows,
     emptyChecklistRows,
     defaultFailureCount,
     brokenFailureCount,

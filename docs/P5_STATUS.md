@@ -804,3 +804,43 @@ P5.23：模块中心多模块筛选验收。建议验证 `Demo Article` 与 `Dem
 ## 下一步
 
 P5.24：模块中心多模块人工验收入口收敛。建议把 `MAKEADMIN_ENABLE_DEMO_NOTICE_MODULE=1` 下模块中心应出现的关键字、筛选状态和打开入口整理成一个登录后 checklist。
+
+## P5.24 当前落地
+
+模块中心多模块人工验收入口已收敛：
+
+- registry checklist 新增 `多模块` 项。
+- registry checklist 新增 `Demo Notice` 项。
+- checklist 明确展示 `MAKEADMIN_ENABLE_DEMO_NOTICE_MODULE=1` 和 `/demo/notice`。
+- `registry-state.fixture.ts` 增加 `multiRegistryModules`、`multiRegistryState` 和 `multiChecklistRows`。
+- 新增 `scripts/check-module-center-manual-checklist.sh`。
+- `scripts/check-module-tools-no-db.sh` 接入 `Module tools: module center manual checklist contract`。
+- 模块中心阶段标识更新为 `P5.24`。
+- README 和 registry 文档索引增加 P5.24 入口。
+
+详见 `docs/P5_MODULE_CENTER_MANUAL_MULTI_CHECKLIST.md`。
+
+## P5.24 验收标准
+
+- `scripts/check-module-center-manual-checklist.sh` 通过。
+- `scripts/check-module-center-filter-contract.sh` 通过。
+- `scripts/check-demo-notice-module.sh` 通过。
+- `scripts/check-module-center-ui-contract.sh` 通过。
+- `cd admin && npm run type-check` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+
+## P5.24 验收结果
+
+- 已通过 `scripts/check-module-center-manual-checklist.sh`。
+- 已通过 `scripts/check-module-center-filter-contract.sh`。
+- 已通过 `scripts/check-demo-notice-module.sh`。
+- 已通过 `scripts/check-module-center-ui-contract.sh`。
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 全量验证里的前端 build 已生成 `demo_notice` chunk。
+- 全量验证里的前端 build 仍有 Rolldown 对 `@vueuse/core` pure annotation 的已知 warning，命令退出码为 0。
+- 浏览器当前位于登录页，旧 token 已过期；本机未设置 `ADMIN_PASSWORD` 或 `P1_SMOKE_ADMIN_PASSWORD`，因此登录后页面截图验收需要你重新登录后执行。
+
+## 下一步
+
+P5.25：P5 模块中心多模块冻结验收。建议对 Demo Article、Demo Notice、registry smoke、模块中心 UI contract、登录后人工 checklist 和 no-db 链路做 P5 最终状态归档。

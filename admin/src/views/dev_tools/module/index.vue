@@ -237,7 +237,7 @@
                 <div class="section-header">
                     <span class="card-title">内置模块清单</span>
                     <div class="section-actions">
-                        <el-tag type="success" size="small">P5.23</el-tag>
+                        <el-tag type="success" size="small">P5.24</el-tag>
                         <el-button
                             type="primary"
                             link
