@@ -8,15 +8,54 @@
                         manifest、codegen、安装计划、安装执行、卸载执行和审计预览的统一入口
                     </div>
                 </div>
-                <module-manifest-preview>
-                    <el-button type="primary">
-                        <template #icon>
-                            <icon name="el-icon-Document" />
-                        </template>
-                        Manifest 预览
-                    </el-button>
-                </module-manifest-preview>
+                <el-button type="primary" :loading="previewLoading" @click="handlePreview">
+                    <template #icon>
+                        <icon name="el-icon-Document" />
+                    </template>
+                    生成预览
+                </el-button>
             </div>
+        </el-card>
+
+        <el-card class="!border-none mb-4" shadow="never">
+            <el-form class="module-form" :model="formData" label-width="90px">
+                <el-form-item label="来源">
+                    <el-radio-group v-model="inputMode">
+                        <el-radio-button label="path">仓库路径</el-radio-button>
+                        <el-radio-button label="body">JSON</el-radio-button>
+                    </el-radio-group>
+                </el-form-item>
+                <el-form-item v-if="inputMode === 'path'" label="路径">
+                    <el-input v-model="formData.manifestPath" clearable />
+                </el-form-item>
+                <el-form-item v-else label="JSON">
+                    <el-input
+                        v-model="formData.manifestBody"
+                        type="textarea"
+                        :autosize="{ minRows: 8, maxRows: 14 }"
+                        clearable
+                    />
+                </el-form-item>
+                <el-form-item label="作者">
+                    <el-input class="w-[280px]" v-model="formData.authorName" clearable />
+                </el-form-item>
+                <el-form-item label="租户/角色">
+                    <div class="flex gap-3">
+                        <el-input-number
+                            class="w-[160px]"
+                            v-model="formData.tenantId"
+                            :min="0"
+                            :controls="false"
+                        />
+                        <el-input-number
+                            class="w-[160px]"
+                            v-model="formData.roleId"
+                            :min="1"
+                            :controls="false"
+                        />
+                    </div>
+                </el-form-item>
+            </el-form>
         </el-card>
 
         <div class="module-grid mb-4">
@@ -33,11 +72,54 @@
             </el-card>
         </div>
 
+        <el-card v-if="preview" class="!border-none mb-4" shadow="never">
+            <template #header>
+                <div class="section-header">
+                    <span class="card-title">预览结果</span>
+                    <el-tag type="success" size="small">{{ preview.manifest.module }}</el-tag>
+                </div>
+            </template>
+            <el-descriptions :column="3" border>
+                <el-descriptions-item label="来源">{{ preview.source }}</el-descriptions-item>
+                <el-descriptions-item label="实体">{{ preview.manifest.entity }}</el-descriptions-item>
+                <el-descriptions-item label="表名">{{ preview.detail.base.tableName }}</el-descriptions-item>
+                <el-descriptions-item label="功能">
+                    {{ preview.detail.gen.functionName }}
+                </el-descriptions-item>
+                <el-descriptions-item label="模板">{{ preview.detail.gen.genTpl }}</el-descriptions-item>
+                <el-descriptions-item label="运行时">{{ preview.plan.runtimeHint }}</el-descriptions-item>
+            </el-descriptions>
+
+            <div class="preview-actions">
+                <el-button @click="handlePlanPreview">
+                    <template #icon>
+                        <icon name="el-icon-DocumentCopy" />
+                    </template>
+                    安装计划
+                </el-button>
+                <el-button type="primary" @click="handleCodePreview">
+                    <template #icon>
+                        <icon name="el-icon-View" />
+                    </template>
+                    代码预览
+                </el-button>
+            </div>
+
+            <el-table class="mt-4" :data="preview.detail.column" size="large">
+                <el-table-column label="字段" prop="columnName" min-width="130" />
+                <el-table-column label="Go 字段" prop="goField" min-width="120" />
+                <el-table-column label="Go 类型" prop="goType" min-width="100" />
+                <el-table-column label="表单" prop="htmlType" min-width="100" />
+                <el-table-column label="查询" prop="queryType" min-width="100" />
+                <el-table-column label="字典" prop="dictType" min-width="120" />
+            </el-table>
+        </el-card>
+
         <el-card class="!border-none" shadow="never">
             <template #header>
                 <div class="section-header">
                     <span class="card-title">内置模块清单</span>
-                    <el-tag type="success" size="small">P4.2</el-tag>
+                    <el-tag type="success" size="small">P4.3</el-tag>
                 </div>
             </template>
             <el-table :data="modules" size="large">
@@ -51,24 +133,50 @@
                     </template>
                 </el-table-column>
                 <el-table-column label="入口" width="160" fixed="right">
-                    <template #default>
-                        <module-manifest-preview>
-                            <el-button type="primary" link>
-                                <template #icon>
-                                    <icon name="el-icon-View" />
-                                </template>
-                                预览
-                            </el-button>
-                        </module-manifest-preview>
+                    <template #default="{ row }">
+                        <el-button type="primary" link @click="handleModulePreview(row.manifest)">
+                            <template #icon>
+                                <icon name="el-icon-View" />
+                            </template>
+                            预览
+                        </el-button>
                     </template>
                 </el-table-column>
             </el-table>
         </el-card>
+
+        <code-preview
+            v-if="previewState.show"
+            v-model="previewState.show"
+            :code="previewState.code"
+        />
     </div>
 </template>
 
 <script lang="ts" setup name="moduleCenter">
-import ModuleManifestPreview from '../components/module-manifest-preview.vue'
+import {
+    previewModuleManifest,
+    type ModuleManifestPreviewParams,
+    type ModuleManifestPreviewResult
+} from '@/api/tools/code'
+import CodePreview from '../components/code-preview.vue'
+import feedback from '@/utils/feedback'
+
+const inputMode = ref<'path' | 'body'>('path')
+const formData = reactive({
+    manifestPath: 'examples/demo/manifest.json',
+    manifestBody: '',
+    authorName: 'codepeep',
+    tenantId: 0,
+    roleId: 1
+})
+
+const preview = ref<ModuleManifestPreviewResult>()
+const previewLoading = ref(false)
+const previewState = reactive({
+    show: false,
+    code: {} as Record<string, string>
+})
 
 const capabilityCards = [
     {
@@ -103,6 +211,63 @@ const modules = [
         statusType: 'success'
     }
 ]
+
+const manifestParams = (): ModuleManifestPreviewParams =>
+    inputMode.value === 'path'
+        ? {
+              manifestPath: formData.manifestPath,
+              authorName: formData.authorName,
+              tenantId: formData.tenantId,
+              roleId: formData.roleId
+          }
+        : {
+              manifestBody: formData.manifestBody,
+              authorName: formData.authorName,
+              tenantId: formData.tenantId,
+              roleId: formData.roleId
+          }
+
+const handlePreview = async () => {
+    if (previewLoading.value) {
+        return
+    }
+    previewLoading.value = true
+    try {
+        preview.value = await previewModuleManifest(manifestParams())
+        feedback.msgSuccess('预览生成成功')
+    } finally {
+        previewLoading.value = false
+    }
+}
+
+const handleModulePreview = async (manifestPath: string) => {
+    inputMode.value = 'path'
+    formData.manifestPath = manifestPath
+    await handlePreview()
+}
+
+const handlePlanPreview = () => {
+    const currentPreview = preview.value
+    if (!currentPreview) {
+        return
+    }
+    const plan = currentPreview.plan
+    previewState.code = {
+        'registry.sql': plan.registrySql || '',
+        'role_grant.sql': plan.roleGrantSql || '',
+        'install.sql': plan.installSql || '',
+        'uninstall.sql': plan.uninstallSql || ''
+    }
+    previewState.show = true
+}
+
+const handleCodePreview = () => {
+    if (!preview.value) {
+        return
+    }
+    previewState.code = preview.value.code
+    previewState.show = true
+}
 </script>
 
 <style lang="scss" scoped>
@@ -131,6 +296,10 @@ const modules = [
     font-size: 14px;
     line-height: 24px;
     margin-top: 6px;
+}
+
+.module-form {
+    max-width: 720px;
 }
 
 .module-grid {
@@ -175,6 +344,13 @@ const modules = [
     justify-content: space-between;
 }
 
+.preview-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 16px;
+}
+
 @media (max-width: 1024px) {
     .module-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -189,6 +365,10 @@ const modules = [
 
     .module-grid {
         grid-template-columns: 1fr;
+    }
+
+    .preview-actions {
+        justify-content: flex-start;
     }
 }
 </style>
