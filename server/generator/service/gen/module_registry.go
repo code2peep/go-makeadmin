@@ -9,6 +9,7 @@ import (
 )
 
 const EnableBrokenModuleRegistryFixtureEnv = "MAKEADMIN_ENABLE_BROKEN_MODULE_REGISTRY_FIXTURE"
+const EnableDemoNoticeModuleRegistryEnv = "MAKEADMIN_ENABLE_DEMO_NOTICE_MODULE"
 
 // ListModuleRegistry returns built-in modules known to the local framework.
 func (genSrv generateService) ListModuleRegistry() []resp.ModuleRegistryItemResp {
@@ -23,6 +24,18 @@ func (genSrv generateService) ListModuleRegistry() []resp.ModuleRegistryItemResp
 			Status:     "可安装",
 			StatusType: "success",
 		},
+	}
+	if strings.TrimSpace(os.Getenv(EnableDemoNoticeModuleRegistryEnv)) == "1" {
+		items = append(items, resp.ModuleRegistryItemResp{
+			Name:       "Demo Notice",
+			Module:     "demo_notice",
+			Manifest:   "examples/demo_notice/manifest.json",
+			Table:      "ma_demo_notice",
+			Runtime:    moduleRuntimeNoGate,
+			Entry:      "/demo/notice",
+			Status:     "前端只读示例",
+			StatusType: "warning",
+		})
 	}
 	if strings.TrimSpace(os.Getenv(EnableBrokenModuleRegistryFixtureEnv)) == "1" {
 		items = append(items, resp.ModuleRegistryItemResp{

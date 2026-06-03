@@ -16,7 +16,8 @@ const modules = {
     ...import.meta.glob('/src/views/setting/system/**/*.vue'),
     ...import.meta.glob('/src/views/setting/website/**/*.vue'),
     ...import.meta.glob('/src/views/dev_tools/**/*.vue'),
-    ...import.meta.glob('/src/views/article/**/*.vue')
+    ...import.meta.glob('/src/views/article/**/*.vue'),
+    ...import.meta.glob('/src/views/demo_notice/**/*.vue')
 }
 
 //

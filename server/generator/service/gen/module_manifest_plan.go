@@ -184,11 +184,13 @@ func modulePermissionCodeList(manifest moduleManifest) string {
 	return strings.Join(codes, ", ")
 }
 
+const moduleRuntimeNoGate = "No runtime env gate is defined for this module yet."
+
 func moduleRuntimeHint(manifest moduleManifest) string {
 	if manifest.Module == "article" {
 		return "MAKEADMIN_ENABLE_DEMO_MODULE=1"
 	}
-	return "No runtime env gate is defined for this module yet."
+	return moduleRuntimeNoGate
 }
 
 func sqlQuote(value any) string {

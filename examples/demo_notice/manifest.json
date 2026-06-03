@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "module": "demo_notice",
+  "entity": "DemoNotice",
+  "table": "ma_demo_notice",
+  "backendPackage": "gencode",
+  "backend": {
+    "routes": [
+      {
+        "method": "GET",
+        "path": "/demo_notice/list",
+        "permission": "demo_notice:list"
+      },
+      {
+        "method": "GET",
+        "path": "/demo_notice/detail",
+        "permission": "demo_notice:detail"
+      }
+    ]
+  },
+  "frontend": {
+    "api": "admin/src/api/demoNotice.ts",
+    "views": [
+      "admin/src/views/demo_notice/index.vue"
+    ]
+  },
+  "menu": {
+    "code": "demo.notice",
+    "parent": "dev_tools",
+    "type": "page",
+    "name": "Demo Notice",
+    "routePath": "/dev_tools/demo/notice",
+    "routeName": "demo.notice",
+    "component": "demo_notice/index",
+    "permission": "demo_notice:list",
+    "visible": true,
+    "sort": 11
+  },
+  "permissions": [
+    {
+      "code": "demo_notice:list",
+      "name": "Notice list",
+      "module": "demo_notice",
+      "resource": "notice",
+      "action": "list"
+    },
+    {
+      "code": "demo_notice:detail",
+      "name": "Notice detail",
+      "module": "demo_notice",
+      "resource": "notice",
+      "action": "detail"
+    }
+  ],
+  "runtimeRegistered": false,
+  "requiresSchema": false
+}

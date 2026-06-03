@@ -18,9 +18,16 @@ MAKEADMIN_ENABLE_BROKEN_MODULE_REGISTRY_FIXTURE=1 \
     -run '^TestListModuleRegistryIncludesBrokenFixtureWhenEnabled$' \
     -count=1
 
+echo "==> Module registry smoke: demo notice fixture"
+MAKEADMIN_ENABLE_DEMO_NOTICE_MODULE=1 \
+    GOPROXY="${GOPROXY:-https://goproxy.cn,direct}" \
+    go test ./generator/service/gen \
+    -run '^Test(ListModuleRegistryIncludesDemoNoticeWhenEnabled|DemoNoticeManifestUsesNoRuntimeGate)$' \
+    -count=1
+
 echo "==> Module registry smoke: route response"
 GOPROXY="${GOPROXY:-https://goproxy.cn,direct}" go test ./generator/routers/gen \
-    -run '^TestListModuleRegistryRoute(DefaultResponse|BrokenFixtureResponse)$' \
+    -run '^TestListModuleRegistryRoute(DefaultResponse|BrokenFixtureResponse|DemoNoticeResponse)$' \
     -count=1
 
 echo "OK: module registry service and route contracts passed"
