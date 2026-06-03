@@ -308,3 +308,34 @@ P5.8：模块 registry 校验异常 fixture 与页面异常态验收。建议增
 ## 下一步
 
 P5.9：模块 registry 后端契约测试与 CLI smoke。建议用脚本直接请求或调用 registry，分别验证默认清单和 broken fixture 清单，形成不用登录后台也能验收模块中心数据契约的 smoke。
+
+## P5.9 当前落地
+
+模块 registry CLI smoke 已接入：
+
+- 新增 `scripts/check-module-registry-smoke.sh`。
+- smoke 验证默认清单只返回 `Demo Article`，且 manifest 校验通过。
+- smoke 验证 `MAKEADMIN_ENABLE_BROKEN_MODULE_REGISTRY_FIXTURE=1` 下返回 `Broken Manifest Fixture`。
+- smoke 验证异常 fixture 校验失败，但不影响 Demo Article。
+- `scripts/check-module-tools-no-db.sh` 已接入 registry smoke。
+- `./scripts/verify-no-db.sh` 会覆盖 registry smoke。
+- 模块中心阶段标识更新为 `P5.9`。
+
+详见 `docs/P5_MODULE_REGISTRY_SMOKE.md`。
+
+## P5.9 验收标准
+
+- `scripts/check-module-registry-smoke.sh` 通过。
+- `cd admin && npm run type-check` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+
+## P5.9 验收结果
+
+- 已通过 `scripts/check-module-registry-smoke.sh`。
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 全量验证里的前端 build 仍有 Rolldown 对 `@vueuse/core` pure annotation 的已知 warning，命令退出码为 0。
+
+## 下一步
+
+P5.10：模块中心登录后人工验收与页面截图记录。建议在你重新登录后台后，分别用默认 registry 和 broken fixture registry 做一次可视化验收，确认 P5.6-P5.9 的页面闭环。
