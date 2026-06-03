@@ -844,3 +844,45 @@ P5.24：模块中心多模块人工验收入口收敛。建议把 `MAKEADMIN_ENA
 ## 下一步
 
 P5.25：P5 模块中心多模块冻结验收。建议对 Demo Article、Demo Notice、registry smoke、模块中心 UI contract、登录后人工 checklist 和 no-db 链路做 P5 最终状态归档。
+
+## P5.25 当前落地
+
+P5 模块中心多模块冻结验收已建立：
+
+- 新增 `docs/P5_FINAL_STATUS.md`。
+- 新增 `scripts/check-p5-module-center-freeze.sh`。
+- `scripts/check-module-tools-no-db.sh` 接入 `Module tools: P5 module center freeze contract`。
+- P5 最终状态覆盖 Demo Article、Demo Notice、registry smoke、UI contract、filter contract、manual checklist 和 no-db 链路。
+- 模块中心阶段标识更新为 `P5.25`。
+- README 和 registry 文档索引增加 P5 最终状态入口。
+
+详见 `docs/P5_FINAL_STATUS.md`。
+
+## P5.25 验收标准
+
+- `scripts/check-p5-module-center-freeze.sh` 通过。
+- `scripts/check-module-registry-smoke.sh` 通过。
+- `scripts/check-module-center-ui-contract.sh` 通过。
+- `scripts/check-module-center-filter-contract.sh` 通过。
+- `scripts/check-module-center-manual-checklist.sh` 通过。
+- `scripts/check-demo-notice-module.sh` 通过。
+- `cd admin && npm run type-check` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+
+## P5.25 验收结果
+
+- 已通过 `scripts/check-p5-module-center-freeze.sh`。
+- 已通过 `scripts/check-module-registry-smoke.sh`。
+- 已通过 `scripts/check-module-center-ui-contract.sh`。
+- 已通过 `scripts/check-module-center-filter-contract.sh`。
+- 已通过 `scripts/check-module-center-manual-checklist.sh`。
+- 已通过 `scripts/check-demo-notice-module.sh`。
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 全量验证里的前端 build 已生成 `demo_notice` chunk。
+- 全量验证里的前端 build 仍有 Rolldown 对 `@vueuse/core` pure annotation 的已知 warning，命令退出码为 0。
+- 登录后人工 checklist 当前未执行；本地未提供 `ADMIN_PASSWORD` 或 `P1_SMOKE_ADMIN_PASSWORD`，不修改 `.env` 或管理员密码。
+
+## 下一步
+
+P6.1：模块中心产品化入口。建议开始把当前模块中心从验收/工具界面推进为产品化模块市场入口，优先整理模块详情、安装向导和状态说明。

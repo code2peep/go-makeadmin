@@ -17,7 +17,7 @@ FIXTURE="$ROOT/admin/src/views/dev_tools/module/registry-state.fixture.ts"
 PAGE="$ROOT/admin/src/views/dev_tools/module/index.vue"
 DOC="$ROOT/docs/P5_MODULE_CENTER_MANUAL_MULTI_CHECKLIST.md"
 
-assert_contains "$PAGE" "P5.24"
+assert_contains "$PAGE" "P5.25"
 assert_contains "$PAGE" "registry-manual-checklist"
 assert_contains "$HELPER" "多模块"
 assert_contains "$HELPER" "Demo Notice"
