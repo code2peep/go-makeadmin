@@ -236,7 +236,7 @@
             <template #header>
                 <div class="section-header">
                     <span class="card-title">内置模块清单</span>
-                    <el-tag type="success" size="small">P4.5</el-tag>
+                    <el-tag type="success" size="small">P5.2</el-tag>
                 </div>
             </template>
             <el-table :data="modules" size="large">
@@ -244,12 +244,13 @@
                 <el-table-column label="Manifest" prop="manifest" min-width="240" />
                 <el-table-column label="表名" prop="table" min-width="160" />
                 <el-table-column label="运行时" prop="runtime" min-width="260" />
+                <el-table-column label="页面" prop="entry" min-width="160" />
                 <el-table-column label="状态" width="120">
                     <template #default="{ row }">
                         <el-tag :type="row.statusType" size="small">{{ row.status }}</el-tag>
                     </template>
                 </el-table-column>
-                <el-table-column label="入口" width="160" fixed="right">
+                <el-table-column label="入口" width="220" fixed="right">
                     <template #default="{ row }">
                         <el-button type="primary" link @click="handleModulePreview(row.manifest)">
                             <template #icon>
@@ -257,6 +258,7 @@
                             </template>
                             预览
                         </el-button>
+                        <el-button type="primary" link @click="goTo(row.entry)">打开</el-button>
                     </template>
                 </el-table-column>
             </el-table>
@@ -286,6 +288,7 @@ import CodePreview from '../components/code-preview.vue'
 import ModuleManifestApplyResultView from '../components/module-manifest-apply-result.vue'
 import feedback from '@/utils/feedback'
 
+const router = useRouter()
 const inputMode = ref<'path' | 'body'>('path')
 const formData = reactive({
     manifestPath: 'examples/demo/manifest.json',
@@ -345,7 +348,8 @@ const modules = [
         manifest: 'examples/demo/manifest.json',
         table: 'ma_demo_article',
         runtime: 'MAKEADMIN_ENABLE_DEMO_MODULE=1',
-        status: '可预览',
+        entry: '/demo/article',
+        status: '可安装',
         statusType: 'success'
     }
 ]
@@ -547,6 +551,10 @@ const handleModulePreview = async (manifestPath: string) => {
     inputMode.value = 'path'
     formData.manifestPath = manifestPath
     await handlePreview()
+}
+
+const goTo = (url: string) => {
+    router.push(url)
 }
 
 const handlePlanPreview = () => {
