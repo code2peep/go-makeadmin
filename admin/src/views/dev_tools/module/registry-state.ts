@@ -7,6 +7,10 @@ export type RegistryStateModule = {
     registryCheckCount?: number
 }
 
+export type RegistryFilterModule = RegistryStateModule & {
+    installStatusCode: string
+}
+
 export type RegistryStateInput = {
     modules: ReadonlyArray<RegistryStateModule>
     registryLoaded: boolean
@@ -40,6 +44,12 @@ export type ModuleRuntimeStatusView = {
     label: string
     type: ElementTagType
     detail: string
+}
+
+export type ModuleStatusSummaryRow = {
+    key: string
+    label: string
+    value: number
 }
 
 export const registrySmokeCommand = 'scripts/check-module-registry-smoke.sh'
@@ -195,4 +205,34 @@ export const buildModuleRuntimeStatus = (
         type: 'success',
         detail: status.runtimeEnv ? `${status.runtimeEnv}=1` : status.runtimeHint || '-'
     }
+}
+
+export const isRegistryModuleFailed = (module: RegistryFilterModule) =>
+    module.registryStatusCode === 'failed' || ['blocked', 'failed'].includes(module.installStatusCode)
+
+export const filterRegistryModules = <T extends RegistryFilterModule>(
+    modules: ReadonlyArray<T>,
+    filter: string
+): T[] => {
+    if (filter === 'all') {
+        return [...modules]
+    }
+    if (filter === 'failed') {
+        return modules.filter(isRegistryModuleFailed)
+    }
+    return modules.filter((item) => item.installStatusCode === filter)
+}
+
+export const buildModuleStatusSummary = (
+    modules: ReadonlyArray<RegistryFilterModule>
+): ModuleStatusSummaryRow[] => {
+    const countBy = (codes: string[]) =>
+        modules.filter((item) => codes.includes(item.installStatusCode)).length
+    return [
+        { key: 'total', label: '总数', value: modules.length },
+        { key: 'installed', label: '已安装', value: countBy(['installed']) },
+        { key: 'partial', label: '部分', value: countBy(['partial']) },
+        { key: 'uninstalled', label: '未安装', value: countBy(['uninstalled']) },
+        { key: 'failed', label: '异常', value: modules.filter(isRegistryModuleFailed).length }
+    ]
 }

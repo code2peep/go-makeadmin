@@ -765,3 +765,42 @@ P5.22：第二个示例模块模块中心状态回读说明。建议把 `Demo No
 ## 下一步
 
 P5.23：模块中心多模块筛选验收。建议验证 `Demo Article` 与 `Demo Notice` 同时存在时，全部、未安装、异常筛选和验收状态条的数量统计保持稳定。
+
+## P5.23 当前落地
+
+模块中心多模块筛选验收已建立：
+
+- 新增 `filterRegistryModules()` helper。
+- 新增 `buildModuleStatusSummary()` helper。
+- 新增 `isRegistryModuleFailed()` helper。
+- 模块中心 `filteredModules` 和 `moduleStatusSummary` 改为调用 helper。
+- `registry-state.fixture.ts` 增加 `article + demo_notice` 双模块状态。
+- 新增 `scripts/check-module-center-filter-contract.sh`。
+- `scripts/check-module-tools-no-db.sh` 接入 `Module tools: module center filter contract`。
+- 模块中心阶段标识更新为 `P5.23`。
+- README 和 registry 文档索引增加 P5.23 入口。
+
+详见 `docs/P5_MODULE_CENTER_MULTI_FILTERS.md`。
+
+## P5.23 验收标准
+
+- `scripts/check-module-center-filter-contract.sh` 通过。
+- `scripts/check-demo-notice-module.sh` 通过。
+- `scripts/check-module-center-ui-contract.sh` 通过。
+- `cd admin && npm run type-check` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+
+## P5.23 验收结果
+
+- 已通过 `scripts/check-module-center-filter-contract.sh`。
+- 已通过 `scripts/check-demo-notice-module.sh`。
+- 已通过 `scripts/check-module-center-ui-contract.sh`。
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 全量验证里的前端 build 已生成 `demo_notice` chunk。
+- 全量验证里的前端 build 仍有 Rolldown 对 `@vueuse/core` pure annotation 的已知 warning，命令退出码为 0。
+- 浏览器当前位于登录页，旧 token 已过期；本机未设置 `ADMIN_PASSWORD` 或 `P1_SMOKE_ADMIN_PASSWORD`，因此登录后页面截图验收需要你重新登录后执行。
+
+## 下一步
+
+P5.24：模块中心多模块人工验收入口收敛。建议把 `MAKEADMIN_ENABLE_DEMO_NOTICE_MODULE=1` 下模块中心应出现的关键字、筛选状态和打开入口整理成一个登录后 checklist。

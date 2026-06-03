@@ -237,7 +237,7 @@
                 <div class="section-header">
                     <span class="card-title">内置模块清单</span>
                     <div class="section-actions">
-                        <el-tag type="success" size="small">P5.22</el-tag>
+                        <el-tag type="success" size="small">P5.23</el-tag>
                         <el-button
                             type="primary"
                             link
@@ -460,6 +460,8 @@ import ModuleManifestApplyResultView from '../components/module-manifest-apply-r
 import feedback from '@/utils/feedback'
 import {
     buildModuleRuntimeStatus,
+    buildModuleStatusSummary,
+    filterRegistryModules,
     buildRegistryAcceptanceRows,
     buildRegistryManualChecklistRows,
     isRegistryEmptyState,
@@ -671,34 +673,11 @@ const writeGateStatusType = computed(() => {
 })
 
 const filteredModules = computed(() => {
-    if (moduleStatusFilter.value === 'all') {
-        return modules
-    }
-    if (moduleStatusFilter.value === 'failed') {
-        return modules.filter(
-            (item) =>
-                item.registryStatusCode === 'failed' ||
-                ['blocked', 'failed'].includes(item.installStatusCode)
-        )
-    }
-    return modules.filter((item) => item.installStatusCode === moduleStatusFilter.value)
+    return filterRegistryModules(modules, moduleStatusFilter.value)
 })
 
 const moduleStatusSummary = computed(() => {
-    const countBy = (codes: string[]) =>
-        modules.filter((item) => codes.includes(item.installStatusCode)).length
-    const failedCount = modules.filter(
-        (item) =>
-            item.registryStatusCode === 'failed' ||
-            ['blocked', 'failed'].includes(item.installStatusCode)
-    ).length
-    return [
-        { key: 'total', label: '总数', value: modules.length },
-        { key: 'installed', label: '已安装', value: countBy(['installed']) },
-        { key: 'partial', label: '部分', value: countBy(['partial']) },
-        { key: 'uninstalled', label: '未安装', value: countBy(['uninstalled']) },
-        { key: 'failed', label: '异常', value: failedCount }
-    ]
+    return buildModuleStatusSummary(modules)
 })
 
 const registryStateInput = computed<RegistryStateInput>(() => ({

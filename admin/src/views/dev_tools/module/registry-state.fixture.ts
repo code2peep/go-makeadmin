@@ -1,5 +1,7 @@
 import {
     buildModuleRuntimeStatus,
+    buildModuleStatusSummary,
+    filterRegistryModules,
     buildRegistryAcceptanceRows,
     buildRegistryManualChecklistRows,
     countRegistryFailures,
@@ -10,6 +12,8 @@ import {
     type RegistryAcceptanceRow,
     type RegistryManualChecklistRow,
     type ModuleRuntimeStatusView,
+    type ModuleStatusSummaryRow,
+    type RegistryFilterModule,
     type RegistryStateInput,
     type RegistryStateModule
 } from './registry-state'
@@ -32,6 +36,23 @@ const brokenFixtureModules = [
         registryCheckCount: 7
     }
 ] satisfies RegistryStateModule[]
+
+const multiStatusModules = [
+    {
+        module: 'article',
+        registryStatusCode: 'passed',
+        entry: '/demo/article',
+        registryCheckCount: 7,
+        installStatusCode: 'installed'
+    },
+    {
+        module: 'demo_notice',
+        registryStatusCode: 'passed',
+        entry: '/demo/notice',
+        registryCheckCount: 7,
+        installStatusCode: 'uninstalled'
+    }
+] satisfies RegistryFilterModule[]
 
 const defaultRegistryState = {
     modules: defaultModules,
@@ -63,6 +84,14 @@ const failedRegistryState = {
 
 const defaultRows: RegistryAcceptanceRow[] = buildRegistryAcceptanceRows(defaultModules)
 const brokenRows: RegistryAcceptanceRow[] = buildRegistryAcceptanceRows(brokenFixtureModules)
+const multiStatusSummaryRows: ModuleStatusSummaryRow[] =
+    buildModuleStatusSummary(multiStatusModules)
+const multiAllModules: RegistryFilterModule[] = filterRegistryModules(multiStatusModules, 'all')
+const multiUninstalledModules: RegistryFilterModule[] = filterRegistryModules(
+    multiStatusModules,
+    'uninstalled'
+)
+const multiFailedModules: RegistryFilterModule[] = filterRegistryModules(multiStatusModules, 'failed')
 const defaultChecklistRows: RegistryManualChecklistRow[] =
     buildRegistryManualChecklistRows(defaultRegistryState)
 const brokenChecklistRows: RegistryManualChecklistRow[] =
@@ -90,6 +119,10 @@ const demoArticleRuntimeStatus: ModuleRuntimeStatusView = buildModuleRuntimeStat
 export const registryStateFixture = {
     defaultRows,
     brokenRows,
+    multiStatusSummaryRows,
+    multiAllModules,
+    multiUninstalledModules,
+    multiFailedModules,
     defaultChecklistRows,
     brokenChecklistRows,
     emptyChecklistRows,
