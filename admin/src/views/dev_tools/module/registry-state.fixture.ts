@@ -1,5 +1,7 @@
 import {
     buildModuleRuntimeStatus,
+    buildModuleInstallWizardRows,
+    buildModuleMarketRows,
     buildModuleStatusSummary,
     filterRegistryModules,
     buildRegistryAcceptanceRows,
@@ -11,6 +13,8 @@ import {
     registryTableEmptyTextFromState,
     type RegistryAcceptanceRow,
     type RegistryManualChecklistRow,
+    type ModuleInstallWizardRow,
+    type ModuleMarketRow,
     type ModuleRuntimeStatusView,
     type ModuleStatusSummaryRow,
     type RegistryFilterModule,
@@ -103,6 +107,10 @@ const defaultRows: RegistryAcceptanceRow[] = buildRegistryAcceptanceRows(default
 const brokenRows: RegistryAcceptanceRow[] = buildRegistryAcceptanceRows(brokenFixtureModules)
 const multiStatusSummaryRows: ModuleStatusSummaryRow[] =
     buildModuleStatusSummary(multiStatusModules)
+const marketRows: ModuleMarketRow[] = buildModuleMarketRows(multiStatusModules)
+const selectedWizardRows: ModuleInstallWizardRow[] =
+    buildModuleInstallWizardRows(multiStatusModules[0])
+const emptyWizardRows: ModuleInstallWizardRow[] = buildModuleInstallWizardRows()
 const multiAllModules: RegistryFilterModule[] = filterRegistryModules(multiStatusModules, 'all')
 const multiUninstalledModules: RegistryFilterModule[] = filterRegistryModules(
     multiStatusModules,
@@ -139,6 +147,9 @@ export const registryStateFixture = {
     defaultRows,
     brokenRows,
     multiStatusSummaryRows,
+    marketRows,
+    selectedWizardRows,
+    emptyWizardRows,
     multiAllModules,
     multiUninstalledModules,
     multiFailedModules,

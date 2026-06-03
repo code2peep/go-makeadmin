@@ -17,6 +17,110 @@
             </div>
         </el-card>
 
+        <div class="module-product-grid mb-4">
+            <el-card class="!border-none module-market-overview" shadow="never">
+                <template #header>
+                    <div class="section-header">
+                        <span class="card-title">模块市场</span>
+                        <div class="section-actions">
+                            <el-tag type="primary" size="small">P6.1</el-tag>
+                            <el-tag type="success" size="small">P5.25</el-tag>
+                        </div>
+                    </div>
+                </template>
+                <div class="market-metric-grid">
+                    <div
+                        v-for="item in moduleMarketRows"
+                        :key="item.key"
+                        class="market-metric-item"
+                    >
+                        <div class="market-metric-label">{{ item.label }}</div>
+                        <div class="market-metric-value">
+                            <strong>{{ item.value }}</strong>
+                            <el-tag :type="item.type" size="small">{{ item.detail }}</el-tag>
+                        </div>
+                    </div>
+                </div>
+            </el-card>
+
+            <el-card class="!border-none module-detail-panel" shadow="never">
+                <template #header>
+                    <div class="section-header">
+                        <span class="card-title">模块详情</span>
+                        <el-tag :type="selectedModuleStatusType" size="small">
+                            {{ selectedModule?.installStatus || '待选择' }}
+                        </el-tag>
+                    </div>
+                </template>
+                <el-descriptions :column="1" border size="small">
+                    <el-descriptions-item label="模块">
+                        {{ selectedModuleTitle }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="Manifest">
+                        <span class="wrap-text">{{ selectedModule?.manifest || '-' }}</span>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="运行时">
+                        <span class="wrap-text">{{ selectedModule?.runtimeDetail || '-' }}</span>
+                    </el-descriptions-item>
+                    <el-descriptions-item label="入口">
+                        <span class="wrap-text">{{ selectedModule?.entry || '-' }}</span>
+                    </el-descriptions-item>
+                </el-descriptions>
+                <div class="module-detail-actions">
+                    <el-button
+                        type="primary"
+                        :disabled="!selectedModule"
+                        :loading="previewLoading"
+                        @click="handleSelectedModulePreview"
+                    >
+                        <template #icon>
+                            <icon name="el-icon-View" />
+                        </template>
+                        预览
+                    </el-button>
+                    <el-button
+                        :disabled="!selectedModule || previewLoading"
+                        @click="handleSelectedModulePlan"
+                    >
+                        <template #icon>
+                            <icon name="el-icon-DocumentCopy" />
+                        </template>
+                        安装计划
+                    </el-button>
+                    <el-button
+                        type="primary"
+                        link
+                        :disabled="!selectedModule?.entry"
+                        @click="goTo(selectedModule?.entry || '/')"
+                    >
+                        打开
+                    </el-button>
+                </div>
+            </el-card>
+
+            <el-card class="!border-none module-install-wizard" shadow="never">
+                <template #header>
+                    <div class="section-header">
+                        <span class="card-title">安装向导</span>
+                        <el-tag type="info" size="small">{{ selectedModule?.module || 'module' }}</el-tag>
+                    </div>
+                </template>
+                <div class="install-wizard-list">
+                    <div
+                        v-for="item in moduleInstallWizardRows"
+                        :key="item.key"
+                        class="install-wizard-item"
+                    >
+                        <div>
+                            <div class="install-wizard-label">{{ item.label }}</div>
+                            <div class="install-wizard-detail">{{ item.detail }}</div>
+                        </div>
+                        <el-tag :type="item.type" size="small">{{ item.status }}</el-tag>
+                    </div>
+                </div>
+            </el-card>
+        </div>
+
         <el-card class="!border-none mb-4" shadow="never">
             <el-form class="module-form" :model="formData" label-width="90px">
                 <el-form-item label="来源">
@@ -237,6 +341,7 @@
                 <div class="section-header">
                     <span class="card-title">内置模块清单</span>
                     <div class="section-actions">
+                        <el-tag type="primary" size="small">P6.1</el-tag>
                         <el-tag type="success" size="small">P5.25</el-tag>
                         <el-button
                             type="primary"
@@ -316,6 +421,7 @@
                 :data="filteredModules"
                 size="large"
                 :empty-text="registryTableEmptyText"
+                @row-click="selectModule"
             >
                 <el-table-column label="模块" prop="name" min-width="130" />
                 <el-table-column label="Manifest" prop="manifest" min-width="240" />
@@ -375,6 +481,9 @@
                 </el-table-column>
                 <el-table-column label="入口" width="220" fixed="right">
                     <template #default="{ row }">
+                        <el-button type="primary" link @click.stop="selectModule(row)">
+                            详情
+                        </el-button>
                         <el-button type="primary" link @click="handleModulePreview(row.manifest)">
                             <template #icon>
                                 <icon name="el-icon-View" />
@@ -460,6 +569,8 @@ import ModuleManifestApplyResultView from '../components/module-manifest-apply-r
 import feedback from '@/utils/feedback'
 import {
     buildModuleRuntimeStatus,
+    buildModuleInstallWizardRows,
+    buildModuleMarketRows,
     buildModuleStatusSummary,
     filterRegistryModules,
     buildRegistryAcceptanceRows,
@@ -468,6 +579,8 @@ import {
     registryErrorDetailText,
     registryTableEmptyTextFromState,
     type ElementTagType,
+    type ModuleInstallWizardRow,
+    type ModuleMarketRow,
     type RegistryAcceptanceRow,
     type RegistryManualChecklistRow,
     type RegistryStateInput,
@@ -509,6 +622,7 @@ const previewState = reactive({
     code: {} as Record<string, string>
 })
 const moduleStatusFilter = ref('all')
+const selectedModuleKey = ref('')
 
 const capabilityCards = [
     {
@@ -680,6 +794,39 @@ const moduleStatusSummary = computed(() => {
     return buildModuleStatusSummary(modules)
 })
 
+const moduleMarketRows = computed<ModuleMarketRow[]>(() => {
+    return buildModuleMarketRows(modules)
+})
+
+const selectedModule = computed(() => {
+    return modules.find((item) => item.module === selectedModuleKey.value)
+})
+
+const selectedModuleTitle = computed(() => {
+    if (!selectedModule.value) {
+        return '未选择模块'
+    }
+    return `${selectedModule.value.name} / ${selectedModule.value.module}`
+})
+
+const selectedModuleStatusType = computed<ElementTagType>(() => {
+    return (selectedModule.value?.installStatusType as ElementTagType) || 'info'
+})
+
+const moduleInstallWizardRows = computed<ModuleInstallWizardRow[]>(() => {
+    const selected = selectedModule.value
+    if (!selected) {
+        return buildModuleInstallWizardRows()
+    }
+    return buildModuleInstallWizardRows({
+        module: selected.module,
+        registryStatusCode: selected.registryStatusCode,
+        entry: selected.entry,
+        registryCheckCount: selected.registryChecks.length,
+        installStatusCode: selected.installStatusCode
+    })
+})
+
 const registryStateInput = computed<RegistryStateInput>(() => ({
     modules,
     registryLoaded: registryLoaded.value,
@@ -791,6 +938,26 @@ watch(manifestInputKey, () => {
     }
 })
 
+watch(
+    () => modules.map((item) => item.module).join('|'),
+    () => {
+        if (!modules.length) {
+            selectedModuleKey.value = ''
+            return
+        }
+        if (!modules.some((item) => item.module === selectedModuleKey.value)) {
+            selectedModuleKey.value = modules[0].module
+        }
+    }
+)
+
+const selectModule = (row: Record<string, unknown>) => {
+    const module = (row as ModuleCenterModule).module
+    if (module) {
+        selectedModuleKey.value = module
+    }
+}
+
 const handlePreview = async () => {
     if (previewLoading.value) {
         return
@@ -817,6 +984,21 @@ const handleModulePreview = async (manifestPath: string) => {
     inputMode.value = 'path'
     formData.manifestPath = manifestPath
     await handlePreview()
+}
+
+const handleSelectedModulePreview = async () => {
+    if (!selectedModule.value) {
+        return
+    }
+    await handleModulePreview(selectedModule.value.manifest)
+}
+
+const handleSelectedModulePlan = async () => {
+    if (!selectedModule.value) {
+        return
+    }
+    await handleModulePreview(selectedModule.value.manifest)
+    handlePlanPreview()
 }
 
 const goTo = (url: string) => {
@@ -1129,6 +1311,100 @@ onMounted(() => {
     margin-top: 6px;
 }
 
+.module-product-grid {
+    display: grid;
+    gap: 16px;
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.market-metric-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.market-metric-item {
+    background: #f8fafc;
+    border: 1px solid #eaecf0;
+    border-radius: 8px;
+    min-width: 0;
+    padding: 12px;
+}
+
+.market-metric-label {
+    color: #667085;
+    font-size: 12px;
+    line-height: 18px;
+}
+
+.market-metric-value {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+    margin-top: 8px;
+    min-width: 0;
+
+    strong {
+        color: #111827;
+        font-size: 24px;
+        font-weight: 600;
+        line-height: 32px;
+    }
+
+    :deep(.el-tag) {
+        height: auto;
+        max-width: 100%;
+        padding: 4px 8px;
+    }
+
+    :deep(.el-tag__content) {
+        line-height: 18px;
+        overflow-wrap: anywhere;
+        white-space: normal;
+    }
+}
+
+.module-detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+.install-wizard-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.install-wizard-item {
+    align-items: center;
+    border: 1px solid #eaecf0;
+    border-radius: 8px;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    min-width: 0;
+    padding: 10px 12px;
+}
+
+.install-wizard-label {
+    color: #111827;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 20px;
+}
+
+.install-wizard-detail {
+    color: #667085;
+    font-size: 12px;
+    line-height: 18px;
+    margin-top: 2px;
+    overflow-wrap: anywhere;
+}
+
 .module-form {
     max-width: 720px;
 }
@@ -1371,6 +1647,10 @@ onMounted(() => {
 }
 
 @media (max-width: 1024px) {
+    .module-product-grid {
+        grid-template-columns: 1fr;
+    }
+
     .module-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }

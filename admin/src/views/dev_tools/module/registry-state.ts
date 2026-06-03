@@ -52,6 +52,27 @@ export type ModuleStatusSummaryRow = {
     value: number
 }
 
+export type ModuleMarketRow = {
+    key: string
+    label: string
+    value: string
+    type: ElementTagType
+    detail: string
+}
+
+export type ModuleInstallWizardInput = RegistryFilterModule & {
+    entry?: string
+    registryCheckCount?: number
+}
+
+export type ModuleInstallWizardRow = {
+    key: string
+    label: string
+    status: string
+    type: ElementTagType
+    detail: string
+}
+
 export const registrySmokeCommand = 'scripts/check-module-registry-smoke.sh'
 
 export const countRegistryFailures = (modules: ReadonlyArray<RegistryStateModule>) =>
@@ -249,5 +270,95 @@ export const buildModuleStatusSummary = (
         { key: 'partial', label: '部分', value: countBy(['partial']) },
         { key: 'uninstalled', label: '未安装', value: countBy(['uninstalled']) },
         { key: 'failed', label: '异常', value: modules.filter(isRegistryModuleFailed).length }
+    ]
+}
+
+export const buildModuleMarketRows = (
+    modules: ReadonlyArray<RegistryFilterModule>
+): ModuleMarketRow[] => {
+    const installedCount = modules.filter((item) => item.installStatusCode === 'installed').length
+    const installableCount = modules.filter(
+        (item) => item.registryStatusCode === 'passed' && item.installStatusCode !== 'installed'
+    ).length
+    const failedCount = modules.filter(isRegistryModuleFailed).length
+    return [
+        {
+            key: 'total',
+            label: '模块数',
+            value: `${modules.length}`,
+            type: modules.length ? 'primary' : 'info',
+            detail: '/api/gen/moduleRegistry'
+        },
+        {
+            key: 'installed',
+            label: '已安装',
+            value: `${installedCount}`,
+            type: installedCount ? 'success' : 'info',
+            detail: 'installed'
+        },
+        {
+            key: 'installable',
+            label: '待安装',
+            value: `${installableCount}`,
+            type: installableCount ? 'warning' : 'success',
+            detail: 'manifest passed'
+        },
+        {
+            key: 'failed',
+            label: '异常',
+            value: `${failedCount}`,
+            type: failedCount ? 'danger' : 'success',
+            detail: 'manifest/status'
+        }
+    ]
+}
+
+export const buildModuleInstallWizardRows = (
+    selected?: ModuleInstallWizardInput
+): ModuleInstallWizardRow[] => {
+    if (!selected) {
+        return [
+            {
+                key: 'select',
+                label: '选择模块',
+                status: '待选择',
+                type: 'info',
+                detail: 'module market'
+            }
+        ]
+    }
+
+    const registryPassed = selected.registryStatusCode === 'passed'
+    const installed = selected.installStatusCode === 'installed'
+    const failed = isRegistryModuleFailed(selected)
+    return [
+        {
+            key: 'manifest',
+            label: 'Manifest',
+            status: registryPassed ? '已通过' : '异常',
+            type: registryPassed ? 'success' : 'danger',
+            detail: `${selected.registryCheckCount || 0} checks`
+        },
+        {
+            key: 'plan',
+            label: '安装计划',
+            status: registryPassed ? '可生成' : '被阻断',
+            type: registryPassed ? 'success' : 'danger',
+            detail: selected.module
+        },
+        {
+            key: 'apply',
+            label: '安装写入',
+            status: installed ? '已安装' : failed ? '需修复' : '待确认',
+            type: installed ? 'success' : failed ? 'danger' : 'warning',
+            detail: selected.installStatusCode
+        },
+        {
+            key: 'entry',
+            label: '页面入口',
+            status: selected.entry ? '可打开' : '未配置',
+            type: selected.entry ? 'success' : 'info',
+            detail: selected.entry || '-'
+        }
     ]
 }
