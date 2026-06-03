@@ -110,8 +110,13 @@ const queryParams = reactive({
 const showEdit = ref(false)
 const getLists = async () => {
     loading.value = true
-    lists.value = await deptLists(queryParams)
-    loading.value = false
+    try {
+        lists.value = await deptLists(queryParams)
+    } catch (error) {
+        lists.value = []
+    } finally {
+        loading.value = false
+    }
 }
 
 const resetParams = () => {

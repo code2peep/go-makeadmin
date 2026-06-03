@@ -109,8 +109,9 @@ const getLists = async () => {
     try {
         const data = await menuLists()
         lists.value = data
-        loading.value = false
     } catch (error) {
+        lists.value = []
+    } finally {
         loading.value = false
     }
 }
