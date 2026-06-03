@@ -47,6 +47,7 @@ func (genSrv generateService) ApplyModuleManifestInstall(applyReq req.ModuleMani
 		Status:      "blocked",
 		RequiredEnv: moduleManifestInstallApplyEnv,
 		Plan:        buildModuleManifestPlan(manifest, previewReq),
+		Summary:     buildModuleManifestApplySummary(manifest, "install"),
 	}
 
 	if os.Getenv(moduleManifestInstallApplyEnv) != "1" {

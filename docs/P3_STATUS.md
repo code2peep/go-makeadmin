@@ -511,8 +511,6 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有删除业务表、没有创建业务 schema、没有读取或修改 `.env`、没有新增权限 SQL、没有连接业务项目数据库。
 
-## 下一步
-
 ## P3.14 当前落地
 
 后台模块安装/卸载门禁结果页面闭环已建立：
@@ -548,4 +546,38 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 
 ## 下一步
 
-P3.15：模块安装/卸载操作审计与安全提示。建议给后台安装、卸载 apply 响应补更明确的操作摘要，并规划审计日志模型，先不改 schema。
+## P3.15 当前落地
+
+模块安装/卸载操作摘要与审计规划已建立：
+
+- 安装 apply 响应新增 `summary`。
+- 卸载 apply 响应新增 `summary`。
+- `summary` 覆盖操作类型、模块、实体、来源表、菜单路由、权限编码、schema 风险、本地库范围和 runtime 提示。
+- 成功和失败响应都会返回 `summary`。
+- 管理端安装结果和卸载结果新增操作类型、路由名和权限编码标签。
+- 文档规划后续审计日志模型，但本阶段不创建审计表。
+
+详见 `docs/P3_MODULE_APPLY_AUDIT_SUMMARY.md`。
+
+## P3.15 验收标准
+
+- `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./generator/service/gen -run 'TestModuleManifestInstallApplyGate|TestModuleManifestUninstallApplyGate' -count=1` 通过。
+- `cd admin && npm run type-check` 通过。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不创建审计表、不修改数据库 schema、不读取或修改 `.env`、不新增权限 SQL。
+
+## P3.15 验收结果
+
+- 已通过 `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./generator/service/gen -run 'TestModuleManifestInstallApplyGate|TestModuleManifestUninstallApplyGate' -count=1`。
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `scripts/check-module-tools-no-db.sh`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有创建审计表、没有修改数据库 schema、没有读取或修改 `.env`、没有新增权限 SQL。
+
+## 下一步
+
+P3.16：模块 apply 页面权限与按钮状态收敛。建议根据当前 manifest 预览状态和确认勾选状态收敛按钮禁用、加载态和结果清理规则，不改后端写入逻辑。

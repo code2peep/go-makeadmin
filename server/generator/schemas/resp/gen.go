@@ -113,6 +113,19 @@ type ModuleManifestInstallCheckResp struct {
 	Message string `json:"message" structs:"message"` // 说明
 }
 
+// ModuleManifestApplySummaryResp 模块清单安装/卸载操作摘要
+type ModuleManifestApplySummaryResp struct {
+	Operation       string   `json:"operation" structs:"operation"`             // 操作类型
+	Module          string   `json:"module" structs:"module"`                   // 模块名
+	Entity          string   `json:"entity" structs:"entity"`                   // 实体名
+	Table           string   `json:"table" structs:"table"`                     // 来源表
+	RouteName       string   `json:"routeName" structs:"routeName"`             // 菜单路由名
+	PermissionCodes []string `json:"permissionCodes" structs:"permissionCodes"` // 权限编码
+	RequiresSchema  bool     `json:"requiresSchema" structs:"requiresSchema"`   // 是否需要业务表
+	DatabaseScope   string   `json:"databaseScope" structs:"databaseScope"`     // 数据库范围
+	RuntimeHint     string   `json:"runtimeHint" structs:"runtimeHint"`         // 运行时提示
+}
+
 // ModuleManifestInstallApplyResp 模块清单安装写入门禁结果
 type ModuleManifestInstallApplyResp struct {
 	Source      string                            `json:"source" structs:"source"`           // manifest 来源
@@ -123,6 +136,7 @@ type ModuleManifestInstallApplyResp struct {
 	Message     string                            `json:"message" structs:"message"`         // 门禁说明
 	RequiredEnv string                            `json:"requiredEnv" structs:"requiredEnv"` // 写入环境变量
 	Plan        ModuleManifestPlanResp            `json:"plan" structs:"plan"`               // 安装计划预览
+	Summary     ModuleManifestApplySummaryResp    `json:"summary" structs:"summary"`         // 操作摘要
 	Checks      []ModuleManifestInstallCheckResp  `json:"checks" structs:"checks"`           // 检查结果
 	Before      ModuleManifestInstallSnapshotResp `json:"before" structs:"before"`           // 写入前快照
 	After       ModuleManifestInstallSnapshotResp `json:"after" structs:"after"`             // 写入后快照
@@ -144,6 +158,7 @@ type ModuleManifestUninstallApplyResp struct {
 	Message     string                            `json:"message" structs:"message"`         // 门禁说明
 	RequiredEnv string                            `json:"requiredEnv" structs:"requiredEnv"` // 写入环境变量
 	Plan        ModuleManifestPlanResp            `json:"plan" structs:"plan"`               // 卸载计划预览
+	Summary     ModuleManifestApplySummaryResp    `json:"summary" structs:"summary"`         // 操作摘要
 	Checks      []ModuleManifestInstallCheckResp  `json:"checks" structs:"checks"`           // 检查结果
 	Before      ModuleManifestInstallSnapshotResp `json:"before" structs:"before"`           // 删除前快照
 	After       ModuleManifestInstallSnapshotResp `json:"after" structs:"after"`             // 删除后快照

@@ -132,6 +132,23 @@
                                 <el-descriptions-item label="环境变量">
                                     {{ installResult.requiredEnv || '-' }}
                                 </el-descriptions-item>
+                                <el-descriptions-item label="操作">
+                                    {{ installResult.summary?.operation || '-' }}
+                                </el-descriptions-item>
+                                <el-descriptions-item label="路由">
+                                    {{ installResult.summary?.routeName || '-' }}
+                                </el-descriptions-item>
+                                <el-descriptions-item label="权限" :span="2">
+                                    <div class="permission-tags">
+                                        <el-tag
+                                            v-for="code in permissionCodes(installResult)"
+                                            :key="code"
+                                            size="small"
+                                        >
+                                            {{ code }}
+                                        </el-tag>
+                                    </div>
+                                </el-descriptions-item>
                             </el-descriptions>
                             <el-table
                                 v-if="hasSnapshot(installResult)"
@@ -173,6 +190,23 @@
                                 </el-descriptions-item>
                                 <el-descriptions-item label="环境变量">
                                     {{ uninstallResult.requiredEnv || '-' }}
+                                </el-descriptions-item>
+                                <el-descriptions-item label="操作">
+                                    {{ uninstallResult.summary?.operation || '-' }}
+                                </el-descriptions-item>
+                                <el-descriptions-item label="路由">
+                                    {{ uninstallResult.summary?.routeName || '-' }}
+                                </el-descriptions-item>
+                                <el-descriptions-item label="权限" :span="2">
+                                    <div class="permission-tags">
+                                        <el-tag
+                                            v-for="code in permissionCodes(uninstallResult)"
+                                            :key="code"
+                                            size="small"
+                                        >
+                                            {{ code }}
+                                        </el-tag>
+                                    </div>
                                 </el-descriptions-item>
                             </el-descriptions>
                             <el-table
@@ -366,6 +400,8 @@ const resultTitle = (result: any, fallback: string) => result?.message || fallba
 
 const resultAlertType = (result: any) => (result?.status === 'applied' ? 'success' : 'warning')
 
+const permissionCodes = (result: any) => result?.summary?.permissionCodes || []
+
 const hasSnapshot = (result: any) =>
     result?.status === 'applied' ||
     snapshotRows(result).some((row) => Number(row.before) > 0 || Number(row.after) > 0)
@@ -410,5 +446,11 @@ const snapshotRows = (result: any) => {
 .install-gate-form,
 .apply-result {
     margin-top: 16px;
+}
+
+.permission-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
 }
 </style>

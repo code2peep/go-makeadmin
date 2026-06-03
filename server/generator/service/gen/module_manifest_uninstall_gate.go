@@ -37,6 +37,7 @@ func (genSrv generateService) ApplyModuleManifestUninstall(applyReq req.ModuleMa
 		Status:      "blocked",
 		RequiredEnv: moduleManifestUninstallApplyEnv,
 		Plan:        buildModuleManifestPlan(manifest, previewReq),
+		Summary:     buildModuleManifestApplySummary(manifest, "uninstall"),
 	}
 
 	if os.Getenv(moduleManifestUninstallApplyEnv) != "1" {

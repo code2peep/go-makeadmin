@@ -162,6 +162,9 @@ func TestModuleManifestInstallApplyGateRequiresEnv(t *testing.T) {
 	if len(res.Checks) != 1 || res.Checks[0].Status != "failed" {
 		t.Fatalf("unexpected gate checks: %+v", res.Checks)
 	}
+	if res.Summary.Operation != "install" || res.Summary.RouteName != "demo.article" || len(res.Summary.PermissionCodes) != 5 {
+		t.Fatalf("unexpected install summary: %+v", res.Summary)
+	}
 }
 
 func TestModuleManifestInstallApplyGateRequiresConfirmations(t *testing.T) {
@@ -270,6 +273,9 @@ func TestModuleManifestUninstallApplyGateRequiresEnv(t *testing.T) {
 	assertContains(t, err.Error(), "no database access was attempted")
 	if res.Status != "blocked" || res.RequiredEnv != moduleManifestUninstallApplyEnv {
 		t.Fatalf("unexpected uninstall gate response: %+v", res)
+	}
+	if res.Summary.Operation != "uninstall" || res.Summary.RouteName != "demo.article" || len(res.Summary.PermissionCodes) != 5 {
+		t.Fatalf("unexpected uninstall summary: %+v", res.Summary)
 	}
 }
 
