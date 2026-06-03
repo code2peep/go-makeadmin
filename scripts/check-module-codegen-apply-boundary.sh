@@ -34,7 +34,6 @@ expect_fail_no_db env MAKEADMIN_ALLOW_MODULE_CODEGEN_WRITE=1 python3 scripts/mod
 expect_fail_no_db env MAKEADMIN_ALLOW_MODULE_CODEGEN_WRITE=1 python3 scripts/module-codegen-plan.py \
     --apply \
     --confirm-module article \
-    --confirm-source-table ma_demo_article \
-    --confirm-sync-columns
+    --confirm-source-table wrong_table
 
 echo "OK: module codegen apply boundary completed."

@@ -7,6 +7,7 @@ import argparse
 import importlib.util
 import json
 import os
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -153,7 +154,9 @@ def build_plan(manifest_path: Path, manifest: dict[str, Any], args: argparse.Nam
     }
 
 
-def validate_apply_gate(args: argparse.Namespace, manifest: dict[str, Any]) -> None:
+def validate_apply_gate(args: argparse.Namespace, manifest_path: Path, manifest: dict[str, Any]) -> None:
+    if not manifest_path.is_relative_to(ROOT):
+        raise PlanError("--apply requires manifest inside repository; no database access was attempted")
     if os.environ.get(WRITE_ENV) != "1":
         raise PlanError(f"--apply requires {WRITE_ENV}=1; no database access was attempted")
     if not args.confirm_module:
@@ -166,7 +169,246 @@ def validate_apply_gate(args: argparse.Namespace, manifest: dict[str, Any]) -> N
         raise PlanError("--confirm-source-table must equal manifest table; no database access was attempted")
     if not args.confirm_sync_columns:
         raise PlanError("--apply requires --confirm-sync-columns; no database access was attempted")
-    raise PlanError("--apply is intentionally disabled until P3.6; no database access was attempted")
+
+
+def mysql_query(args: argparse.Namespace, query: str) -> str:
+    command = mysql_command(args) + ["--batch", "--raw", "--skip-column-names", "--execute", query]
+    env = os.environ.copy()
+    if "MYSQL_PASSWORD" in env:
+        env["MYSQL_PWD"] = env["MYSQL_PASSWORD"]
+    try:
+        result = subprocess.run(command, env=env, check=True, capture_output=True, text=True)
+    except FileNotFoundError as exc:
+        raise PlanError("mysql client is required") from exc
+    except subprocess.CalledProcessError as exc:
+        stderr = exc.stderr.strip()
+        raise PlanError(f"mysql query failed: {stderr}") from exc
+    return result.stdout.strip()
+
+
+def mysql_exec(args: argparse.Namespace, query: str) -> None:
+    command = mysql_command(args) + ["--execute", query]
+    env = os.environ.copy()
+    if "MYSQL_PASSWORD" in env:
+        env["MYSQL_PWD"] = env["MYSQL_PASSWORD"]
+    try:
+        subprocess.run(command, env=env, check=True, capture_output=True, text=True)
+    except FileNotFoundError as exc:
+        raise PlanError("mysql client is required") from exc
+    except subprocess.CalledProcessError as exc:
+        stderr = exc.stderr.strip()
+        raise PlanError(f"mysql query failed: {stderr}") from exc
+
+
+def mysql_command(args: argparse.Namespace) -> list[str]:
+    return [
+        "mysql",
+        "--host",
+        args.mysql_host,
+        "--port",
+        str(args.mysql_port),
+        "--user",
+        args.mysql_user,
+        "--database",
+        args.mysql_database,
+    ]
+
+
+def apply_codegen_config(args: argparse.Namespace, plan: dict[str, Any]) -> None:
+    assert_live_table_owner(args, plan)
+    mysql_exec(args, build_apply_sql(plan))
+    snapshot = apply_snapshot(args, plan)
+    table = plan["makeadmin"]["table"]
+    print(f"Module codegen apply: module={plan['module']} sourceTable={table['sourceTable']}")
+    print(f"Table: id={snapshot['tableId']} tenantId={table['tenantId']}")
+    print(f"Columns: count={snapshot['columnCount']} names={snapshot['columnNames']}")
+
+
+def assert_live_table_owner(args: argparse.Namespace, plan: dict[str, Any]) -> None:
+    table = plan["makeadmin"]["table"]
+    raw = mysql_query(
+        args,
+        "\n".join(
+            [
+                "SELECT `id`, `module_name`, `business_name`, `entity_name`",
+                "FROM `ma_codegen_table`",
+                f"WHERE `tenant_id` = {int(table['tenantId'])}",
+                f"  AND `table_name` = {sql_quote(table['sourceTable'])}",
+                "  AND `delete_time` = 0",
+                "LIMIT 2;",
+            ]
+        ),
+    )
+    rows = [row for row in raw.splitlines() if row.strip()]
+    if not rows:
+        return
+    if len(rows) > 1:
+        raise PlanError("multiple live codegen table rows found; no database writes were executed")
+    parts = rows[0].split("\t")
+    if len(parts) != 4:
+        raise PlanError(f"unexpected codegen table owner output: {rows[0]}")
+    _, module_name, business_name, entity_name = parts
+    if (
+        module_name != table["moduleName"]
+        or business_name != table["businessName"]
+        or entity_name != table["entityName"]
+    ):
+        raise PlanError("live codegen table belongs to another module or entity; no database writes were executed")
+
+
+def build_apply_sql(plan: dict[str, Any]) -> str:
+    table = plan["makeadmin"]["table"]
+    columns = plan["makeadmin"]["columns"]
+    expected_column_names = ", ".join(sql_quote(column["columnName"]) for column in columns)
+    statements = [
+        "START TRANSACTION;",
+        "SET @now = UNIX_TIMESTAMP();",
+        f"SET @tenant_id = {int(table['tenantId'])};",
+        f"SET @source_table = {sql_quote(table['sourceTable'])};",
+        table_insert_sql(table),
+        table_update_sql(table),
+    ]
+    statements.extend(column_upsert_sql(column) for column in columns)
+    statements.append(
+        "\n".join(
+            [
+                "DELETE FROM `ma_codegen_column`",
+                "WHERE `table_id` = @codegen_table_id",
+                f"  AND `column_name` NOT IN ({expected_column_names});",
+            ]
+        )
+    )
+    statements.append("COMMIT;")
+    return "\n\n".join(statements)
+
+
+def table_insert_sql(table: dict[str, Any]) -> str:
+    return "\n".join(
+        [
+            "SET @codegen_table_id = COALESCE((",
+            "    SELECT `id` FROM `ma_codegen_table`",
+            "    WHERE `tenant_id` = @tenant_id AND `table_name` = @source_table AND `delete_time` = 0",
+            "    LIMIT 1",
+            "), 0);",
+            "",
+            "INSERT INTO `ma_codegen_table`",
+            "(`tenant_id`, `table_name`, `table_comment`, `module_name`, `package_name`, `business_name`,",
+            " `entity_name`, `function_name`, `author_name`, `template_type`, `generate_type`, `generate_path`,",
+            " `options`, `remark`, `create_time`, `update_time`, `delete_time`)",
+            "SELECT",
+            f"@tenant_id, @source_table, {sql_quote(table['tableComment'])}, {sql_quote(table['moduleName'])},",
+            f"{sql_quote(table['packageName'])}, {sql_quote(table['businessName'])}, {sql_quote(table['entityName'])},",
+            f"{sql_quote(table['functionName'])}, {sql_quote(table['authorName'])}, {sql_quote(table['templateType'])},",
+            f"{sql_quote(table['generateType'])}, {sql_quote(table['generatePath'])}, {sql_quote(table['options'])},",
+            f"{sql_quote(table['remark'])}, @now, @now, 0",
+            "WHERE @codegen_table_id = 0;",
+            "",
+            "SET @codegen_table_id = COALESCE((",
+            "    SELECT `id` FROM `ma_codegen_table`",
+            "    WHERE `tenant_id` = @tenant_id AND `table_name` = @source_table AND `delete_time` = 0",
+            "    LIMIT 1",
+            "), 0);",
+        ]
+    )
+
+
+def table_update_sql(table: dict[str, Any]) -> str:
+    return "\n".join(
+        [
+            "UPDATE `ma_codegen_table`",
+            "SET",
+            f"  `table_comment` = {sql_quote(table['tableComment'])},",
+            f"  `module_name` = {sql_quote(table['moduleName'])},",
+            f"  `package_name` = {sql_quote(table['packageName'])},",
+            f"  `business_name` = {sql_quote(table['businessName'])},",
+            f"  `entity_name` = {sql_quote(table['entityName'])},",
+            f"  `function_name` = {sql_quote(table['functionName'])},",
+            f"  `author_name` = {sql_quote(table['authorName'])},",
+            f"  `template_type` = {sql_quote(table['templateType'])},",
+            f"  `generate_type` = {sql_quote(table['generateType'])},",
+            f"  `generate_path` = {sql_quote(table['generatePath'])},",
+            f"  `options` = {sql_quote(table['options'])},",
+            f"  `remark` = {sql_quote(table['remark'])},",
+            "  `update_time` = @now",
+            "WHERE `id` = @codegen_table_id;",
+        ]
+    )
+
+
+def column_upsert_sql(column: dict[str, Any]) -> str:
+    return "\n".join(
+        [
+            "INSERT INTO `ma_codegen_column`",
+            "(`table_id`, `column_name`, `column_comment`, `column_type`, `column_length`, `go_type`, `go_field`,",
+            " `json_field`, `is_pk`, `is_increment`, `is_required`, `is_insert`, `is_edit`, `is_list`, `is_query`,",
+            " `query_type`, `html_type`, `dict_type`, `sort`, `create_time`, `update_time`)",
+            "VALUES",
+            f"(@codegen_table_id, {sql_quote(column['columnName'])}, {sql_quote(column['columnComment'])},",
+            f" {sql_quote(column['columnType'])}, {int(column['columnLength'])}, {sql_quote(column['goType'])},",
+            f" {sql_quote(column['goField'])}, {sql_quote(column['jsonField'])}, {int(column['isPk'])},",
+            f" {int(column['isIncrement'])}, {int(column['isRequired'])}, {int(column['isInsert'])},",
+            f" {int(column['isEdit'])}, {int(column['isList'])}, {int(column['isQuery'])},",
+            f" {sql_quote(column['queryType'])}, {sql_quote(column['htmlType'])}, {sql_quote(column['dictType'])},",
+            f" {int(column['sort'])}, @now, @now)",
+            "ON DUPLICATE KEY UPDATE",
+            "  `column_comment` = VALUES(`column_comment`),",
+            "  `column_type` = VALUES(`column_type`),",
+            "  `column_length` = VALUES(`column_length`),",
+            "  `go_type` = VALUES(`go_type`),",
+            "  `go_field` = VALUES(`go_field`),",
+            "  `json_field` = VALUES(`json_field`),",
+            "  `is_pk` = VALUES(`is_pk`),",
+            "  `is_increment` = VALUES(`is_increment`),",
+            "  `is_required` = VALUES(`is_required`),",
+            "  `is_insert` = VALUES(`is_insert`),",
+            "  `is_edit` = VALUES(`is_edit`),",
+            "  `is_list` = VALUES(`is_list`),",
+            "  `is_query` = VALUES(`is_query`),",
+            "  `query_type` = VALUES(`query_type`),",
+            "  `html_type` = VALUES(`html_type`),",
+            "  `dict_type` = VALUES(`dict_type`),",
+            "  `sort` = VALUES(`sort`),",
+            "  `update_time` = @now;",
+        ]
+    )
+
+
+def apply_snapshot(args: argparse.Namespace, plan: dict[str, Any]) -> dict[str, Any]:
+    table = plan["makeadmin"]["table"]
+    raw = mysql_query(
+        args,
+        "\n".join(
+            [
+                "SELECT",
+                "  COALESCE((",
+                "      SELECT `id` FROM `ma_codegen_table`",
+                f"      WHERE `tenant_id` = {int(table['tenantId'])}",
+                f"        AND `table_name` = {sql_quote(table['sourceTable'])}",
+                "        AND `delete_time` = 0",
+                "      LIMIT 1",
+                "  ), 0),",
+                "  (",
+                "      SELECT COUNT(*) FROM `ma_codegen_column` AS c",
+                "      INNER JOIN `ma_codegen_table` AS t ON t.id = c.table_id",
+                f"      WHERE t.`tenant_id` = {int(table['tenantId'])}",
+                f"        AND t.`table_name` = {sql_quote(table['sourceTable'])}",
+                "        AND t.`delete_time` = 0",
+                "  ),",
+                "  COALESCE((",
+                "      SELECT GROUP_CONCAT(c.`column_name` ORDER BY c.`sort` SEPARATOR ',')",
+                "      FROM `ma_codegen_column` AS c",
+                "      INNER JOIN `ma_codegen_table` AS t ON t.id = c.table_id",
+                f"      WHERE t.`tenant_id` = {int(table['tenantId'])}",
+                f"        AND t.`table_name` = {sql_quote(table['sourceTable'])}",
+                "        AND t.`delete_time` = 0",
+                "  ), '');",
+            ]
+        ),
+    )
+    parts = raw.split("\t")
+    if len(parts) != 3:
+        raise PlanError(f"unexpected apply snapshot output: {raw}")
+    return {"tableId": int(parts[0]), "columnCount": int(parts[1]), "columnNames": parts[2]}
 
 
 def build_legacy_columns(manifest: dict[str, Any]) -> list[dict[str, Any]]:
@@ -297,6 +539,11 @@ def require_text(data: dict[str, Any], key: str) -> str:
     return value
 
 
+def sql_quote(value: Any) -> str:
+    text = str(value)
+    return "'" + text.replace("\\", "\\\\").replace("'", "''") + "'"
+
+
 def legacy_to_makeadmin_column(column: dict[str, Any]) -> dict[str, Any]:
     return {
         "id": column["id"],
@@ -359,7 +606,9 @@ def main() -> int:
     manifest = load_manifest(manifest_path)
     plan = build_plan(manifest_path, manifest, args)
     if args.apply:
-        validate_apply_gate(args, manifest)
+        validate_apply_gate(args, manifest_path, manifest)
+        apply_codegen_config(args, plan)
+        return 0
     if args.format == "json":
         print(json.dumps(plan, ensure_ascii=False, indent=2))
     else:

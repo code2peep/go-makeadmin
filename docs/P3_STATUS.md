@@ -1,6 +1,6 @@
 # P3 Status
 
-更新时间：2026-06-02
+更新时间：2026-06-03
 
 ## 当前阶段
 
@@ -186,6 +186,48 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有写入 `ma_codegen_*`、没有创建业务 schema、没有执行数据库写入或删除、没有读取或修改 `.env`、没有连接业务项目数据库。
 
+## P3.6 当前落地
+
+模块生成器配置本地受控写入已建立：
+
+- `scripts/module-codegen-plan.py --apply` 已开放本地受控写入。
+- 写入必须满足 `MAKEADMIN_ALLOW_MODULE_CODEGEN_WRITE=1`、`--confirm-module`、`--confirm-source-table` 和 `--confirm-sync-columns`。
+- apply 会在单事务内写入或更新 `ma_codegen_table` 和 `ma_codegen_column`。
+- live 表配置按 `tenant_id + table_name + delete_time=0` 幂等。
+- 列配置按 `table_id + column_name` 幂等 upsert。
+- 已存在 live 表配置必须与 manifest 的 `module_name`、`business_name`、`entity_name` 对齐，否则停止，不覆盖。
+- `--confirm-sync-columns` 会删除同一 `table_id` 下 manifest 已移除的 stale 列配置。
+- 新增 `scripts/check-module-codegen-apply-smoke.sh`。
+- `scripts/check-module-tools-no-db.sh` 已覆盖 codegen apply smoke 缺环境变量门禁。
+
+详见 `docs/P3_MODULE_CODEGEN_APPLY.md`。
+
+## P3.6 验收标准
+
+- `python3 -m py_compile scripts/module-codegen-plan.py` 通过。
+- `bash -n scripts/check-module-codegen-apply-boundary.sh scripts/check-module-codegen-apply-smoke.sh scripts/check-module-tools-no-db.sh` 通过。
+- `scripts/check-module-codegen-apply-boundary.sh` 通过。
+- `MAKEADMIN_ALLOW_MODULE_CODEGEN_SMOKE_WRITE=1 scripts/check-module-codegen-apply-smoke.sh` 通过。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- smoke 清理后 `ma_demo_article` live codegen 表配置残留为 0。
+- 不创建业务 schema、不读取或修改 `.env`、不连接业务项目数据库。
+
+## P3.6 验收结果
+
+- 已通过 `python3 -m py_compile scripts/module-codegen-plan.py`。
+- 已通过 `bash -n scripts/check-module-codegen-apply-boundary.sh scripts/check-module-codegen-apply-smoke.sh scripts/check-module-tools-no-db.sh`。
+- 已通过 `scripts/check-module-codegen-apply-boundary.sh`。
+- 已通过 `MAKEADMIN_ALLOW_MODULE_CODEGEN_SMOKE_WRITE=1 scripts/check-module-codegen-apply-smoke.sh`。
+- smoke 已完成第一次 apply、stale 列插入、第二次 apply 同步删除 stale 列和最终清理。
+- 已确认清理后 `tenant_id=0 + ma_demo_article + delete_time=0` live codegen 表配置残留为 0。
+- 已通过 `scripts/check-module-tools-no-db.sh`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有创建业务 schema、没有读取或修改 `.env`、没有连接业务项目数据库。
+
 ## 下一步
 
-P3.6：模块生成器配置本地受控写入。该任务在 P3.5 门禁基础上实现本地 `ma_codegen_*` 事务写入和幂等 smoke。
+P3.7：生成器配置回读与模板生成闭环。该任务验证写入后的 `ma_codegen_*` 能被现有生成器服务按旧 `/gen/*` 兼容形状回读并驱动模板生成。
