@@ -373,3 +373,36 @@ P5.10：模块中心登录后人工验收与页面截图记录。建议在你重
 ## 下一步
 
 P5.11：模块 registry 本地 API smoke 文档化。建议把默认 registry、broken fixture registry、路由契约和登录后页面验收拆成一个稳定的人工/自动验收矩阵。
+
+## P5.11 当前落地
+
+模块 registry 自动/人工验收矩阵已建立：
+
+- 新增 `docs/P5_MODULE_REGISTRY_ACCEPTANCE_MATRIX.md`。
+- 自动矩阵覆盖默认 registry 服务契约。
+- 自动矩阵覆盖 broken fixture 服务契约。
+- 自动矩阵覆盖 `/api/gen/moduleRegistry` 路由响应契约。
+- 自动矩阵覆盖 `./scripts/verify-no-db.sh` 全量 no-db 链路。
+- 人工矩阵拆出默认模块中心、broken fixture 页面态、异常筛选、校验明细弹窗和 Demo Article 入口。
+- 模块中心阶段标识更新为 `P5.11`。
+
+详见 `docs/P5_MODULE_REGISTRY_ACCEPTANCE_MATRIX.md`。
+
+## P5.11 验收标准
+
+- `scripts/check-module-registry-smoke.sh` 通过。
+- `cd admin && npm run type-check` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 登录后页面验收矩阵有清晰执行入口和预期结果。
+
+## P5.11 验收结果
+
+- 已通过 `scripts/check-module-registry-smoke.sh`。
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 全量验证里的前端 build 仍有 Rolldown 对 `@vueuse/core` pure annotation 的已知 warning，命令退出码为 0。
+- 浏览器当前位于登录页，旧 token 已过期；本机未设置 `ADMIN_PASSWORD` 或 `P1_SMOKE_ADMIN_PASSWORD`，因此登录后页面截图验收需要你重新登录后执行。
+
+## 下一步
+
+P5.12：模块中心页面验收辅助状态。建议在模块中心增加一个轻量的验收提示区，展示当前 registry 来源、broken fixture 是否开启、自动 smoke 命令和登录后人工验收入口，让页面本身更适合框架交付验收。
