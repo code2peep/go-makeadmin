@@ -26,11 +26,12 @@
                 {{ result.summary?.routeName || '-' }}
             </el-descriptions-item>
             <el-descriptions-item label="权限" :span="2">
-                <div class="permission-tags">
+                <div v-if="permissionCodes.length" class="permission-tags">
                     <el-tag v-for="code in permissionCodes" :key="code" size="small">
                         {{ code }}
                     </el-tag>
                 </div>
+                <span v-else class="apply-empty-text">无权限编码</span>
             </el-descriptions-item>
         </el-descriptions>
         <el-table v-if="hasSnapshot" class="mt-3" :data="snapshotRows" size="large">
@@ -38,11 +39,13 @@
             <el-table-column label="执行前" prop="before" min-width="100" />
             <el-table-column label="执行后" prop="after" min-width="100" />
         </el-table>
+        <div v-else class="apply-empty-text mt-3">无快照</div>
         <el-table v-if="result.checks?.length" class="mt-3" :data="result.checks" size="large">
             <el-table-column label="检查项" prop="name" min-width="140" />
             <el-table-column label="状态" prop="status" min-width="120" />
             <el-table-column label="说明" prop="message" min-width="280" />
         </el-table>
+        <div v-else class="apply-empty-text mt-3">无检查项</div>
         <div class="audit-preview-toolbar">
             <el-button type="primary" link @click="toggleAuditPreview">
                 <template #icon>
@@ -169,6 +172,11 @@ const toggleAuditPreviewCode = () => {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+}
+
+.apply-empty-text {
+    color: #909399;
+    font-size: 13px;
 }
 
 .audit-preview-toolbar {
