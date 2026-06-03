@@ -237,7 +237,7 @@
                 <div class="section-header">
                     <span class="card-title">内置模块清单</span>
                     <div class="section-actions">
-                        <el-tag type="success" size="small">P5.11</el-tag>
+                        <el-tag type="success" size="small">P5.12</el-tag>
                         <el-button
                             type="primary"
                             link
@@ -264,6 +264,18 @@
                         <span>{{ item.label }}</span>
                         <strong>{{ item.value }}</strong>
                     </div>
+                </div>
+            </div>
+            <div class="registry-acceptance">
+                <div
+                    v-for="item in registryAcceptanceRows"
+                    :key="item.key"
+                    class="registry-acceptance-item"
+                >
+                    <span class="registry-acceptance-label">{{ item.label }}</span>
+                    <el-tag :type="item.type" size="small">
+                        {{ item.value }}
+                    </el-tag>
                 </div>
             </div>
             <el-table
@@ -473,6 +485,7 @@ const capabilityCards = [
 
 type ModuleCenterModule = {
     name: string
+    module: string
     manifest: string
     table: string
     runtime: string
@@ -495,6 +508,13 @@ type ModuleCenterModule = {
 }
 
 type ElementTagType = 'primary' | 'success' | 'warning' | 'danger' | 'info'
+
+type RegistryAcceptanceRow = {
+    key: string
+    label: string
+    value: string
+    type: ElementTagType
+}
 
 const modules = reactive<ModuleCenterModule[]>([])
 const registryCheckDialog = reactive<{
@@ -643,6 +663,53 @@ const moduleStatusSummary = computed(() => {
     ]
 })
 
+const registryFailedCount = computed(
+    () => modules.filter((item) => item.registryStatusCode === 'failed').length
+)
+
+const hasBrokenRegistryFixture = computed(() =>
+    modules.some((item) => item.module === 'broken_fixture')
+)
+
+const registryAcceptanceRows = computed<RegistryAcceptanceRow[]>(() => [
+    {
+        key: 'source',
+        label: '来源',
+        value: '/api/gen/moduleRegistry',
+        type: 'info'
+    },
+    {
+        key: 'total',
+        label: '模块',
+        value: `${modules.length}`,
+        type: modules.length ? 'primary' : 'info'
+    },
+    {
+        key: 'failed',
+        label: '校验异常',
+        value: `${registryFailedCount.value}`,
+        type: registryFailedCount.value ? 'danger' : 'success'
+    },
+    {
+        key: 'fixture',
+        label: 'Broken Fixture',
+        value: hasBrokenRegistryFixture.value ? '已开启' : '未开启',
+        type: hasBrokenRegistryFixture.value ? 'warning' : 'info'
+    },
+    {
+        key: 'smoke',
+        label: 'Smoke',
+        value: 'check-module-registry-smoke.sh',
+        type: 'success'
+    },
+    {
+        key: 'manual',
+        label: '人工入口',
+        value: '/module',
+        type: 'warning'
+    }
+])
+
 const registryCheckRows = computed(() => registryCheckDialog.row?.registryChecks || [])
 const registryDialogStatusType = computed<ElementTagType>(() =>
     moduleRegistryStatusType(registryCheckDialog.row?.registryStatusCode)
@@ -753,6 +820,7 @@ const goTo = (url: string) => {
 
 const toModuleCenterModule = (item: ModuleRegistryItemResult): ModuleCenterModule => ({
     name: item.name,
+    module: item.module,
     manifest: item.manifest,
     table: item.table,
     runtime: item.runtime,
@@ -1146,6 +1214,50 @@ onMounted(() => {
     }
 }
 
+.registry-acceptance {
+    align-items: stretch;
+    border: 1px solid #eaecf0;
+    border-radius: 8px;
+    display: grid;
+    gap: 0;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    margin-bottom: 14px;
+    overflow: hidden;
+}
+
+.registry-acceptance-item {
+    align-items: flex-start;
+    border-right: 1px solid #eaecf0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 66px;
+    min-width: 0;
+    padding: 10px 12px;
+
+    &:last-child {
+        border-right: 0;
+    }
+
+    :deep(.el-tag) {
+        height: auto;
+        max-width: 100%;
+        padding: 4px 8px;
+    }
+
+    :deep(.el-tag__content) {
+        line-height: 18px;
+        overflow-wrap: anywhere;
+        white-space: normal;
+    }
+}
+
+.registry-acceptance-label {
+    color: #667085;
+    font-size: 12px;
+    line-height: 18px;
+}
+
 .section-label {
     color: #111827;
     font-size: 15px;
@@ -1218,6 +1330,10 @@ onMounted(() => {
     .module-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    .registry-acceptance {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 640px) {
@@ -1227,6 +1343,10 @@ onMounted(() => {
     }
 
     .module-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .registry-acceptance {
         grid-template-columns: 1fr;
     }
 

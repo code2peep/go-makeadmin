@@ -406,3 +406,35 @@ P5.11：模块 registry 本地 API smoke 文档化。建议把默认 registry、
 ## 下一步
 
 P5.12：模块中心页面验收辅助状态。建议在模块中心增加一个轻量的验收提示区，展示当前 registry 来源、broken fixture 是否开启、自动 smoke 命令和登录后人工验收入口，让页面本身更适合框架交付验收。
+
+## P5.12 当前落地
+
+模块中心页面验收辅助状态已接入：
+
+- `内置模块清单` 区域新增只读状态条。
+- 状态条展示 registry 来源 `/api/gen/moduleRegistry`。
+- 状态条展示当前 registry 模块数量。
+- 状态条展示 registry 校验异常数量。
+- 状态条根据返回模块判断 `Broken Fixture` 是否开启。
+- 状态条展示自动 smoke 命令 `check-module-registry-smoke.sh`。
+- 状态条展示人工验收入口 `/module`。
+- 模块中心阶段标识更新为 `P5.12`。
+
+详见 `docs/P5_MODULE_CENTER_ACCEPTANCE_STATUS.md`。
+
+## P5.12 验收标准
+
+- `cd admin && npm run type-check` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 登录后模块中心可看到 P5.12 验收辅助状态条。
+
+## P5.12 验收结果
+
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 全量验证里的前端 build 仍有 Rolldown 对 `@vueuse/core` pure annotation 的已知 warning，命令退出码为 0。
+- 浏览器当前位于登录页，旧 token 已过期；本机未设置 `ADMIN_PASSWORD` 或 `P1_SMOKE_ADMIN_PASSWORD`，因此登录后页面截图验收需要你重新登录后执行。
+
+## 下一步
+
+P5.13：模块中心 registry 状态空态与错误态收敛。建议给 registry 读取失败和空清单加入更明确的页面状态，保证模块中心在 API 异常时仍能给出可执行的排查入口。
