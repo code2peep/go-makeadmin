@@ -438,3 +438,33 @@ P5.12：模块中心页面验收辅助状态。建议在模块中心增加一个
 ## 下一步
 
 P5.13：模块中心 registry 状态空态与错误态收敛。建议给 registry 读取失败和空清单加入更明确的页面状态，保证模块中心在 API 异常时仍能给出可执行的排查入口。
+
+## P5.13 当前落地
+
+模块中心 registry 状态空态与错误态已收敛：
+
+- registry 读取失败时展示 `Registry 读取失败` alert。
+- 失败 alert 带上错误信息和 `scripts/check-module-registry-smoke.sh`。
+- registry 读取成功但模块列表为空时展示 `Registry 暂无模块` alert。
+- 表格空态根据当前状态切换为 `registry 读取失败`、`registry 暂无模块` 或 `暂无匹配模块`。
+- registry 读取失败时不继续逐项读取安装状态。
+- 模块中心阶段标识更新为 `P5.13`。
+
+详见 `docs/P5_MODULE_CENTER_REGISTRY_STATES.md`。
+
+## P5.13 验收标准
+
+- `cd admin && npm run type-check` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 登录后模块中心在 registry 失败或空清单时有明确页面状态。
+
+## P5.13 验收结果
+
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 全量验证里的前端 build 仍有 Rolldown 对 `@vueuse/core` pure annotation 的已知 warning，命令退出码为 0。
+- 浏览器当前位于登录页，旧 token 已过期；本机未设置 `ADMIN_PASSWORD` 或 `P1_SMOKE_ADMIN_PASSWORD`，因此登录后页面截图验收需要你重新登录后执行。
+
+## 下一步
+
+P5.14：模块中心 registry 状态单元测试。建议把 registry 错误态、空态、broken fixture 状态条等前端纯逻辑抽成可测试函数，降低后续页面调整时的回归风险。

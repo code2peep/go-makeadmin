@@ -237,7 +237,7 @@
                 <div class="section-header">
                     <span class="card-title">内置模块清单</span>
                     <div class="section-actions">
-                        <el-tag type="success" size="small">P5.12</el-tag>
+                        <el-tag type="success" size="small">P5.13</el-tag>
                         <el-button
                             type="primary"
                             link
@@ -278,11 +278,29 @@
                     </el-tag>
                 </div>
             </div>
+            <el-alert
+                v-if="registryError"
+                class="registry-state-alert"
+                type="error"
+                title="Registry 读取失败"
+                :description="registryErrorDetail"
+                show-icon
+                :closable="false"
+            />
+            <el-alert
+                v-else-if="isRegistryEmpty"
+                class="registry-state-alert"
+                type="warning"
+                title="Registry 暂无模块"
+                description="scripts/check-module-registry-smoke.sh"
+                show-icon
+                :closable="false"
+            />
             <el-table
                 v-loading="registryLoading || statusLoading"
                 :data="filteredModules"
                 size="large"
-                empty-text="暂无匹配模块"
+                :empty-text="registryTableEmptyText"
             >
                 <el-table-column label="模块" prop="name" min-width="130" />
                 <el-table-column label="Manifest" prop="manifest" min-width="240" />
@@ -443,6 +461,8 @@ const uninstallResult = ref<ModuleManifestApplyResult>()
 const resultTab = ref<'install' | 'uninstall'>('install')
 const previewLoading = ref(false)
 const registryLoading = ref(false)
+const registryLoaded = ref(false)
+const registryError = ref('')
 const statusLoading = ref(false)
 const installApplyLoading = ref(false)
 const uninstallApplyLoading = ref(false)
@@ -667,9 +687,29 @@ const registryFailedCount = computed(
     () => modules.filter((item) => item.registryStatusCode === 'failed').length
 )
 
+const registrySmokeCommand = 'scripts/check-module-registry-smoke.sh'
+
 const hasBrokenRegistryFixture = computed(() =>
     modules.some((item) => item.module === 'broken_fixture')
 )
+
+const isRegistryEmpty = computed(
+    () => registryLoaded.value && !registryLoading.value && !registryError.value && modules.length === 0
+)
+
+const registryErrorDetail = computed(() =>
+    registryError.value ? `${registryError.value} · ${registrySmokeCommand}` : registrySmokeCommand
+)
+
+const registryTableEmptyText = computed(() => {
+    if (registryError.value) {
+        return 'registry 读取失败'
+    }
+    if (isRegistryEmpty.value) {
+        return 'registry 暂无模块'
+    }
+    return '暂无匹配模块'
+})
 
 const registryAcceptanceRows = computed<RegistryAcceptanceRow[]>(() => [
     {
@@ -699,7 +739,7 @@ const registryAcceptanceRows = computed<RegistryAcceptanceRow[]>(() => [
     {
         key: 'smoke',
         label: 'Smoke',
-        value: 'check-module-registry-smoke.sh',
+        value: registrySmokeCommand,
         type: 'success'
     },
     {
@@ -970,6 +1010,16 @@ const moduleStatusErrorMessage = (error: unknown) => {
     return 'status api failed'
 }
 
+const moduleRegistryErrorMessage = (error: unknown) => {
+    if (error instanceof Error && error.message) {
+        return error.message
+    }
+    if (typeof error === 'string' && error) {
+        return error
+    }
+    return 'module registry api failed'
+}
+
 const loadModuleStatuses = async () => {
     if (statusLoading.value) {
         return
@@ -1007,9 +1057,15 @@ const loadModuleRegistry = async () => {
         return
     }
     registryLoading.value = true
+    registryError.value = ''
     try {
         const items = await listModuleRegistry()
         modules.splice(0, modules.length, ...items.map(toModuleCenterModule))
+        registryLoaded.value = true
+    } catch (error) {
+        modules.splice(0, modules.length)
+        registryError.value = moduleRegistryErrorMessage(error)
+        registryLoaded.value = true
     } finally {
         registryLoading.value = false
     }
@@ -1017,6 +1073,9 @@ const loadModuleRegistry = async () => {
 
 const refreshModuleCenter = async () => {
     await loadModuleRegistry()
+    if (registryError.value) {
+        return
+    }
     await loadModuleStatuses()
 }
 
@@ -1256,6 +1315,10 @@ onMounted(() => {
     color: #667085;
     font-size: 12px;
     line-height: 18px;
+}
+
+.registry-state-alert {
+    margin-bottom: 14px;
 }
 
 .section-label {
