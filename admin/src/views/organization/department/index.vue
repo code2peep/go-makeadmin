@@ -92,7 +92,7 @@
     </div>
 </template>
 <script lang="ts" setup name="department">
-    import type { FormInstance, TableInstance } from 'element-plus'
+import type { FormInstance, TableInstance } from 'element-plus'
 import EditPopup from './edit.vue'
 import { deptDelete, deptLists } from '@/api/org/department'
 import feedback from '@/utils/feedback'

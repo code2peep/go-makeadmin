@@ -20,7 +20,7 @@
                         <div class="form-tips">建议尺寸：100*100像素，支持jpg，jpeg，png格式</div>
                     </div>
                 </el-form-item>
-                <el-form-item label="网站logo" prop="logo">
+                <el-form-item label="网站 Logo" prop="logo">
                     <div>
                         <material-picker v-model="formData.logo" :limit="1" />
                         <div class="form-tips">建议尺寸：200*200像素，支持jpg，jpeg，png格式</div>
@@ -51,7 +51,7 @@ const { getConfig } = useAppStore()
 const formData = reactive({
     name: '', // 网站名称
     favicon: '', // 网站图标
-    logo: '', // 网站logo
+    logo: '', // 网站 Logo
     backdrop: '' // 登录页广告图
 })
 
@@ -87,7 +87,7 @@ const rules = {
     ]
 }
 
-// 获取备案信息
+// 获取网站信息
 const getData = async () => {
     const data = await getWebsite()
     for (const key in formData) {
@@ -96,7 +96,7 @@ const getData = async () => {
     }
 }
 
-// 设置备案信息
+// 保存网站信息
 const handleSubmit = async () => {
     await formRef.value?.validate()
     await setWebsite(formData)

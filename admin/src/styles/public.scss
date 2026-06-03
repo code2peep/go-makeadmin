@@ -5,6 +5,14 @@ body {
     @apply text-tx-secondary text-xs leading-6 mt-1;
 }
 
+.el-table .cell {
+    overflow-wrap: anywhere;
+}
+
+.el-descriptions__label {
+    white-space: nowrap;
+}
+
 .clearfix:after {
     content: '';
     display: block;
