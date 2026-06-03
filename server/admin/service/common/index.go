@@ -2,11 +2,9 @@ package common
 
 import (
 	"go-makeadmin/config"
-	"go-makeadmin/core"
 	"go-makeadmin/core/response"
 	"go-makeadmin/util"
 	"gorm.io/gorm"
-	"time"
 )
 
 type IIndexService interface {
@@ -34,39 +32,34 @@ func (iSrv indexService) Console() (res map[string]interface{}, e error) {
 	version := map[string]interface{}{
 		"name":    name,
 		"version": config.Config.Version,
-		"website": "https://www.go-makeadmin.cn",
+		"website": "https://github.com/code2peep/go-makeadmin",
 		"based":   "Go、Gin、Gorm、Vue3、Element Plus、MySQL、Redis",
 		"links": map[string]string{
-			"gitee":   "https://gitee.com/codepeep/go-makeadmin",
-			"website": "https://www.go-makeadmin.cn",
+			"github":  "https://github.com/code2peep/go-makeadmin",
+			"website": "https://github.com/code2peep/go-makeadmin",
 		},
-	}
-	// 今日数据
-	today := map[string]interface{}{
-		"time":        "2022-08-11 15:08:29",
-		"todayVisits": 10,  // 访问量(人)
-		"totalVisits": 100, // 总访问量
-		"todaySales":  30,  // 销售额(元)
-		"totalSales":  65,  // 总销售额
-		"todayOrder":  12,  // 订单量(笔)
-		"totalOrder":  255, // 总订单量
-		"todayUsers":  120, // 新增用户
-		"totalUsers":  360, // 总访用户
-	}
-	// 访客图表
-	now := time.Now()
-	var date []string
-	for i := 14; i >= 0; i-- {
-		date = append(date, now.AddDate(0, 0, -i).Format(core.DateFormat))
-	}
-	visitor := map[string]interface{}{
-		"date": date,
-		"list": []int{12, 13, 11, 5, 8, 22, 14, 9, 456, 62, 78, 12, 18, 22, 46},
 	}
 	return map[string]interface{}{
 		"version": version,
-		"today":   today,
-		"visitor": visitor,
+		"framework": map[string]interface{}{
+			"stage":           "P4.1 可见后台与人工测试闭环",
+			"database":        "go_makeadmin",
+			"tables":          "ma_*",
+			"auth":            "JWT + Redis session",
+			"moduleLifecycle": "manifest + codegen + install/uninstall apply",
+		},
+		"milestones": []map[string]string{
+			{"name": "P1 核心后台", "status": "已冻结", "summary": "登录、菜单、权限、设置、字典、文件、日志和代码生成器切到 ma_*。"},
+			{"name": "P2 权限租户", "status": "已冻结", "summary": "JWT、Redis session、租户上下文、数据权限和模块生命周期命令完成。"},
+			{"name": "P3 模块产品化", "status": "已冻结", "summary": "脚手架、codegen、manifest、安装卸载和 apply 结果闭环完成。"},
+			{"name": "P4 可见后台", "status": "进行中", "summary": "把底座能力沉到后台页面，进入人工测试和产品体验验收。"},
+		},
+		"validation": []map[string]string{
+			{"name": "无库验证", "status": "通过", "scope": "runtime residue、Go test、type-check、build、npm audit"},
+			{"name": "模块工具链", "status": "通过", "scope": "manifest、脚手架、codegen、安装卸载计划、写入门禁"},
+			{"name": "本地 API", "status": "可用", "scope": "http://127.0.0.1:18000/api"},
+			{"name": "管理端", "status": "可用", "scope": "http://127.0.0.1:5173"},
+		},
 	}, nil
 }
 
