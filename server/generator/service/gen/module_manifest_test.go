@@ -130,6 +130,12 @@ func TestListModuleRegistryIncludesDemoArticle(t *testing.T) {
 	if item.Runtime != "MAKEADMIN_ENABLE_DEMO_MODULE=1" {
 		t.Fatalf("unexpected runtime: %s", item.Runtime)
 	}
+	if item.ManifestStatus != "passed" || item.ManifestMessage == "" {
+		t.Fatalf("unexpected manifest status: %+v", item)
+	}
+	if len(item.ManifestChecks) < 6 {
+		t.Fatalf("manifest checks too short: %+v", item.ManifestChecks)
+	}
 }
 
 func TestPreviewModuleManifestIncludesInstallPlan(t *testing.T) {

@@ -274,6 +274,16 @@
             >
                 <el-table-column label="模块" prop="name" min-width="130" />
                 <el-table-column label="Manifest" prop="manifest" min-width="240" />
+                <el-table-column label="校验" min-width="180">
+                    <template #default="{ row }">
+                        <div class="status-stack">
+                            <el-tag :type="row.registryStatusType" size="small">
+                                {{ row.registryStatus }}
+                            </el-tag>
+                            <span class="status-detail">{{ row.registryDetail }}</span>
+                        </div>
+                    </template>
+                </el-table-column>
                 <el-table-column label="表名" prop="table" min-width="160" />
                 <el-table-column label="运行时" prop="runtime" min-width="260" />
                 <el-table-column label="页面" prop="entry" min-width="160" />
@@ -415,6 +425,10 @@ type ModuleCenterModule = {
     entry: string
     status: string
     statusType: string
+    registryStatusCode: string
+    registryStatus: string
+    registryStatusType: string
+    registryDetail: string
     installStatusCode: string
     installStatus: string
     installStatusType: string
@@ -540,7 +554,11 @@ const filteredModules = computed(() => {
         return modules
     }
     if (moduleStatusFilter.value === 'failed') {
-        return modules.filter((item) => ['blocked', 'failed'].includes(item.installStatusCode))
+        return modules.filter(
+            (item) =>
+                item.registryStatusCode === 'failed' ||
+                ['blocked', 'failed'].includes(item.installStatusCode)
+        )
     }
     return modules.filter((item) => item.installStatusCode === moduleStatusFilter.value)
 })
@@ -548,12 +566,17 @@ const filteredModules = computed(() => {
 const moduleStatusSummary = computed(() => {
     const countBy = (codes: string[]) =>
         modules.filter((item) => codes.includes(item.installStatusCode)).length
+    const failedCount = modules.filter(
+        (item) =>
+            item.registryStatusCode === 'failed' ||
+            ['blocked', 'failed'].includes(item.installStatusCode)
+    ).length
     return [
         { key: 'total', label: '总数', value: modules.length },
         { key: 'installed', label: '已安装', value: countBy(['installed']) },
         { key: 'partial', label: '部分', value: countBy(['partial']) },
         { key: 'uninstalled', label: '未安装', value: countBy(['uninstalled']) },
-        { key: 'failed', label: '异常', value: countBy(['blocked', 'failed']) }
+        { key: 'failed', label: '异常', value: failedCount }
     ]
 })
 
@@ -668,6 +691,10 @@ const toModuleCenterModule = (item: ModuleRegistryItemResult): ModuleCenterModul
     entry: item.entry,
     status: item.status,
     statusType: item.statusType,
+    registryStatusCode: item.manifestStatus || 'failed',
+    registryStatus: moduleRegistryStatusLabel(item.manifestStatus),
+    registryStatusType: moduleRegistryStatusType(item.manifestStatus),
+    registryDetail: item.manifestMessage || '-',
     installStatusCode: 'loading',
     installStatus: '读取中',
     installStatusType: 'info',
@@ -677,6 +704,26 @@ const toModuleCenterModule = (item: ModuleRegistryItemResult): ModuleCenterModul
     runtimeStatusType: 'info',
     runtimeDetail: '-'
 })
+
+const moduleRegistryStatusLabel = (status?: string) => {
+    if (status === 'passed') {
+        return '已通过'
+    }
+    if (status === 'failed') {
+        return '异常'
+    }
+    return '未知'
+}
+
+const moduleRegistryStatusType = (status?: string) => {
+    if (status === 'passed') {
+        return 'success'
+    }
+    if (status === 'failed') {
+        return 'danger'
+    }
+    return 'info'
+}
 
 const statusTypeMap: Record<string, string> = {
     installed: 'success',

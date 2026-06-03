@@ -89,7 +89,7 @@ P3 最终状态见 `docs/P3_FINAL_STATUS.md`。
 
 P4 状态见 `docs/P4_STATUS.md`。P4.1 可见后台工作台见 `docs/P4_VISIBLE_ADMIN_WORKBENCH.md`。P4.2 模块中心见 `docs/P4_MODULE_CENTER.md`。P4.3 模块中心内嵌预览见 `docs/P4_MODULE_CENTER_INLINE_PREVIEW.md`。P4.4 模块中心 apply 结果见 `docs/P4_MODULE_CENTER_APPLY_RESULT.md`。P4.5 模块中心状态清单见 `docs/P4_MODULE_CENTER_STATUS_CHECKLIST.md`。P4.6 核心页面验收见 `docs/P4_CORE_ADMIN_VISIBLE_CHECK.md`。P4.7 核心页面修整见 `docs/P4_CORE_PAGE_POLISH.md`。P4.8 核心表格空态见 `docs/P4_CORE_TABLE_EMPTY_STATE.md`。P4.9 核心页面失败态见 `docs/P4_CORE_PAGE_FAILURE_STATE.md`。P4 最终状态见 `docs/P4_FINAL_STATUS.md`。
 
-P5 状态见 `docs/P5_STATUS.md`。P5.1 Demo Article 可见模块见 `docs/P5_DEMO_MODULE_VISIBLE.md`。P5.2 模块中心真实 apply 见 `docs/P5_MODULE_CENTER_APPLY.md`。P5.3 模块状态回读见 `docs/P5_MODULE_STATUS_READBACK.md`。P5.4 模块状态筛选见 `docs/P5_MODULE_STATUS_FILTERS.md`。P5.5 模块 registry 只读清单见 `docs/P5_MODULE_REGISTRY_READONLY.md`。
+P5 状态见 `docs/P5_STATUS.md`。P5.1 Demo Article 可见模块见 `docs/P5_DEMO_MODULE_VISIBLE.md`。P5.2 模块中心真实 apply 见 `docs/P5_MODULE_CENTER_APPLY.md`。P5.3 模块状态回读见 `docs/P5_MODULE_STATUS_READBACK.md`。P5.4 模块状态筛选见 `docs/P5_MODULE_STATUS_FILTERS.md`。P5.5 模块 registry 只读清单见 `docs/P5_MODULE_REGISTRY_READONLY.md`。P5.6 registry manifest 校验见 `docs/P5_MODULE_REGISTRY_MANIFEST_CHECK.md`。
 
 ## 授权
 

@@ -213,3 +213,35 @@ P5.5：模块 registry 后端只读列表。建议把内置模块清单从前端
 ## 下一步
 
 P5.6：模块 registry 与 manifest 校验联动。建议让 registry 项在后端启动或请求时校验 manifest 文件存在、模块名一致、入口字段完整，并把校验结果带回模块中心。
+
+## P5.6 当前落地
+
+模块 registry 与 manifest 校验联动已建立：
+
+- `GET /api/gen/moduleRegistry` 返回项新增 `manifestStatus`、`manifestMessage` 和 `manifestChecks`。
+- registry 返回时会校验 manifest 可读取、结构有效、`module` 一致、`table` 一致、runtime hint 一致、管理端入口合法、菜单路由字段完整。
+- 单个 registry 项校验失败时仍返回该项，并标记为 `failed`，避免模块中心整页空白。
+- 模块中心新增 `校验` 列。
+- 模块中心 `异常` 筛选同时包含 registry 校验异常和安装状态异常。
+
+详见 `docs/P5_MODULE_REGISTRY_MANIFEST_CHECK.md`。
+
+## P5.6 验收标准
+
+- `go test ./generator/service/gen ./generator/routers/gen` 通过。
+- `cd admin && npm run type-check` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 浏览器重新登录后，模块中心显示 `P5.6`、Demo Article 校验 `已通过`。
+
+## P5.6 验收结果
+
+- 已通过 `go test ./generator/service/gen ./generator/routers/gen`。
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 全量验证里的前端 build 仍有 Rolldown 对 `@vueuse/core` pure annotation 的已知 warning，命令退出码为 0。
+- 本地 API 已用 `MAKEADMIN_ENABLE_DEMO_MODULE=1 MAKEADMIN_ALLOW_MODULE_INSTALL_APPLY=1 MAKEADMIN_ALLOW_MODULE_UNINSTALL_APPLY=1 ./scripts/dev-api.sh` 启动，并确认注册 `/api/gen/moduleRegistry`。
+- 浏览器当前位于登录页，旧 token 已过期；本机未设置 `ADMIN_PASSWORD` 或 `P1_SMOKE_ADMIN_PASSWORD`，因此模块中心页面人工复验需要重新登录后执行。
+
+## 下一步
+
+P5.7：模块 registry 校验明细展示。建议在模块中心为校验列增加明细弹窗，展示每个 `manifestChecks` 项，方便以后多模块接入时快速定位 manifest 与 registry 的差异。

@@ -166,6 +166,9 @@ export interface ModuleRegistryItemResult {
     entry: string
     status: string
     statusType: string
+    manifestStatus?: string
+    manifestMessage?: string
+    manifestChecks?: ModuleManifestApplyCheckResult[]
 }
 
 export interface ModuleManifestApplyAuditActorResult {
