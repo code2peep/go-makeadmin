@@ -308,8 +308,6 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有写 `ma_codegen_*`、没有生成文件、没有创建业务 schema、没有读取或修改 `.env`、没有新增权限 SQL。
 
-## 下一步
-
 ## P3.9 当前落地
 
 模块 manifest 预览结果的安装计划联动已建立：
@@ -354,4 +352,45 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 
 ## 下一步
 
-P3.10：后台模块安装写入门禁与确认参数。建议在只读安装计划成熟后，再做受控写入入口的门禁设计，先覆盖环境变量、模块名、租户、角色和 schema 风险确认，不直接开放页面写库。
+## P3.10 当前落地
+
+后台模块安装写入门禁与确认参数已建立：
+
+- 新增 `PUT /gen/previewCode`。
+- 新接口复用现有 `gen:previewCode` 权限面，不新增权限 SQL。
+- 新增 `ApplyModuleManifestInstall` 服务方法。
+- 写入门禁必须显式设置 `MAKEADMIN_ALLOW_MODULE_INSTALL_APPLY=1`。
+- 确认参数覆盖 `confirmModule`、`confirmTenantId`、`confirmRoleId`、`confirmInstall` 和 `confirmSchemaRisk`。
+- `manifest.requiresSchema=true` 时必须显式确认 schema 风险。
+- P3.10 即使全部门禁满足，也会在安装执行器处阻断，并明确返回 `no database access was attempted`。
+- 门禁响应返回 manifest 摘要、租户、角色、安装计划和结构化检查结果。
+- 管理端 `Manifest 预览` 弹窗新增写入确认控件和 `写入门禁` 按钮。
+- 新增 `scripts/check-module-install-apply-boundary.sh`。
+- `scripts/check-module-tools-no-db.sh` 已接入 install apply boundary 验证。
+
+详见 `docs/P3_MODULE_INSTALL_APPLY_BOUNDARY.md`。
+
+## P3.10 验收标准
+
+- `scripts/check-module-install-apply-boundary.sh` 通过。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./generator/service/gen -run 'TestPreviewModuleManifest|TestModuleManifestInstallApplyGate' -count=1` 通过。
+- `cd admin && npm run type-check` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不执行安装 SQL、不执行卸载 SQL、不写数据库、不创建业务 schema、不读取或修改 `.env`、不新增权限 SQL。
+
+## P3.10 验收结果
+
+- 已通过 `scripts/check-module-install-apply-boundary.sh`。
+- 已通过 `scripts/check-module-tools-no-db.sh`，且 no-db guard 已执行 install apply boundary。
+- 已通过 `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./generator/service/gen -run 'TestPreviewModuleManifest|TestModuleManifestInstallApplyGate' -count=1`。
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有执行安装 SQL、没有执行卸载 SQL、没有写数据库、没有创建业务 schema、没有读取或修改 `.env`、没有新增权限 SQL。
+
+## 下一步
+
+P3.11：后台模块安装受控本地写入 smoke。建议在 P3.10 门禁稳定后，开放仅限本地 `go_makeadmin` 的 demo article 安装 smoke，验证权限、菜单、菜单权限和角色授权写入的幂等与清理残留。

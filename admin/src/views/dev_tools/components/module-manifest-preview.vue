@@ -90,6 +90,44 @@
                     </el-descriptions-item>
                 </el-descriptions>
 
+                <el-form class="install-gate-form" :model="confirmData" label-width="90px">
+                    <el-form-item label="确认模块">
+                        <el-input
+                            class="w-[280px]"
+                            v-model="confirmData.confirmModule"
+                            clearable
+                        />
+                    </el-form-item>
+                    <el-form-item label="写入确认">
+                        <el-checkbox v-model="confirmData.confirmInstall">安装写入</el-checkbox>
+                        <el-checkbox
+                            v-model="confirmData.confirmSchemaRisk"
+                            :disabled="!preview.manifest.requiresSchema"
+                        >
+                            Schema 风险
+                        </el-checkbox>
+                    </el-form-item>
+                </el-form>
+
+                <div v-if="installGate" class="install-gate-result">
+                    <el-alert
+                        :title="installGate.message || '写入门禁已阻断'"
+                        type="warning"
+                        show-icon
+                        :closable="false"
+                    />
+                    <el-table
+                        v-if="installGate.checks?.length"
+                        class="mt-3"
+                        :data="installGate.checks"
+                        size="large"
+                    >
+                        <el-table-column label="检查项" prop="name" min-width="140" />
+                        <el-table-column label="状态" prop="status" min-width="120" />
+                        <el-table-column label="说明" prop="message" min-width="280" />
+                    </el-table>
+                </div>
+
                 <el-table class="mt-4" :data="preview.detail.column" size="large" height="260">
                     <el-table-column label="字段" prop="columnName" min-width="130" />
                     <el-table-column label="Go 字段" prop="goField" min-width="120" />
@@ -105,6 +143,12 @@
                             <icon name="el-icon-DocumentCopy" />
                         </template>
                         安装计划
+                    </el-button>
+                    <el-button type="warning" @click="handleInstallGate">
+                        <template #icon>
+                            <icon name="el-icon-Lock" />
+                        </template>
+                        写入门禁
                     </el-button>
                     <el-button type="primary" @click="handleCodePreview">
                         <template #icon>
@@ -127,7 +171,7 @@
 <script lang="ts" setup>
 import Popup from '@/components/popup/index.vue'
 import CodePreview from './code-preview.vue'
-import { previewModuleManifest } from '@/api/tools/code'
+import { applyModuleManifestInstall, previewModuleManifest } from '@/api/tools/code'
 import feedback from '@/utils/feedback'
 
 const popupRef = shallowRef<InstanceType<typeof Popup>>()
@@ -141,27 +185,39 @@ const formData = reactive({
 })
 
 const preview = ref<any>()
+const installGate = ref<any>()
+const confirmData = reactive({
+    confirmModule: '',
+    confirmInstall: false,
+    confirmSchemaRisk: false
+})
 const previewState = reactive({
     show: false,
     code: {} as Record<string, string>
 })
 
+const manifestParams = () =>
+    inputMode.value === 'path'
+        ? {
+              manifestPath: formData.manifestPath,
+              authorName: formData.authorName,
+              tenantId: formData.tenantId,
+              roleId: formData.roleId
+          }
+        : {
+              manifestBody: formData.manifestBody,
+              authorName: formData.authorName,
+              tenantId: formData.tenantId,
+              roleId: formData.roleId
+          }
+
 const handlePreview = async () => {
-    const params =
-        inputMode.value === 'path'
-            ? {
-                  manifestPath: formData.manifestPath,
-                  authorName: formData.authorName,
-                  tenantId: formData.tenantId,
-                  roleId: formData.roleId
-              }
-            : {
-                  manifestBody: formData.manifestBody,
-                  authorName: formData.authorName,
-                  tenantId: formData.tenantId,
-                  roleId: formData.roleId
-              }
+    const params = manifestParams()
     preview.value = await previewModuleManifest(params)
+    confirmData.confirmModule = preview.value?.manifest?.module || ''
+    confirmData.confirmInstall = false
+    confirmData.confirmSchemaRisk = false
+    installGate.value = undefined
     feedback.msgSuccess('预览生成成功')
 }
 
@@ -180,6 +236,26 @@ const handlePlanPreview = () => {
     }
     previewState.show = true
 }
+
+const handleInstallGate = async () => {
+    const params = {
+        ...manifestParams(),
+        confirmModule: confirmData.confirmModule,
+        confirmTenantId: formData.tenantId,
+        confirmRoleId: formData.roleId,
+        confirmInstall: confirmData.confirmInstall,
+        confirmSchemaRisk: confirmData.confirmSchemaRisk
+    }
+    try {
+        installGate.value = await applyModuleManifestInstall(params)
+        feedback.msgSuccess('门禁检查通过')
+    } catch (error) {
+        installGate.value = error || {
+            message: '写入门禁已阻断',
+            checks: []
+        }
+    }
+}
 </script>
 
 <style scoped lang="scss">
@@ -188,6 +264,11 @@ const handlePlanPreview = () => {
 }
 
 .manifest-result {
+    margin-top: 16px;
+}
+
+.install-gate-form,
+.install-gate-result {
     margin-top: 16px;
 }
 </style>

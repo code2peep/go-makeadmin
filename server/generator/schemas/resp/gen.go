@@ -105,3 +105,23 @@ type ModuleManifestPlanResp struct {
 	UninstallSQL string `json:"uninstallSql" structs:"uninstallSql"` // 卸载SQL
 	RuntimeHint  string `json:"runtimeHint" structs:"runtimeHint"`   // 运行时提示
 }
+
+// ModuleManifestInstallCheckResp 模块清单安装门禁检查结果
+type ModuleManifestInstallCheckResp struct {
+	Name    string `json:"name" structs:"name"`       // 检查项
+	Status  string `json:"status" structs:"status"`   // 状态
+	Message string `json:"message" structs:"message"` // 说明
+}
+
+// ModuleManifestInstallApplyResp 模块清单安装写入门禁结果
+type ModuleManifestInstallApplyResp struct {
+	Source      string                           `json:"source" structs:"source"`           // manifest 来源
+	Manifest    ModuleManifestSummaryResp        `json:"manifest" structs:"manifest"`       // manifest 摘要
+	TenantID    uint64                           `json:"tenantId" structs:"tenantId"`       // 租户ID
+	RoleID      uint64                           `json:"roleId" structs:"roleId"`           // 角色ID
+	Status      string                           `json:"status" structs:"status"`           // 门禁状态
+	Message     string                           `json:"message" structs:"message"`         // 门禁说明
+	RequiredEnv string                           `json:"requiredEnv" structs:"requiredEnv"` // 写入环境变量
+	Plan        ModuleManifestPlanResp           `json:"plan" structs:"plan"`               // 安装计划预览
+	Checks      []ModuleManifestInstallCheckResp `json:"checks" structs:"checks"`           // 检查结果
+}

@@ -86,6 +86,19 @@ type ModuleManifestPreviewReq struct {
 	AuthorName   string `json:"authorName" binding:"omitempty,max=100"`   // 作者名称
 }
 
+// ModuleManifestInstallApplyReq 模块清单安装写入门禁参数
+type ModuleManifestInstallApplyReq struct {
+	ManifestPath      string  `json:"manifestPath" binding:"omitempty,max=500"`  // 仓库内 manifest 路径
+	ManifestBody      string  `json:"manifestBody"`                              // manifest JSON
+	TenantID          uint64  `json:"tenantId"`                                  // 租户ID
+	RoleID            uint64  `json:"roleId"`                                    // 角色ID
+	ConfirmModule     string  `json:"confirmModule" binding:"omitempty,max=100"` // 确认模块名
+	ConfirmTenantID   *uint64 `json:"confirmTenantId"`                           // 确认租户ID
+	ConfirmRoleID     *uint64 `json:"confirmRoleId"`                             // 确认角色ID
+	ConfirmInstall    bool    `json:"confirmInstall"`                            // 确认安装写入
+	ConfirmSchemaRisk bool    `json:"confirmSchemaRisk"`                         // 确认业务 schema 风险
+}
+
 // GenCodeReq 生成代码参数
 type GenCodeReq struct {
 	Tables string `form:"tables" binding:"required"` // 生成的表, 用","分隔

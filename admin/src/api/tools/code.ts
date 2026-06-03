@@ -55,6 +55,11 @@ export function previewModuleManifest(params: any) {
     return request.post({ url: '/gen/previewCode', params })
 }
 
+// 模块 manifest 安装写入门禁
+export function applyModuleManifestInstall(params: any) {
+    return request.request({ url: '/gen/previewCode', method: 'PUT', data: params })
+}
+
 //生成代码
 export function generateCode(params: any) {
     return request.get({ url: '/gen/genCode', params })

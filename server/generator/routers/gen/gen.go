@@ -30,6 +30,7 @@ func regGen(rg *gin.RouterGroup, group *core.GroupBase) error {
 		rg.POST("/delTable", handle.delTable)
 		rg.GET("/previewCode", handle.previewCode)
 		rg.POST("/previewCode", handle.previewModuleManifest)
+		rg.PUT("/previewCode", handle.applyModuleManifestInstall)
 		rg.GET("/genCode", handle.genCode)
 		rg.GET("/downloadCode", handle.downloadCode)
 	})
@@ -134,6 +135,16 @@ func (gh genHandler) previewModuleManifest(c *gin.Context) {
 		return
 	}
 	res, err := gh.srv.PreviewModuleManifest(previewReq)
+	response.CheckAndRespWithData(c, res, err)
+}
+
+// applyModuleManifestInstall 校验模块 manifest 安装写入门禁
+func (gh genHandler) applyModuleManifestInstall(c *gin.Context) {
+	var applyReq req.ModuleManifestInstallApplyReq
+	if response.IsFailWithResp(c, util.VerifyUtil.VerifyJSON(c, &applyReq)) {
+		return
+	}
+	res, err := gh.srv.ApplyModuleManifestInstall(applyReq)
 	response.CheckAndRespWithData(c, res, err)
 }
 

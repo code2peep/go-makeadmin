@@ -145,3 +145,128 @@ func TestPreviewModuleManifestRejectsUnsafePath(t *testing.T) {
 		t.Fatalf("expected unsafe manifest path to fail")
 	}
 }
+
+func TestModuleManifestInstallApplyGateRequiresEnv(t *testing.T) {
+	srv := generateService{}
+	res, err := srv.ApplyModuleManifestInstall(req.ModuleManifestInstallApplyReq{
+		ManifestPath: "examples/demo/manifest.json",
+	})
+	if err == nil {
+		t.Fatalf("expected missing env gate to fail")
+	}
+	assertContains(t, err.Error(), moduleManifestInstallApplyEnv+"=1 is required")
+	assertContains(t, err.Error(), "no database access was attempted")
+	if res.Status != "blocked" || res.RequiredEnv != moduleManifestInstallApplyEnv {
+		t.Fatalf("unexpected gate response: %+v", res)
+	}
+	if len(res.Checks) != 1 || res.Checks[0].Status != "failed" {
+		t.Fatalf("unexpected gate checks: %+v", res.Checks)
+	}
+}
+
+func TestModuleManifestInstallApplyGateRequiresConfirmations(t *testing.T) {
+	t.Setenv(moduleManifestInstallApplyEnv, "1")
+	srv := generateService{}
+	tenantID := uint64(0)
+	roleID := uint64(1)
+
+	res, err := srv.ApplyModuleManifestInstall(req.ModuleManifestInstallApplyReq{
+		ManifestPath:  "examples/demo/manifest.json",
+		ConfirmModule: "wrong",
+	})
+	if err == nil {
+		t.Fatalf("expected confirmModule gate to fail")
+	}
+	assertContains(t, err.Error(), `confirmModule must be "article"`)
+	assertContains(t, err.Error(), "no database access was attempted")
+	if res.Checks[len(res.Checks)-1].Name != "confirmModule" {
+		t.Fatalf("expected confirmModule check, got %+v", res.Checks)
+	}
+
+	res, err = srv.ApplyModuleManifestInstall(req.ModuleManifestInstallApplyReq{
+		ManifestPath:    "examples/demo/manifest.json",
+		ConfirmModule:   "article",
+		ConfirmTenantID: uint64Ptr(9),
+	})
+	if err == nil {
+		t.Fatalf("expected confirmTenantId gate to fail")
+	}
+	assertContains(t, err.Error(), "confirmTenantId must be 0")
+	assertContains(t, err.Error(), "no database access was attempted")
+
+	res, err = srv.ApplyModuleManifestInstall(req.ModuleManifestInstallApplyReq{
+		ManifestPath:    "examples/demo/manifest.json",
+		ConfirmModule:   "article",
+		ConfirmTenantID: &tenantID,
+		ConfirmRoleID:   uint64Ptr(9),
+	})
+	if err == nil {
+		t.Fatalf("expected confirmRoleId gate to fail")
+	}
+	assertContains(t, err.Error(), "confirmRoleId must be 1")
+	assertContains(t, err.Error(), "no database access was attempted")
+
+	res, err = srv.ApplyModuleManifestInstall(req.ModuleManifestInstallApplyReq{
+		ManifestPath:    "examples/demo/manifest.json",
+		ConfirmModule:   "article",
+		ConfirmTenantID: &tenantID,
+		ConfirmRoleID:   &roleID,
+	})
+	if err == nil {
+		t.Fatalf("expected confirmInstall gate to fail")
+	}
+	assertContains(t, err.Error(), "confirmInstall must be true")
+	assertContains(t, err.Error(), "no database access was attempted")
+
+	res, err = srv.ApplyModuleManifestInstall(req.ModuleManifestInstallApplyReq{
+		ManifestBody:    moduleManifestBodyWithRequiresSchema(t),
+		ConfirmModule:   "article",
+		ConfirmTenantID: &tenantID,
+		ConfirmRoleID:   &roleID,
+		ConfirmInstall:  true,
+	})
+	if err == nil {
+		t.Fatalf("expected confirmSchemaRisk gate to fail")
+	}
+	assertContains(t, err.Error(), "confirmSchemaRisk must be true")
+	assertContains(t, err.Error(), "no database access was attempted")
+}
+
+func TestModuleManifestInstallApplyGateBlocksExecutorWhenConfirmed(t *testing.T) {
+	t.Setenv(moduleManifestInstallApplyEnv, "1")
+	srv := generateService{}
+	tenantID := uint64(0)
+	roleID := uint64(1)
+
+	res, err := srv.ApplyModuleManifestInstall(req.ModuleManifestInstallApplyReq{
+		ManifestPath:    "examples/demo/manifest.json",
+		ConfirmModule:   "article",
+		ConfirmTenantID: &tenantID,
+		ConfirmRoleID:   &roleID,
+		ConfirmInstall:  true,
+	})
+	if err == nil {
+		t.Fatalf("expected P3.10 executor boundary to fail")
+	}
+	assertContains(t, err.Error(), "module install apply executor is not open in P3.10")
+	assertContains(t, err.Error(), "no database access was attempted")
+	if res.Manifest.Module != "article" || res.Plan.InstallSQL == "" {
+		t.Fatalf("unexpected install gate response: %+v", res)
+	}
+	if res.Checks[len(res.Checks)-1].Name != "executor" || res.Checks[len(res.Checks)-1].Status != "blocked" {
+		t.Fatalf("unexpected executor check: %+v", res.Checks)
+	}
+}
+
+func moduleManifestBodyWithRequiresSchema(t *testing.T) string {
+	t.Helper()
+	content, err := os.ReadFile(filepath.Join(filepath.Dir(config.Config.RootPath), "examples", "demo", "manifest.json"))
+	if err != nil {
+		t.Fatalf("read demo manifest: %v", err)
+	}
+	return strings.Replace(string(content), `"requiresSchema": false`, `"requiresSchema": true`, 1)
+}
+
+func uint64Ptr(value uint64) *uint64 {
+	return &value
+}
