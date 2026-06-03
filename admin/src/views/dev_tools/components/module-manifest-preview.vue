@@ -95,18 +95,26 @@
                         <el-input
                             class="w-[280px]"
                             v-model="confirmData.confirmModule"
+                            :disabled="isApplyLoading"
                             clearable
                         />
                     </el-form-item>
                     <el-form-item label="写入确认">
-                        <el-checkbox v-model="confirmData.confirmInstall">安装写入</el-checkbox>
+                        <el-checkbox
+                            v-model="confirmData.confirmInstall"
+                            :disabled="isApplyLoading"
+                        >
+                            安装写入
+                        </el-checkbox>
                         <el-checkbox
                             v-model="confirmData.confirmSchemaRisk"
-                            :disabled="!preview.manifest.requiresSchema"
+                            :disabled="!requiresSchemaConfirm || isApplyLoading"
                         >
                             Schema 风险
                         </el-checkbox>
-                        <el-checkbox v-model="confirmData.confirmDelete">删除确认</el-checkbox>
+                        <el-checkbox v-model="confirmData.confirmDelete" :disabled="isApplyLoading">
+                            删除确认
+                        </el-checkbox>
                     </el-form-item>
                 </el-form>
 
@@ -243,25 +251,41 @@
                 </el-table>
 
                 <div class="flex justify-end mt-4">
-                    <el-button @click="handlePlanPreview">
+                    <el-button :disabled="!hasCurrentPreview || isApplyLoading" @click="handlePlanPreview">
                         <template #icon>
                             <icon name="el-icon-DocumentCopy" />
                         </template>
                         安装计划
                     </el-button>
-                    <el-button type="warning" @click="handleInstallGate">
+                    <el-button
+                        v-perms="['gen:previewCode']"
+                        type="warning"
+                        :disabled="!canInstallApply"
+                        :loading="installApplyLoading"
+                        @click="handleInstallGate"
+                    >
                         <template #icon>
                             <icon name="el-icon-Lock" />
                         </template>
                         安装执行
                     </el-button>
-                    <el-button type="danger" @click="handleUninstallGate">
+                    <el-button
+                        v-perms="['gen:previewCode']"
+                        type="danger"
+                        :disabled="!canUninstallApply"
+                        :loading="uninstallApplyLoading"
+                        @click="handleUninstallGate"
+                    >
                         <template #icon>
                             <icon name="el-icon-Delete" />
                         </template>
                         卸载执行
                     </el-button>
-                    <el-button type="primary" @click="handleCodePreview">
+                    <el-button
+                        type="primary"
+                        :disabled="!hasCurrentPreview || isApplyLoading"
+                        @click="handleCodePreview"
+                    >
                         <template #icon>
                             <icon name="el-icon-View" />
                         </template>
@@ -300,9 +324,13 @@ const formData = reactive({
 })
 
 const preview = ref<any>()
+const previewSnapshotKey = ref('')
 const installResult = ref<any>()
 const uninstallResult = ref<any>()
 const resultTab = ref<'install' | 'uninstall'>('install')
+const previewLoading = ref(false)
+const installApplyLoading = ref(false)
+const uninstallApplyLoading = ref(false)
 const confirmData = reactive({
     confirmModule: '',
     confirmInstall: false,
@@ -329,24 +357,106 @@ const manifestParams = () =>
               roleId: formData.roleId
           }
 
-const handlePreview = async () => {
-    const params = manifestParams()
-    preview.value = await previewModuleManifest(params)
-    confirmData.confirmModule = preview.value?.manifest?.module || ''
+const manifestInputKey = computed(() =>
+    JSON.stringify({
+        inputMode: inputMode.value,
+        ...manifestParams()
+    })
+)
+
+const hasCurrentPreview = computed(
+    () => Boolean(preview.value) && previewSnapshotKey.value === manifestInputKey.value
+)
+
+const requiresSchemaConfirm = computed(() => Boolean(preview.value?.manifest?.requiresSchema))
+
+const isApplyLoading = computed(
+    () => previewLoading.value || installApplyLoading.value || uninstallApplyLoading.value
+)
+
+const expectedModule = computed(() => preview.value?.manifest?.module || '')
+
+const isConfirmModuleMatched = computed(
+    () => Boolean(expectedModule.value) && confirmData.confirmModule === expectedModule.value
+)
+
+const canInstallApply = computed(
+    () =>
+        hasCurrentPreview.value &&
+        isConfirmModuleMatched.value &&
+        confirmData.confirmInstall &&
+        (!requiresSchemaConfirm.value || confirmData.confirmSchemaRisk) &&
+        !isApplyLoading.value
+)
+
+const canUninstallApply = computed(
+    () =>
+        hasCurrentPreview.value &&
+        isConfirmModuleMatched.value &&
+        confirmData.confirmDelete &&
+        !isApplyLoading.value
+)
+
+const resetConfirmState = (module = '') => {
+    confirmData.confirmModule = module
     confirmData.confirmInstall = false
     confirmData.confirmSchemaRisk = false
     confirmData.confirmDelete = false
+}
+
+const clearApplyResults = () => {
     installResult.value = undefined
     uninstallResult.value = undefined
-    feedback.msgSuccess('预览生成成功')
+    resultTab.value = 'install'
+}
+
+const clearPreviewState = () => {
+    preview.value = undefined
+    previewSnapshotKey.value = ''
+    resetConfirmState()
+    clearApplyResults()
+}
+
+watch(manifestInputKey, () => {
+    if (preview.value) {
+        clearPreviewState()
+    }
+})
+
+const handlePreview = async () => {
+    if (previewLoading.value) {
+        return
+    }
+    const params = manifestParams()
+    const snapshotKey = manifestInputKey.value
+    previewLoading.value = true
+    try {
+        const data = await previewModuleManifest(params)
+        if (snapshotKey !== manifestInputKey.value) {
+            return
+        }
+        preview.value = data
+        previewSnapshotKey.value = snapshotKey
+        resetConfirmState(preview.value?.manifest?.module || '')
+        clearApplyResults()
+        feedback.msgSuccess('预览生成成功')
+    } finally {
+        previewLoading.value = false
+    }
 }
 
 const handleCodePreview = () => {
+    if (!hasCurrentPreview.value) {
+        return
+    }
     previewState.code = preview.value?.code || {}
     previewState.show = true
 }
 
 const handlePlanPreview = () => {
+    if (!hasCurrentPreview.value) {
+        return
+    }
     const plan = preview.value?.plan || {}
     previewState.code = {
         'registry.sql': plan.registrySql || '',
@@ -358,6 +468,9 @@ const handlePlanPreview = () => {
 }
 
 const handleInstallGate = async () => {
+    if (!canInstallApply.value) {
+        return
+    }
     const params = {
         ...manifestParams(),
         confirmModule: confirmData.confirmModule,
@@ -366,6 +479,8 @@ const handleInstallGate = async () => {
         confirmInstall: confirmData.confirmInstall,
         confirmSchemaRisk: confirmData.confirmSchemaRisk
     }
+    installApplyLoading.value = true
+    installResult.value = undefined
     try {
         installResult.value = await applyModuleManifestInstall(params)
         feedback.msgSuccess('安装执行完成')
@@ -374,16 +489,23 @@ const handleInstallGate = async () => {
             message: '安装写入已阻断',
             checks: []
         }
+    } finally {
+        installApplyLoading.value = false
     }
     resultTab.value = 'install'
 }
 
 const handleUninstallGate = async () => {
+    if (!canUninstallApply.value) {
+        return
+    }
     const params = {
         ...manifestParams(),
         confirmModule: confirmData.confirmModule,
         confirmDelete: confirmData.confirmDelete
     }
+    uninstallApplyLoading.value = true
+    uninstallResult.value = undefined
     try {
         uninstallResult.value = await applyModuleManifestUninstall(params)
         feedback.msgSuccess('卸载执行完成')
@@ -392,6 +514,8 @@ const handleUninstallGate = async () => {
             message: '卸载写入已阻断',
             checks: []
         }
+    } finally {
+        uninstallApplyLoading.value = false
     }
     resultTab.value = 'uninstall'
 }

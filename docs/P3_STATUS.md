@@ -578,6 +578,39 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 - `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
 - 本阶段没有创建审计表、没有修改数据库 schema、没有读取或修改 `.env`、没有新增权限 SQL。
 
+## P3.16 当前落地
+
+模块 apply 页面权限与按钮状态已收敛：
+
+- `Manifest 预览` 弹窗内安装、卸载继续复用 `gen:previewCode` 权限面。
+- 安装计划和代码预览只允许基于当前输入对应的 preview 打开。
+- 安装执行按钮必须满足当前 preview、确认模块匹配、安装写入确认和 schema 风险确认。
+- 卸载执行按钮必须满足当前 preview、确认模块匹配和删除确认。
+- preview、安装、卸载请求期间会锁住对应按钮状态。
+- apply 请求期间会锁住确认输入和确认勾选项。
+- 修改来源模式、manifest 路径、manifest JSON、作者、租户或角色后会清空旧 preview 和旧 apply 结果。
+- 重新生成 preview 会清空旧安装结果和旧卸载结果。
+- 发起安装会清空旧安装结果，发起卸载会清空旧卸载结果。
+
+详见 `docs/P3_MODULE_APPLY_UI_STATE.md`。
+
+## P3.16 验收标准
+
+- `cd admin && npm run type-check` 通过。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不修改后端写入门禁、不新增后端接口、不创建业务 schema、不读取或修改 `.env`、不新增权限 SQL。
+
+## P3.16 验收结果
+
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `scripts/check-module-tools-no-db.sh`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
+- 本阶段没有修改后端写入门禁、没有新增后端接口、没有创建业务 schema、没有读取或修改 `.env`、没有新增权限 SQL。
+
 ## 下一步
 
-P3.16：模块 apply 页面权限与按钮状态收敛。建议根据当前 manifest 预览状态和确认勾选状态收敛按钮禁用、加载态和结果清理规则，不改后端写入逻辑。
+P3.17：模块 manifest 前端 API 类型收敛。建议为 preview、install apply、uninstall apply 响应补充前端类型，减少 `any` 扩散，不改变接口协议和后端写入逻辑。
