@@ -46,6 +46,7 @@ type IGenerateService interface {
 	EditTable(editReq req.EditTableReq) (e error)
 	DelTable(ids []uint) (e error)
 	PreviewCode(id uint) (res map[string]string, e error)
+	ListModuleRegistry() []resp.ModuleRegistryItemResp
 	PreviewModuleManifest(previewReq req.ModuleManifestPreviewReq) (res resp.ModuleManifestPreviewResp, e error)
 	ReadModuleManifestInstallStatus(previewReq req.ModuleManifestPreviewReq) (res resp.ModuleManifestInstallStatusResp, e error)
 	ApplyModuleManifestInstall(applyReq req.ModuleManifestInstallApplyReq) (res resp.ModuleManifestInstallApplyResp, e error)

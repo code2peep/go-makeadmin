@@ -170,6 +170,18 @@ type ModuleManifestInstallStatusResp struct {
 	Checks            []ModuleManifestInstallCheckResp  `json:"checks" structs:"checks"`                       // 检查结果
 }
 
+// ModuleRegistryItemResp 模块中心只读注册项
+type ModuleRegistryItemResp struct {
+	Name       string `json:"name" structs:"name"`             // 模块显示名
+	Module     string `json:"module" structs:"module"`         // 模块标识
+	Manifest   string `json:"manifest" structs:"manifest"`     // manifest 路径
+	Table      string `json:"table" structs:"table"`           // 业务表
+	Runtime    string `json:"runtime" structs:"runtime"`       // 运行时提示
+	Entry      string `json:"entry" structs:"entry"`           // 管理端入口
+	Status     string `json:"status" structs:"status"`         // 产品状态
+	StatusType string `json:"statusType" structs:"statusType"` // 产品状态类型
+}
+
 // ModuleManifestUninstallApplyResp 模块清单卸载写入门禁结果
 type ModuleManifestUninstallApplyResp struct {
 	Source      string                            `json:"source" structs:"source"`           // manifest 来源

@@ -117,6 +117,21 @@ func TestPreviewModuleManifestFromRepositoryPath(t *testing.T) {
 	assertContains(t, res.Code["vue/edit.vue"], "articleAdd")
 }
 
+func TestListModuleRegistryIncludesDemoArticle(t *testing.T) {
+	srv := generateService{}
+	items := srv.ListModuleRegistry()
+	if len(items) != 1 {
+		t.Fatalf("registry length = %d, want 1", len(items))
+	}
+	item := items[0]
+	if item.Module != "article" || item.Manifest != "examples/demo/manifest.json" || item.Entry != "/demo/article" {
+		t.Fatalf("unexpected registry item: %+v", item)
+	}
+	if item.Runtime != "MAKEADMIN_ENABLE_DEMO_MODULE=1" {
+		t.Fatalf("unexpected runtime: %s", item.Runtime)
+	}
+}
+
 func TestPreviewModuleManifestIncludesInstallPlan(t *testing.T) {
 	srv := generateService{}
 	res, err := srv.PreviewModuleManifest(req.ModuleManifestPreviewReq{

@@ -237,8 +237,13 @@
                 <div class="section-header">
                     <span class="card-title">内置模块清单</span>
                     <div class="section-actions">
-                        <el-tag type="success" size="small">P5.4</el-tag>
-                        <el-button type="primary" link :loading="statusLoading" @click="loadModuleStatuses">
+                        <el-tag type="success" size="small">P5.5</el-tag>
+                        <el-button
+                            type="primary"
+                            link
+                            :loading="registryLoading || statusLoading"
+                            @click="refreshModuleCenter"
+                        >
                             刷新状态
                         </el-button>
                     </div>
@@ -261,7 +266,12 @@
                     </div>
                 </div>
             </div>
-            <el-table :data="filteredModules" size="large" empty-text="暂无匹配模块">
+            <el-table
+                v-loading="registryLoading || statusLoading"
+                :data="filteredModules"
+                size="large"
+                empty-text="暂无匹配模块"
+            >
                 <el-table-column label="模块" prop="name" min-width="130" />
                 <el-table-column label="Manifest" prop="manifest" min-width="240" />
                 <el-table-column label="表名" prop="table" min-width="160" />
@@ -323,6 +333,7 @@
 import {
     applyModuleManifestInstall,
     applyModuleManifestUninstall,
+    listModuleRegistry,
     normalizeModuleManifestApplyError,
     previewModuleManifest,
     readModuleManifestInstallStatus,
@@ -332,7 +343,8 @@ import {
     type ModuleManifestInstallStatusResult,
     type ModuleManifestPreviewParams,
     type ModuleManifestPreviewResult,
-    type ModuleManifestUninstallApplyParams
+    type ModuleManifestUninstallApplyParams,
+    type ModuleRegistryItemResult
 } from '@/api/tools/code'
 import CodePreview from '../components/code-preview.vue'
 import ModuleManifestApplyResultView from '../components/module-manifest-apply-result.vue'
@@ -354,6 +366,7 @@ const installResult = ref<ModuleManifestApplyResult>()
 const uninstallResult = ref<ModuleManifestApplyResult>()
 const resultTab = ref<'install' | 'uninstall'>('install')
 const previewLoading = ref(false)
+const registryLoading = ref(false)
 const statusLoading = ref(false)
 const installApplyLoading = ref(false)
 const uninstallApplyLoading = ref(false)
@@ -412,25 +425,7 @@ type ModuleCenterModule = {
     runtimeDetail: string
 }
 
-const modules = reactive<ModuleCenterModule[]>([
-    {
-        name: 'Demo Article',
-        manifest: 'examples/demo/manifest.json',
-        table: 'ma_demo_article',
-        runtime: 'MAKEADMIN_ENABLE_DEMO_MODULE=1',
-        entry: '/demo/article',
-        status: '可安装',
-        statusType: 'success',
-        installStatusCode: 'loading',
-        installStatus: '读取中',
-        installStatusType: 'info',
-        statusDetail: '-',
-        snapshotText: '-',
-        runtimeStatus: '读取中',
-        runtimeStatusType: 'info',
-        runtimeDetail: '-'
-    }
-])
+const modules = reactive<ModuleCenterModule[]>([])
 
 const moduleStatusFilterOptions = [
     { label: '全部', value: 'all' },
@@ -665,6 +660,24 @@ const goTo = (url: string) => {
     router.push(url)
 }
 
+const toModuleCenterModule = (item: ModuleRegistryItemResult): ModuleCenterModule => ({
+    name: item.name,
+    manifest: item.manifest,
+    table: item.table,
+    runtime: item.runtime,
+    entry: item.entry,
+    status: item.status,
+    statusType: item.statusType,
+    installStatusCode: 'loading',
+    installStatus: '读取中',
+    installStatusType: 'info',
+    statusDetail: '-',
+    snapshotText: '-',
+    runtimeStatus: '读取中',
+    runtimeStatusType: 'info',
+    runtimeDetail: '-'
+})
+
 const statusTypeMap: Record<string, string> = {
     installed: 'success',
     partial: 'warning',
@@ -774,6 +787,24 @@ const loadModuleStatuses = async () => {
     }
 }
 
+const loadModuleRegistry = async () => {
+    if (registryLoading.value) {
+        return
+    }
+    registryLoading.value = true
+    try {
+        const items = await listModuleRegistry()
+        modules.splice(0, modules.length, ...items.map(toModuleCenterModule))
+    } finally {
+        registryLoading.value = false
+    }
+}
+
+const refreshModuleCenter = async () => {
+    await loadModuleRegistry()
+    await loadModuleStatuses()
+}
+
 const handlePlanPreview = () => {
     const currentPreview = preview.value
     if (!hasCurrentPreview.value || !currentPreview) {
@@ -849,7 +880,7 @@ const handleUninstallApply = async () => {
 }
 
 onMounted(() => {
-    loadModuleStatuses()
+    refreshModuleCenter()
 })
 </script>
 

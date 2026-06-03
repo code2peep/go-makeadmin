@@ -157,6 +157,17 @@ export interface ModuleManifestInstallStatusResult {
     checks?: ModuleManifestApplyCheckResult[]
 }
 
+export interface ModuleRegistryItemResult {
+    name: string
+    module: string
+    manifest: string
+    table: string
+    runtime: string
+    entry: string
+    status: string
+    statusType: string
+}
+
 export interface ModuleManifestApplyAuditActorResult {
     id?: number
     name?: string
@@ -363,6 +374,11 @@ export function generateEdit(params: any) {
 //预览代码
 export function generatePreview(params: any) {
     return request.get({ url: '/gen/previewCode', params })
+}
+
+// 模块中心只读注册清单
+export function listModuleRegistry(): Promise<ModuleRegistryItemResult[]> {
+    return request.get({ url: '/gen/moduleRegistry' })
 }
 
 // 模块 manifest 预览代码

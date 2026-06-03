@@ -28,6 +28,7 @@ func regGen(rg *gin.RouterGroup, group *core.GroupBase) error {
 		rg.POST("/syncTable", handle.syncTable)
 		rg.POST("/editTable", handle.editTable)
 		rg.POST("/delTable", handle.delTable)
+		rg.GET("/moduleRegistry", handle.listModuleRegistry)
 		rg.GET("/previewCode", handle.previewCode)
 		rg.POST("/previewCode/status", handle.readModuleManifestInstallStatus)
 		rg.POST("/previewCode", handle.previewModuleManifest)
@@ -128,6 +129,11 @@ func (gh genHandler) previewCode(c *gin.Context) {
 	}
 	res, err := gh.srv.PreviewCode(previewReq.ID)
 	response.CheckAndRespWithData(c, res, err)
+}
+
+// listModuleRegistry 模块中心只读注册清单
+func (gh genHandler) listModuleRegistry(c *gin.Context) {
+	response.OkWithData(c, gh.srv.ListModuleRegistry())
 }
 
 // previewModuleManifest 预览模块 manifest 生成代码
