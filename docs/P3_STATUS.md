@@ -738,6 +738,38 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 - 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
 - 本阶段没有创建审计表、没有修改数据库 schema、没有接入写库、没有修改接口响应、没有读取或修改 `.env`、没有新增权限 SQL。
 
+## P3.21 当前落地
+
+模块 manifest apply 审计事件构造器 dry-run 已建立：
+
+- 新增 `server/generator/service/gen/module_manifest_apply_audit.go`。
+- 新增 `buildModuleManifestInstallAuditEvent`。
+- 新增 `buildModuleManifestUninstallAuditEvent`。
+- 构造器把现有 install/uninstall apply result 组合成 `ModuleManifestApplyAuditEventResp`。
+- 构造器输入包含 event ID、actor、requestedAt 和 completedAt。
+- 构造器不生成 event ID、不读取数据库、不读取当前用户。
+- 新增 `server/generator/service/gen/module_manifest_apply_audit_test.go`。
+- 单测覆盖安装和卸载审计事件映射。
+
+详见 `docs/P3_MODULE_APPLY_AUDIT_BUILDER.md`。
+
+## P3.21 验收标准
+
+- `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./generator/service/gen -run 'TestBuildModuleManifest.*AuditEvent' -count=1` 通过。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不接入接口、不创建审计表、不修改数据库 schema、不写库、不读取或修改 `.env`、不新增权限 SQL。
+
+## P3.21 验收结果
+
+- 已通过 `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./generator/service/gen -run 'TestBuildModuleManifest.*AuditEvent' -count=1`。
+- 已通过 `scripts/check-module-tools-no-db.sh`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
+- 本阶段没有接入接口、没有创建审计表、没有修改数据库 schema、没有写库、没有读取或修改 `.env`、没有新增权限 SQL。
+
 ## 下一步
 
-P3.21：模块 manifest apply 审计事件构造器 dry-run。建议只做纯函数把现有 apply result 组合成审计事件 DTO，并配套单测；不创建审计表、不写库、不接接口。
+P3.22：模块 manifest apply 审计事件前端 dry-run 预览。建议在结果视图中基于当前 apply result 生成审计事件预览代码块，不调用后端、不写库、不新增接口。
