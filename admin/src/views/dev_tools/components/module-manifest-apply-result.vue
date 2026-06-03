@@ -44,20 +44,50 @@
             <el-table-column label="说明" prop="message" min-width="280" />
         </el-table>
         <div class="audit-preview-toolbar">
-            <el-button type="primary" link @click="auditPreviewVisible = !auditPreviewVisible">
+            <el-button type="primary" link @click="toggleAuditPreview">
                 <template #icon>
                     <icon name="el-icon-DocumentCopy" />
                 </template>
                 审计预览
             </el-button>
+            <el-button v-if="auditPreviewVisible" type="primary" link @click="toggleAuditPreviewCode">
+                JSON
+            </el-button>
         </div>
-        <pre v-if="auditPreviewVisible" class="audit-preview-code">{{ auditPreviewCode }}</pre>
+        <el-descriptions v-if="auditPreviewVisible" class="mt-2" :column="4" border>
+            <el-descriptions-item label="操作">
+                {{ auditPreviewSummary.operation || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="模块">
+                {{ auditPreviewSummary.module || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="状态">
+                {{ auditPreviewSummary.status || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="路由">
+                {{ auditPreviewSummary.routeName || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="权限">
+                {{ auditPreviewSummary.permissionCount }}
+            </el-descriptions-item>
+            <el-descriptions-item label="检查">
+                {{ auditPreviewSummary.checkCount }}
+            </el-descriptions-item>
+            <el-descriptions-item label="执行前">
+                {{ auditPreviewSummary.beforeTotal }}
+            </el-descriptions-item>
+            <el-descriptions-item label="执行后">
+                {{ auditPreviewSummary.afterTotal }}
+            </el-descriptions-item>
+        </el-descriptions>
+        <pre v-if="auditPreviewVisible && auditPreviewCodeVisible" class="audit-preview-code">{{ auditPreviewCode }}</pre>
     </div>
 </template>
 
 <script lang="ts" setup>
 import {
     buildModuleManifestApplyAuditPreview,
+    buildModuleManifestApplyAuditPreviewSummary,
     type ModuleManifestApplyResult
 } from '@/api/tools/code'
 
@@ -73,6 +103,7 @@ const props = defineProps<{
 }>()
 
 const auditPreviewVisible = ref(false)
+const auditPreviewCodeVisible = ref(false)
 
 const resultTitle = computed(() => props.result.message || props.fallbackTitle)
 
@@ -113,9 +144,24 @@ const hasSnapshot = computed(
         snapshotRows.value.some((row) => Number(row.before) > 0 || Number(row.after) > 0)
 )
 
-const auditPreviewCode = computed(() =>
-    JSON.stringify(buildModuleManifestApplyAuditPreview(props.result), null, 2)
+const auditPreview = computed(() => buildModuleManifestApplyAuditPreview(props.result))
+
+const auditPreviewSummary = computed(() =>
+    buildModuleManifestApplyAuditPreviewSummary(auditPreview.value)
 )
+
+const auditPreviewCode = computed(() => JSON.stringify(auditPreview.value, null, 2))
+
+const toggleAuditPreview = () => {
+    auditPreviewVisible.value = !auditPreviewVisible.value
+    if (!auditPreviewVisible.value) {
+        auditPreviewCodeVisible.value = false
+    }
+}
+
+const toggleAuditPreviewCode = () => {
+    auditPreviewCodeVisible.value = !auditPreviewCodeVisible.value
+}
 </script>
 
 <style scoped lang="scss">

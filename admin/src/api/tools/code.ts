@@ -176,6 +176,19 @@ export interface ModuleManifestApplyAuditPreviewOptions {
     completedAt?: string
 }
 
+export interface ModuleManifestApplyAuditPreviewSummaryResult {
+    operation?: string
+    module?: string
+    status?: string
+    routeName?: string
+    permissionCount: number
+    checkCount: number
+    beforeTotal: number
+    afterTotal: number
+    databaseScope?: string
+    actorType?: string
+}
+
 export function buildModuleManifestApplyAuditPreview(
     result: ModuleManifestApplyResult,
     options: ModuleManifestApplyAuditPreviewOptions = {}
@@ -206,6 +219,29 @@ export function buildModuleManifestApplyAuditPreview(
         completedAt: options.completedAt || previewAt
     }
 }
+
+export function buildModuleManifestApplyAuditPreviewSummary(
+    event: ModuleManifestApplyAuditEventResult
+): ModuleManifestApplyAuditPreviewSummaryResult {
+    return {
+        operation: event.operation,
+        module: event.manifest?.module || event.summary?.module,
+        status: event.status,
+        routeName: event.summary?.routeName,
+        permissionCount: event.summary?.permissionCodes?.length || 0,
+        checkCount: event.checks?.length || 0,
+        beforeTotal: moduleManifestApplySnapshotTotal(event.before),
+        afterTotal: moduleManifestApplySnapshotTotal(event.after),
+        databaseScope: event.scope?.databaseScope,
+        actorType: event.actor?.type
+    }
+}
+
+const moduleManifestApplySnapshotTotal = (snapshot?: ModuleManifestApplySnapshotResult) =>
+    (snapshot?.permissions || 0) +
+    (snapshot?.menus || 0) +
+    (snapshot?.menuPermissions || 0) +
+    (snapshot?.rolePermissions || 0)
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null

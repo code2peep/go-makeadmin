@@ -802,6 +802,35 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 - 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
 - 本阶段没有调用后端、没有新增接口、没有写库、没有创建审计表、没有读取当前登录用户、没有读取或修改 `.env`、没有新增权限 SQL。
 
+## P3.23 当前落地
+
+模块 manifest apply 审计预览已调整为摘要优先：
+
+- `admin/src/api/tools/code.ts` 新增 `buildModuleManifestApplyAuditPreviewSummary`。
+- 审计预览摘要包含操作、模块、状态、路由、权限数量、检查项数量、执行前快照总数、执行后快照总数、数据库范围和操作人类型。
+- `module-manifest-apply-result.vue` 点击 `审计预览` 后先展示摘要。
+- 完整 JSON 需要点击 `JSON` 后二次展开。
+- 关闭审计预览时同步收起 JSON。
+
+详见 `docs/P3_MODULE_APPLY_AUDIT_PREVIEW_SUMMARY.md`。
+
+## P3.23 验收标准
+
+- `cd admin && npm run type-check` 通过。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不改变后端、不新增接口、不调用后端、不写库、不创建审计表、不读取当前登录用户、不读取或修改 `.env`、不新增权限 SQL。
+
+## P3.23 验收结果
+
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `scripts/check-module-tools-no-db.sh`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
+- 本阶段没有改变后端、没有新增接口、没有调用后端、没有写库、没有创建审计表、没有读取当前登录用户、没有读取或修改 `.env`、没有新增权限 SQL。
+
 ## 下一步
 
-P3.23：模块 manifest apply 审计预览字段最小化与快照摘要。建议把前端审计 JSON 预览补充为摘要优先，避免页面展示过长；不改变后端、不新增接口。
+P3.24：模块 manifest apply 审计预览文案与空态收敛。建议处理无权限编码、无检查项、无快照时的展示一致性，不改变后端、不新增接口。
