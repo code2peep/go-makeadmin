@@ -770,6 +770,38 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 - 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
 - 本阶段没有接入接口、没有创建审计表、没有修改数据库 schema、没有写库、没有读取或修改 `.env`、没有新增权限 SQL。
 
+## P3.22 当前落地
+
+模块 manifest apply 审计事件前端 dry-run 预览已建立：
+
+- `admin/src/api/tools/code.ts` 新增 `buildModuleManifestApplyAuditPreview`。
+- 前端构造器基于 `ModuleManifestApplyResult` 生成 `ModuleManifestApplyAuditEventResult`。
+- `scope.tenantId` 和 `scope.roleId` 优先来自 apply result，其次来自 plan。
+- 默认 `eventId` 为 `preview`。
+- 默认 `actor.type` 为 `frontend-preview`。
+- 默认时间使用前端本地 ISO 时间，仅作为 dry-run 展示。
+- `module-manifest-apply-result.vue` 新增 `审计预览` 操作。
+- 点击后展示格式化 JSON 代码块。
+
+详见 `docs/P3_MODULE_APPLY_AUDIT_PREVIEW.md`。
+
+## P3.22 验收标准
+
+- `cd admin && npm run type-check` 通过。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不调用后端、不新增接口、不写库、不创建审计表、不读取当前登录用户、不读取或修改 `.env`、不新增权限 SQL。
+
+## P3.22 验收结果
+
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `scripts/check-module-tools-no-db.sh`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
+- 本阶段没有调用后端、没有新增接口、没有写库、没有创建审计表、没有读取当前登录用户、没有读取或修改 `.env`、没有新增权限 SQL。
+
 ## 下一步
 
-P3.22：模块 manifest apply 审计事件前端 dry-run 预览。建议在结果视图中基于当前 apply result 生成审计事件预览代码块，不调用后端、不写库、不新增接口。
+P3.23：模块 manifest apply 审计预览字段最小化与快照摘要。建议把前端审计 JSON 预览补充为摘要优先，避免页面展示过长；不改变后端、不新增接口。

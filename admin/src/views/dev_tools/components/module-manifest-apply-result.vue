@@ -43,11 +43,23 @@
             <el-table-column label="状态" prop="status" min-width="120" />
             <el-table-column label="说明" prop="message" min-width="280" />
         </el-table>
+        <div class="audit-preview-toolbar">
+            <el-button type="primary" link @click="auditPreviewVisible = !auditPreviewVisible">
+                <template #icon>
+                    <icon name="el-icon-DocumentCopy" />
+                </template>
+                审计预览
+            </el-button>
+        </div>
+        <pre v-if="auditPreviewVisible" class="audit-preview-code">{{ auditPreviewCode }}</pre>
     </div>
 </template>
 
 <script lang="ts" setup>
-import type { ModuleManifestApplyResult } from '@/api/tools/code'
+import {
+    buildModuleManifestApplyAuditPreview,
+    type ModuleManifestApplyResult
+} from '@/api/tools/code'
 
 interface SnapshotRow {
     name: string
@@ -59,6 +71,8 @@ const props = defineProps<{
     result: ModuleManifestApplyResult
     fallbackTitle: string
 }>()
+
+const auditPreviewVisible = ref(false)
 
 const resultTitle = computed(() => props.result.message || props.fallbackTitle)
 
@@ -98,6 +112,10 @@ const hasSnapshot = computed(
         props.result.status === 'applied' ||
         snapshotRows.value.some((row) => Number(row.before) > 0 || Number(row.after) > 0)
 )
+
+const auditPreviewCode = computed(() =>
+    JSON.stringify(buildModuleManifestApplyAuditPreview(props.result), null, 2)
+)
 </script>
 
 <style scoped lang="scss">
@@ -105,5 +123,25 @@ const hasSnapshot = computed(
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+}
+
+.audit-preview-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+.audit-preview-code {
+    max-height: 320px;
+    margin-top: 8px;
+    overflow: auto;
+    padding: 12px;
+    border-radius: 6px;
+    background: #f6f8fa;
+    color: #1f2937;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre-wrap;
 }
 </style>

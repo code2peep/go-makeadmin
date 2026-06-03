@@ -169,6 +169,44 @@ export interface ModuleManifestApplyAuditEventResult {
     completedAt?: string
 }
 
+export interface ModuleManifestApplyAuditPreviewOptions {
+    eventId?: string
+    actor?: ModuleManifestApplyAuditActorResult
+    requestedAt?: string
+    completedAt?: string
+}
+
+export function buildModuleManifestApplyAuditPreview(
+    result: ModuleManifestApplyResult,
+    options: ModuleManifestApplyAuditPreviewOptions = {}
+): ModuleManifestApplyAuditEventResult {
+    const previewAt = new Date().toISOString()
+    return {
+        eventId: options.eventId || 'preview',
+        operation: result.summary?.operation || '',
+        source: result.source,
+        manifest: result.manifest,
+        summary: result.summary,
+        scope: {
+            tenantId: result.tenantId ?? result.plan?.tenantId,
+            roleId: result.roleId ?? result.plan?.roleId,
+            databaseScope: result.summary?.databaseScope,
+            requiresSchema: result.manifest?.requiresSchema ?? result.summary?.requiresSchema
+        },
+        status: result.status,
+        message: result.message,
+        requiredEnv: result.requiredEnv,
+        checks: result.checks || [],
+        before: result.before || {},
+        after: result.after || {},
+        actor: options.actor || {
+            type: 'frontend-preview'
+        },
+        requestedAt: options.requestedAt || previewAt,
+        completedAt: options.completedAt || previewAt
+    }
+}
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null
 
