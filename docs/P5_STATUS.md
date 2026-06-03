@@ -275,3 +275,36 @@ P5.7：模块 registry 校验明细展示。建议在模块中心为校验列增
 ## 下一步
 
 P5.8：模块 registry 校验异常 fixture 与页面异常态验收。建议增加一个受环境变量控制的本地异常 registry 项，用来验证模块中心 `异常` 筛选、校验明细弹窗和后端单项失败不中断列表的产品闭环。
+
+## P5.8 当前落地
+
+模块 registry 异常 fixture 已接入：
+
+- 新增环境变量开关 `MAKEADMIN_ENABLE_BROKEN_MODULE_REGISTRY_FIXTURE=1`。
+- 默认情况下 `GET /api/gen/moduleRegistry` 仍只返回 `Demo Article`。
+- 打开开关后额外返回 `Broken Manifest Fixture`。
+- 异常 fixture 使用合法但不存在的 `examples/demo/missing/manifest.json`。
+- 后端会把异常项标记为 `manifestStatus=failed`，同时保留正常 Demo Article。
+- 模块中心阶段标识更新为 `P5.8`。
+- 模块中心复用已有 `异常` 筛选、`校验` 列和 `明细` 弹窗展示失败检查项。
+
+详见 `docs/P5_MODULE_REGISTRY_FAILURE_FIXTURE.md`。
+
+## P5.8 验收标准
+
+- `cd server && go test ./generator/service/gen` 通过。
+- `cd admin && npm run type-check` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 显式设置 `MAKEADMIN_ENABLE_BROKEN_MODULE_REGISTRY_FIXTURE=1` 后，模块中心可看到异常 fixture 并能打开校验明细。
+
+## P5.8 验收结果
+
+- 已通过 `cd server && go test ./generator/service/gen`。
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 全量验证里的前端 build 仍有 Rolldown 对 `@vueuse/core` pure annotation 的已知 warning，命令退出码为 0。
+- 浏览器当前位于登录页，旧 token 已过期；本机未设置 `ADMIN_PASSWORD` 或 `P1_SMOKE_ADMIN_PASSWORD`，因此模块中心页面人工复验需要重新登录后执行。
+
+## 下一步
+
+P5.9：模块 registry 后端契约测试与 CLI smoke。建议用脚本直接请求或调用 registry，分别验证默认清单和 broken fixture 清单，形成不用登录后台也能验收模块中心数据契约的 smoke。

@@ -1,11 +1,14 @@
 package gen
 
 import (
+	"os"
 	"strings"
 
 	"go-makeadmin/generator/schemas/req"
 	"go-makeadmin/generator/schemas/resp"
 )
+
+const EnableBrokenModuleRegistryFixtureEnv = "MAKEADMIN_ENABLE_BROKEN_MODULE_REGISTRY_FIXTURE"
 
 // ListModuleRegistry returns built-in modules known to the local framework.
 func (genSrv generateService) ListModuleRegistry() []resp.ModuleRegistryItemResp {
@@ -20,6 +23,18 @@ func (genSrv generateService) ListModuleRegistry() []resp.ModuleRegistryItemResp
 			Status:     "可安装",
 			StatusType: "success",
 		},
+	}
+	if strings.TrimSpace(os.Getenv(EnableBrokenModuleRegistryFixtureEnv)) == "1" {
+		items = append(items, resp.ModuleRegistryItemResp{
+			Name:       "Broken Manifest Fixture",
+			Module:     "broken_fixture",
+			Manifest:   "examples/demo/missing/manifest.json",
+			Table:      "ma_broken_fixture",
+			Runtime:    EnableBrokenModuleRegistryFixtureEnv + "=1",
+			Entry:      "/demo/broken-fixture",
+			Status:     "本地异常示例",
+			StatusType: "warning",
+		})
 	}
 	for index := range items {
 		items[index] = genSrv.validateModuleRegistryItem(items[index])

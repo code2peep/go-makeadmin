@@ -138,6 +138,33 @@ func TestListModuleRegistryIncludesDemoArticle(t *testing.T) {
 	}
 }
 
+func TestListModuleRegistryIncludesBrokenFixtureWhenEnabled(t *testing.T) {
+	t.Setenv(EnableBrokenModuleRegistryFixtureEnv, "1")
+
+	srv := generateService{}
+	items := srv.ListModuleRegistry()
+	if len(items) != 2 {
+		t.Fatalf("registry length = %d, want 2", len(items))
+	}
+	demo := findModuleRegistryItem(items, "article")
+	if demo == nil || demo.ManifestStatus != "passed" {
+		t.Fatalf("demo registry item must still pass: %+v", demo)
+	}
+	broken := findModuleRegistryItem(items, "broken_fixture")
+	if broken == nil {
+		t.Fatalf("broken registry fixture not found: %+v", items)
+	}
+	if broken.ManifestStatus != "failed" || broken.ManifestMessage == "" {
+		t.Fatalf("broken fixture must fail manifest validation: %+v", broken)
+	}
+	if len(broken.ManifestChecks) != 1 || broken.ManifestChecks[0].Status != "failed" {
+		t.Fatalf("unexpected broken fixture checks: %+v", broken.ManifestChecks)
+	}
+	if !strings.Contains(broken.ManifestMessage, "missing") {
+		t.Fatalf("unexpected broken fixture message: %s", broken.ManifestMessage)
+	}
+}
+
 func TestPreviewModuleManifestIncludesInstallPlan(t *testing.T) {
 	srv := generateService{}
 	res, err := srv.PreviewModuleManifest(req.ModuleManifestPreviewReq{
@@ -380,6 +407,15 @@ func TestModuleManifestUninstallApplyGateRequiresDatabaseWhenConfirmed(t *testin
 	if res.Checks[len(res.Checks)-1].Name != "database" || res.Checks[len(res.Checks)-1].Status != "failed" {
 		t.Fatalf("unexpected database check: %+v", res.Checks)
 	}
+}
+
+func findModuleRegistryItem(items []resp.ModuleRegistryItemResp, module string) *resp.ModuleRegistryItemResp {
+	for index := range items {
+		if items[index].Module == module {
+			return &items[index]
+		}
+	}
+	return nil
 }
 
 func moduleManifestBodyWithRequiresSchema(t *testing.T) string {
