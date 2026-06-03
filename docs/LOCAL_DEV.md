@@ -82,6 +82,19 @@ P1 独立库初始化入口：
 
 ```bash
 cd /Users/fengrongxin/AI/01-projects/go-makeadmin
+./scripts/init-p1-db.sh
+```
+
+本地开发默认账号：
+
+```text
+username: admin
+password: 123456
+```
+
+如需覆盖本地初始化密码：
+
+```bash
 ADMIN_PASSWORD='your-local-admin-password' ./scripts/init-p1-db.sh
 ```
 
@@ -89,7 +102,7 @@ ADMIN_PASSWORD='your-local-admin-password' ./scripts/init-p1-db.sh
 
 ```bash
 cd /Users/fengrongxin/AI/01-projects/go-makeadmin
-INIT_P1_DROP=1 ADMIN_PASSWORD='your-local-admin-password' ./scripts/init-p1-db.sh
+INIT_P1_DROP=1 ./scripts/init-p1-db.sh
 ```
 
 ## Redis 前置条件
@@ -128,14 +141,14 @@ admin/.env.production.example
 ```text
 P1 ma_*：
 username: admin
-password: 由 scripts/init-p1-db.sh 执行时的 ADMIN_PASSWORD 决定
+password: 123456
 ```
 
 ## 启动顺序
 
 1. 跑 `./scripts/verify-no-db.sh`，确认无数据库依赖的基础质量。
 2. 准备 MySQL 和 Redis。
-3. 如本机未初始化 P1 开发库，执行 `scripts/init-p1-db.sh` 并通过 `ADMIN_PASSWORD` 指定本地管理员密码。
+3. 如本机未初始化 P1 开发库，执行 `scripts/init-p1-db.sh`，默认本地管理员密码为 `123456`。
 4. 跑 `./scripts/check-services.sh`。
 5. 跑 `./scripts/check-p1-seed.sh`，确认 `ma_*` 表和基础数据存在。
 6. 分别启动 `./scripts/dev-api.sh` 和 `./scripts/dev-admin.sh`。
@@ -149,7 +162,7 @@ password: 由 scripts/init-p1-db.sh 执行时的 ADMIN_PASSWORD 决定
 cd /Users/fengrongxin/AI/01-projects/go-makeadmin
 P1_SMOKE_ALLOW_WRITE=1 \
 P1_SMOKE_BASE_URL=http://127.0.0.1:8000/api \
-P1_SMOKE_ADMIN_PASSWORD='your-local-admin-password' \
+P1_SMOKE_ADMIN_PASSWORD='123456' \
 python3 scripts/p1-smoke.py
 ```
 

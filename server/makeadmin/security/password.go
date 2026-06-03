@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	MinPasswordLength = 8
+	MinPasswordLength = 6
 	MaxPasswordLength = 72
 	DefaultBcryptCost = 12
 )

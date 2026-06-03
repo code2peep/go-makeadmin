@@ -9,7 +9,7 @@ MYSQL_USER="${MYSQL_USER:-root}"
 MYSQL_PASSWORD="${MYSQL_PASSWORD-}"
 MYSQL_DATABASE="${MYSQL_DATABASE:-go_makeadmin}"
 INIT_P1_DROP="${INIT_P1_DROP:-0}"
-ADMIN_PASSWORD="${ADMIN_PASSWORD-}"
+ADMIN_PASSWORD="${ADMIN_PASSWORD:-123456}"
 
 if [[ ! "$MYSQL_DATABASE" =~ ^[A-Za-z0-9_]+$ ]]; then
     echo "FAIL: MYSQL_DATABASE must contain only letters, numbers, and underscores."
@@ -26,19 +26,9 @@ if ! command -v go >/dev/null 2>&1; then
     exit 1
 fi
 
-if [ -z "$ADMIN_PASSWORD" ]; then
-    if [ -t 0 ]; then
-        read -r -s -p "Admin password: " ADMIN_PASSWORD
-        echo
-    else
-        echo "FAIL: ADMIN_PASSWORD is required when stdin is not interactive."
-        exit 1
-    fi
-fi
-
 password_len="${#ADMIN_PASSWORD}"
-if [ "$password_len" -lt 8 ] || [ "$password_len" -gt 72 ]; then
-    echo "FAIL: ADMIN_PASSWORD length must be 8-72 bytes."
+if [ "$password_len" -lt 6 ] || [ "$password_len" -gt 72 ]; then
+    echo "FAIL: ADMIN_PASSWORD length must be 6-72 bytes."
     exit 1
 fi
 

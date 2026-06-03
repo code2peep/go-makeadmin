@@ -150,7 +150,7 @@ else
     echo "OK: setting seed count=$setting_count."
 fi
 
-if [ "$dict_type_count" -lt 4 ] || [ "$dict_item_count" -lt 14 ]; then
+if [ "$dict_type_count" -lt 5 ] || [ "$dict_item_count" -lt 16 ]; then
     echo "FAIL: dict seed count is incomplete: types=$dict_type_count items=$dict_item_count."
     failed=1
 else

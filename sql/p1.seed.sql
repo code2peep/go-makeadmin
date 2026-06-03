@@ -179,7 +179,8 @@ INSERT INTO `ma_dict_type` (`id`, `code`, `name`, `remark`, `status`, `sort`, `c
 (1, 'system_status', '系统状态', 'Framework enabled/disabled status.', 1, 1000, @seed_time, @seed_time, 0),
 (2, 'menu_type', '菜单类型', 'Framework menu type.', 1, 990, @seed_time, @seed_time, 0),
 (3, 'storage_type', '存储类型', 'Storage driver type.', 1, 980, @seed_time, @seed_time, 0),
-(4, 'data_scope_type', '数据范围类型', 'Role data scope type.', 1, 970, @seed_time, @seed_time, 0);
+(4, 'data_scope_type', '数据范围类型', 'Role data scope type.', 1, 970, @seed_time, @seed_time, 0),
+(5, 'common_status', '通用状态', 'Numeric enabled/disabled status for generated CRUD modules.', 1, 960, @seed_time, @seed_time, 0);
 
 INSERT INTO `ma_dict_item` (`id`, `type_id`, `item_label`, `item_value`, `remark`, `status`, `sort`, `create_time`, `update_time`, `delete_time`) VALUES
 (1, 1, '启用', 'enabled', '', 1, 1000, @seed_time, @seed_time, 0),
@@ -195,7 +196,9 @@ INSERT INTO `ma_dict_item` (`id`, `type_id`, `item_label`, `item_value`, `remark
 (11, 4, '本人数据', 'self', '', 1, 990, @seed_time, @seed_time, 0),
 (12, 4, '本组织', 'org', '', 1, 980, @seed_time, @seed_time, 0),
 (13, 4, '本组织及下级', 'org_tree', '', 1, 970, @seed_time, @seed_time, 0),
-(14, 4, '自定义组织', 'custom_org', '', 1, 960, @seed_time, @seed_time, 0);
+(14, 4, '自定义组织', 'custom_org', '', 1, 960, @seed_time, @seed_time, 0),
+(15, 5, '启用', '1', '', 1, 1000, @seed_time, @seed_time, 0),
+(16, 5, '禁用', '0', '', 1, 990, @seed_time, @seed_time, 0);
 
 INSERT INTO `ma_file_category` (`id`, `tenant_id`, `parent_id`, `code`, `name`, `file_type`, `status`, `sort`, `create_time`, `update_time`, `delete_time`) VALUES
 (1, 0, 0, 'image', '图片', 'image', 1, 1000, @seed_time, @seed_time, 0),

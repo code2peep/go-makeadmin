@@ -9,7 +9,7 @@
 本阶段只确定种子边界：
 
 - 不写入数据库。
-- 不生成真实密码或可用于登录的密码 hash。
+- 不在文档或 SQL 中硬编码真实密码 hash；本地初始化脚本会默认生成 `admin / 123456` 的 bcrypt hash。
 - 不执行导入脚本。
 - 不修改当前 `la_*` 运行链路。
 - 不包含文章、商城、用户端、公众号、装修等业务演示数据。
@@ -19,7 +19,7 @@
 - 用稳定 `code` 作为业务识别，不让业务逻辑依赖自增 ID。
 - `id` 可以在 SQL 草案中固定，运行时代码仍应按 `code` 查询。
 - `tenant_id=0` 表示全局默认上下文；P1 不启用租户入口。
-- 超级管理员密码必须由初始化命令交互输入或一次性本地变量生成，不能在仓库中硬编码。
+- 超级管理员密码由初始化命令生成 bcrypt hash；本地默认密码为 `123456`，可通过 `ADMIN_PASSWORD` 覆盖，不能在仓库中硬编码最终 hash。
 - P1 新账号统一使用 bcrypt；`password_salt` 只为旧 MD5+salt 迁移兼容保留。
 - 超级管理员可以通过 `is_super=1` 拥有全权限；仍种下 `super_admin` 角色，方便页面展示和后续审计。
 - 菜单只描述页面展示；接口能力统一进入 `ma_permission`。
@@ -338,6 +338,7 @@ system_status: enabled=启用, disabled=禁用
 menu_type: catalog=目录, page=页面, action=操作
 storage_type: local=本地, qiniu=七牛云, aliyun=阿里云, qcloud=腾讯云
 data_scope_type: all=全部数据, self=本人数据, org=本组织, org_tree=本组织及下级, custom_org=自定义组织
+common_status: 1=启用, 0=禁用
 ```
 
 ## 文件分类种子
@@ -363,4 +364,4 @@ cd /Users/fengrongxin/AI/01-projects/go-makeadmin
 ./scripts/check-p1-seed.sh
 ```
 
-验证结果：通过。25 张 `ma_*` 表存在，`admin`、`super_admin`、79 条权限、22 个菜单、12 条设置、4 类字典、14 个字典项和 2 个素材分类均已写入独立库。
+验证结果：通过。25 张 `ma_*` 表存在，`admin`、`super_admin`、79 条权限、22 个菜单、12 条设置、5 类字典、16 个字典项和 2 个素材分类均已写入独立库。

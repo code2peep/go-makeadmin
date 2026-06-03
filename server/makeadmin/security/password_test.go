@@ -75,7 +75,7 @@ func TestValidatePasswordLength(t *testing.T) {
 	if !errors.Is(ValidatePassword("short"), ErrPasswordTooShort) {
 		t.Fatal("ValidatePassword() short password did not return ErrPasswordTooShort")
 	}
-	if err := ValidatePassword("12345678"); err != nil {
+	if err := ValidatePassword("123456"); err != nil {
 		t.Fatalf("ValidatePassword() valid password error = %v", err)
 	}
 }

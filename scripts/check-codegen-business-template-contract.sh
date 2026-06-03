@@ -44,6 +44,9 @@ require_text server/generator/templates/vue/api.ts.tpl "Delete"
 
 require_text server/generator/tpl_test.go "codegen_template_smoke"
 require_text server/generator/tpl_test.go "common_status"
+require_text sql/p1.seed.sql "'common_status'"
+require_text sql/p1.seed.sql "(15, 5, '启用', '1'"
+require_text sql/p1.seed.sql "(16, 5, '禁用', '0'"
 require_text docs/P6_STATUS.md "P6.4"
 
 python3 scripts/module-codegen-plan.py \

@@ -9,6 +9,9 @@ echo "==> Runtime residue guard"
 echo "==> Framework workbench contract"
 "$ROOT_DIR/scripts/check-framework-workbench-contract.sh"
 
+echo "==> Local dev login contract"
+"$ROOT_DIR/scripts/check-local-dev-login-contract.sh"
+
 echo "==> Module tools no-db guard"
 "$ROOT_DIR/scripts/check-module-tools-no-db.sh"
 
