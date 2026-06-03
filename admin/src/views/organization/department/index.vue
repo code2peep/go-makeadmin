@@ -39,6 +39,7 @@
                 size="large"
                 v-loading="loading"
                 :data="lists"
+                empty-text="暂无数据"
                 row-key="id"
                 :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
             >

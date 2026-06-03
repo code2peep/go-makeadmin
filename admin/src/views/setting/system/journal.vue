@@ -64,7 +64,7 @@
 
     <el-card class="!border-none mt-4" shadow="never" v-loading="pager.loading">
       <div>
-        <el-table :data="pager.lists" size="large">
+        <el-table :data="pager.lists" size="large" empty-text="暂无数据">
           <el-table-column label="记录ID" prop="id" />
           <el-table-column label="操作" prop="title" min-width="120" />
           <el-table-column label="管理员" prop="username" min-width="120" />

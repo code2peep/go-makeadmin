@@ -47,7 +47,7 @@
         新增
       </el-button>
       <div class="mt-4">
-        <el-table :data="pager.lists" size="large">
+        <el-table :data="pager.lists" size="large" empty-text="暂无数据">
           <el-table-column label="ID" prop="id" min-width="60" />
           <el-table-column label="头像" min-width="100">
             <template #default="{ row }">

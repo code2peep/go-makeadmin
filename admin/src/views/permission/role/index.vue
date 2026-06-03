@@ -11,7 +11,12 @@
             </div>
             <div class="mt-4">
                 <div>
-                    <el-table :data="pager.lists" size="large" v-loading="pager.loading">
+                    <el-table
+                        :data="pager.lists"
+                        size="large"
+                        v-loading="pager.loading"
+                        empty-text="暂无数据"
+                    >
                         <el-table-column prop="id" label="ID" min-width="100" />
                         <el-table-column prop="name" label="名称" min-width="150" />
                         <el-table-column
