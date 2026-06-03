@@ -41,6 +41,22 @@
                 <el-form-item label="作者">
                     <el-input class="w-[280px]" v-model="formData.authorName" clearable />
                 </el-form-item>
+                <el-form-item label="租户/角色">
+                    <div class="flex gap-3">
+                        <el-input-number
+                            class="w-[160px]"
+                            v-model="formData.tenantId"
+                            :min="0"
+                            :controls="false"
+                        />
+                        <el-input-number
+                            class="w-[160px]"
+                            v-model="formData.roleId"
+                            :min="1"
+                            :controls="false"
+                        />
+                    </div>
+                </el-form-item>
             </el-form>
 
             <div v-if="preview" class="manifest-result">
@@ -63,6 +79,15 @@
                     <el-descriptions-item label="模板">
                         {{ preview.detail.gen.genTpl }}
                     </el-descriptions-item>
+                    <el-descriptions-item label="租户">
+                        {{ preview.plan.tenantId }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="角色">
+                        {{ preview.plan.roleId }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="运行时">
+                        {{ preview.plan.runtimeHint }}
+                    </el-descriptions-item>
                 </el-descriptions>
 
                 <el-table class="mt-4" :data="preview.detail.column" size="large" height="260">
@@ -75,6 +100,12 @@
                 </el-table>
 
                 <div class="flex justify-end mt-4">
+                    <el-button @click="handlePlanPreview">
+                        <template #icon>
+                            <icon name="el-icon-DocumentCopy" />
+                        </template>
+                        安装计划
+                    </el-button>
                     <el-button type="primary" @click="handleCodePreview">
                         <template #icon>
                             <icon name="el-icon-View" />
@@ -104,7 +135,9 @@ const inputMode = ref<'path' | 'body'>('path')
 const formData = reactive({
     manifestPath: 'examples/demo/manifest.json',
     manifestBody: '',
-    authorName: 'codepeep'
+    authorName: 'codepeep',
+    tenantId: 0,
+    roleId: 1
 })
 
 const preview = ref<any>()
@@ -118,11 +151,15 @@ const handlePreview = async () => {
         inputMode.value === 'path'
             ? {
                   manifestPath: formData.manifestPath,
-                  authorName: formData.authorName
+                  authorName: formData.authorName,
+                  tenantId: formData.tenantId,
+                  roleId: formData.roleId
               }
             : {
                   manifestBody: formData.manifestBody,
-                  authorName: formData.authorName
+                  authorName: formData.authorName,
+                  tenantId: formData.tenantId,
+                  roleId: formData.roleId
               }
     preview.value = await previewModuleManifest(params)
     feedback.msgSuccess('预览生成成功')
@@ -130,6 +167,17 @@ const handlePreview = async () => {
 
 const handleCodePreview = () => {
     previewState.code = preview.value?.code || {}
+    previewState.show = true
+}
+
+const handlePlanPreview = () => {
+    const plan = preview.value?.plan || {}
+    previewState.code = {
+        'registry.sql': plan.registrySql || '',
+        'role_grant.sql': plan.roleGrantSql || '',
+        'install.sql': plan.installSql || '',
+        'uninstall.sql': plan.uninstallSql || ''
+    }
     previewState.show = true
 }
 </script>

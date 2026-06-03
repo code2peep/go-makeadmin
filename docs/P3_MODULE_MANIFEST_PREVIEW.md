@@ -50,6 +50,7 @@ GET /gen/previewCode?id=<table_id>
 - `manifest`：模块、实体、来源表和菜单名称摘要。
 - `detail`：兼容旧 `/gen/detail` 的表配置和列配置。
 - `code`：Go model、schema、service、route 和 Vue api、list、edit 的模板预览。
+- `plan`：模块注册、角色授权、安装和卸载 SQL 预览。
 - `warning`：只读边界提示。
 
 ## 管理端入口
@@ -63,6 +64,7 @@ GET /gen/previewCode?id=<table_id>
 - 表配置摘要。
 - 字段配置表格。
 - 代码预览弹窗。
+- 安装计划预览弹窗。
 
 ## 边界
 

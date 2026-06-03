@@ -131,7 +131,7 @@ func (genSrv generateService) PreviewModuleManifest(previewReq req.ModuleManifes
 	}
 	return resp.ModuleManifestPreviewResp{
 		Source:  source,
-		Warning: "Preview only; this request did not connect to a database and did not write ma_codegen_* rows.",
+		Warning: "Preview only; this request did not connect to a database, did not write ma_codegen_* rows, and did not execute install SQL.",
 		Manifest: resp.ModuleManifestSummaryResp{
 			Module:         manifest.Module,
 			Entity:         manifest.Entity,
@@ -141,6 +141,7 @@ func (genSrv generateService) PreviewModuleManifest(previewReq req.ModuleManifes
 		},
 		Detail: genTableDetailRespFromMakeadmin(makeadminTable, makeadminColumns),
 		Code:   code,
+		Plan:   buildModuleManifestPlan(manifest, previewReq),
 	}, nil
 }
 
@@ -494,6 +495,13 @@ func manifestTenantID(previewReq req.ModuleManifestPreviewReq) uint64 {
 		return previewReq.TenantID
 	}
 	return makeadmin.GlobalTenantID
+}
+
+func manifestRoleID(previewReq req.ModuleManifestPreviewReq) uint64 {
+	if previewReq.RoleID > 0 {
+		return previewReq.RoleID
+	}
+	return 1
 }
 
 func firstNonEmpty(values ...string) string {

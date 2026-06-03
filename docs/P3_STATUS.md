@@ -310,4 +310,48 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 
 ## 下一步
 
-P3.9：模块 manifest 预览结果的安装计划联动。建议在后台 manifest 预览弹窗继续补注册 SQL、角色授权 SQL、安装计划和卸载计划的只读预览，让页面从“生成器闭环”推进到“模块生命周期预审闭环”。
+## P3.9 当前落地
+
+模块 manifest 预览结果的安装计划联动已建立：
+
+- `POST /gen/previewCode` 返回新增 `plan`。
+- `plan` 包含 `registrySql`、`roleGrantSql`、`installSql`、`uninstallSql` 和 `runtimeHint`。
+- 安装计划 SQL 由 Go 服务内存生成，不在请求中调用 Python 脚本。
+- `registrySql` 对应 manifest 菜单和权限注册预览。
+- `roleGrantSql` 对应指定租户和角色的权限授权预览。
+- `installSql` 合并注册 SQL 和角色授权 SQL。
+- `uninstallSql` 只按 manifest 声明的权限 code 和菜单 routeName 生成清理预览。
+- 管理端 `Manifest 预览` 弹窗新增租户 ID、角色 ID 输入。
+- 管理端预览结果新增租户、角色、运行时提示展示。
+- 管理端新增 `安装计划` 按钮，使用代码预览弹窗展示 SQL。
+- 新增 `scripts/check-module-install-plan-preview.sh`。
+- `scripts/check-module-tools-no-db.sh` 已接入 install plan preview 验证。
+
+详见 `docs/P3_MODULE_INSTALL_PLAN_PREVIEW.md`。
+
+## P3.9 验收标准
+
+- `scripts/check-module-install-plan-preview.sh` 通过。
+- `scripts/check-module-manifest-preview.sh` 通过。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./generator/service/gen -run 'TestPreviewModuleManifest|TestPreviewModuleManifestIncludesInstallPlan' -count=1` 通过。
+- `cd admin && npm run type-check` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不执行安装 SQL、不执行卸载 SQL、不写数据库、不创建业务 schema、不读取或修改 `.env`、不新增权限 SQL。
+
+## P3.9 验收结果
+
+- 已通过 `scripts/check-module-install-plan-preview.sh`。
+- 已通过 `scripts/check-module-manifest-preview.sh`。
+- 已通过 `scripts/check-module-tools-no-db.sh`。
+- 已通过 `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./generator/service/gen -run 'TestPreviewModuleManifest|TestPreviewModuleManifestIncludesInstallPlan' -count=1`。
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有执行安装 SQL、没有执行卸载 SQL、没有写数据库、没有创建业务 schema、没有读取或修改 `.env`、没有新增权限 SQL。
+
+## 下一步
+
+P3.10：后台模块安装写入门禁与确认参数。建议在只读安装计划成熟后，再做受控写入入口的门禁设计，先覆盖环境变量、模块名、租户、角色和 schema 风险确认，不直接开放页面写库。

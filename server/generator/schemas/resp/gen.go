@@ -92,4 +92,16 @@ type ModuleManifestPreviewResp struct {
 	Manifest ModuleManifestSummaryResp `json:"manifest" structs:"manifest"` // manifest 摘要
 	Detail   GenTableDetailResp        `json:"detail" structs:"detail"`     // 兼容 /gen/detail 形状
 	Code     map[string]string         `json:"code" structs:"code"`         // 模板预览代码
+	Plan     ModuleManifestPlanResp    `json:"plan" structs:"plan"`         // 安装计划预览
+}
+
+// ModuleManifestPlanResp 模块清单安装计划预览
+type ModuleManifestPlanResp struct {
+	TenantID     uint64 `json:"tenantId" structs:"tenantId"`         // 租户ID
+	RoleID       uint64 `json:"roleId" structs:"roleId"`             // 角色ID
+	RegistrySQL  string `json:"registrySql" structs:"registrySql"`   // 菜单权限注册SQL
+	RoleGrantSQL string `json:"roleGrantSql" structs:"roleGrantSql"` // 角色授权SQL
+	InstallSQL   string `json:"installSql" structs:"installSql"`     // 安装SQL
+	UninstallSQL string `json:"uninstallSql" structs:"uninstallSql"` // 卸载SQL
+	RuntimeHint  string `json:"runtimeHint" structs:"runtimeHint"`   // 运行时提示
 }

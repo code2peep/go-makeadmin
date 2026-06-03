@@ -82,6 +82,7 @@ type ModuleManifestPreviewReq struct {
 	ManifestPath string `json:"manifestPath" binding:"omitempty,max=500"` // 仓库内 manifest 路径
 	ManifestBody string `json:"manifestBody"`                             // manifest JSON
 	TenantID     uint64 `json:"tenantId"`                                 // 租户ID
+	RoleID       uint64 `json:"roleId"`                                   // 角色ID
 	AuthorName   string `json:"authorName" binding:"omitempty,max=100"`   // 作者名称
 }
 

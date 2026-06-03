@@ -59,7 +59,7 @@ func TestPreviewModuleManifestFromInlineJSON(t *testing.T) {
   }
 }`
 	srv := generateService{}
-	res, err := srv.PreviewModuleManifest(req.ModuleManifestPreviewReq{ManifestBody: body, TenantID: 7, AuthorName: "tester"})
+	res, err := srv.PreviewModuleManifest(req.ModuleManifestPreviewReq{ManifestBody: body, TenantID: 7, RoleID: 3, AuthorName: "tester"})
 	if err != nil {
 		t.Fatalf("preview inline manifest: %v", err)
 	}
@@ -78,6 +78,19 @@ func TestPreviewModuleManifestFromInlineJSON(t *testing.T) {
 	assertContains(t, res.Code["gocode/route.go"], `rg.GET("/article/list"`)
 	assertContains(t, res.Code["vue/api.ts"], "url: '/article/list'")
 	assertContains(t, res.Code["vue/index.vue"], `v-perms="['article:add']"`)
+	if res.Plan.TenantID != 7 || res.Plan.RoleID != 3 {
+		t.Fatalf("unexpected plan tenant/role: %+v", res.Plan)
+	}
+	assertContains(t, res.Plan.RegistrySQL, "INSERT INTO `ma_permission`")
+	assertContains(t, res.Plan.RegistrySQL, "`route_name` = 'demo.article'")
+	assertContains(t, res.Plan.RoleGrantSQL, "INSERT INTO `ma_role_permission`")
+	assertContains(t, res.Plan.RoleGrantSQL, "SET @tenant_id = 7;")
+	assertContains(t, res.Plan.RoleGrantSQL, "SET @role_id = 3;")
+	assertContains(t, res.Plan.InstallSQL, res.Plan.RegistrySQL)
+	assertContains(t, res.Plan.InstallSQL, res.Plan.RoleGrantSQL)
+	assertContains(t, res.Plan.UninstallSQL, "DELETE FROM `ma_permission`")
+	assertContains(t, res.Plan.UninstallSQL, "'article:add'")
+	assertContains(t, res.Plan.RuntimeHint, "MAKEADMIN_ENABLE_DEMO_MODULE=1")
 }
 
 func TestPreviewModuleManifestFromRepositoryPath(t *testing.T) {
@@ -97,7 +110,33 @@ func TestPreviewModuleManifestFromRepositoryPath(t *testing.T) {
 	if strings.TrimSpace(res.Warning) == "" {
 		t.Fatalf("warning must not be empty")
 	}
+	if res.Plan.RoleID != 1 {
+		t.Fatalf("default role id = %d, want 1", res.Plan.RoleID)
+	}
 	assertContains(t, res.Code["vue/edit.vue"], "articleAdd")
+}
+
+func TestPreviewModuleManifestIncludesInstallPlan(t *testing.T) {
+	srv := generateService{}
+	res, err := srv.PreviewModuleManifest(req.ModuleManifestPreviewReq{
+		ManifestPath: "examples/demo/manifest.json",
+		TenantID:     0,
+		RoleID:       2,
+	})
+	if err != nil {
+		t.Fatalf("preview repository manifest: %v", err)
+	}
+	if res.Plan.TenantID != 0 || res.Plan.RoleID != 2 {
+		t.Fatalf("unexpected plan ids: %+v", res.Plan)
+	}
+	assertContains(t, res.Plan.RegistrySQL, "SET @parent_route_name = 'dev_tools';")
+	assertContains(t, res.Plan.RegistrySQL, "INSERT INTO `ma_menu_permission`")
+	assertContains(t, res.Plan.RoleGrantSQL, "SET @role_id = 2;")
+	assertContains(t, res.Plan.InstallSQL, "INSERT INTO `ma_permission`")
+	assertContains(t, res.Plan.InstallSQL, "INSERT INTO `ma_role_permission`")
+	assertContains(t, res.Plan.UninstallSQL, "DELETE rp FROM `ma_role_permission`")
+	assertContains(t, res.Plan.UninstallSQL, "DELETE FROM `ma_menu`")
+	assertContains(t, res.Plan.RuntimeHint, "MAKEADMIN_ENABLE_DEMO_MODULE=1")
 }
 
 func TestPreviewModuleManifestRejectsUnsafePath(t *testing.T) {
