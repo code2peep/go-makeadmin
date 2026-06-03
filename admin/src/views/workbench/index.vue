@@ -214,6 +214,12 @@ const capabilityCards = computed(() => [
 
 const quickActions = [
     {
+        name: '模块中心',
+        url: '/module',
+        icon: 'el-icon-Box',
+        scope: 'manifest、安装计划、安装卸载、审计预览'
+    },
+    {
         name: '代码生成器',
         url: '/code',
         icon: 'el-icon-Tools',

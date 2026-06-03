@@ -53,7 +53,8 @@ INSERT INTO `ma_menu` (`id`, `parent_id`, `menu_type`, `name`, `icon`, `route_pa
 (552, 550, 'page', '系统缓存', '', '/setting/system/cache', 'setting.system.cache', 'setting/system/cache', '', '', '{}', 1, 0, 1, 200, @seed_time, @seed_time, 0),
 (553, 550, 'page', '系统日志', '', '/setting/system/journal', 'setting.system.journal', 'setting/system/journal', '', '', '{}', 1, 0, 1, 100, @seed_time, @seed_time, 0),
 (600, 0, 'catalog', '开发工具', 'el-icon-EditPen', '/dev_tools', 'dev_tools', '', '', '', '{}', 1, 0, 1, 500, @seed_time, @seed_time, 0),
-(515, 600, 'page', '字典管理', 'el-icon-Box', '/dev_tools/dict', 'dev_tools.dict', 'setting/dict/type/index', '', '', '{}', 1, 0, 1, 200, @seed_time, @seed_time, 0),
+(515, 600, 'page', '字典管理', 'el-icon-Box', '/dev_tools/dict', 'dev_tools.dict', 'setting/dict/type/index', '', '', '{}', 1, 0, 1, 300, @seed_time, @seed_time, 0),
+(620, 600, 'page', '模块中心', 'el-icon-Box', '/dev_tools/module', 'dev_tools.module', 'dev_tools/module/index', '', '', '{}', 1, 0, 1, 200, @seed_time, @seed_time, 0),
 (610, 600, 'page', '代码生成器', 'el-icon-DocumentAdd', '/dev_tools/code', 'dev_tools.code', 'dev_tools/code/index', '', '', '{}', 1, 0, 1, 100, @seed_time, @seed_time, 0);
 
 INSERT INTO `ma_permission` (`id`, `code`, `name`, `module`, `resource`, `action`, `status`, `sort`, `create_time`, `update_time`) VALUES
@@ -135,7 +136,8 @@ INSERT INTO `ma_permission` (`id`, `code`, `name`, `module`, `resource`, `action
 (76, 'gen:delTable', '删除数据表', 'gen', 'delTable', '', 1, 940, @seed_time, @seed_time),
 (77, 'gen:previewCode', '预览代码', 'gen', 'previewCode', '', 1, 930, @seed_time, @seed_time),
 (78, 'gen:genCode', '生成代码', 'gen', 'genCode', '', 1, 920, @seed_time, @seed_time),
-(79, 'gen:downloadCode', '下载代码', 'gen', 'downloadCode', '', 1, 910, @seed_time, @seed_time);
+(79, 'gen:downloadCode', '下载代码', 'gen', 'downloadCode', '', 1, 910, @seed_time, @seed_time),
+(80, 'module:center:view', '模块中心查看', 'module', 'center', 'view', 1, 1000, @seed_time, @seed_time);
 
 INSERT INTO `ma_menu_permission` (`menu_id`, `permission_id`, `create_time`) VALUES
 (1, 1, @seed_time),
@@ -153,6 +155,7 @@ INSERT INTO `ma_menu_permission` (`menu_id`, `permission_id`, `create_time`) VAL
 (552, 67, @seed_time),
 (553, 68, @seed_time),
 (515, 55, @seed_time),
+(620, 80, @seed_time),
 (610, 71, @seed_time);
 
 INSERT INTO `ma_role_permission` (`tenant_id`, `role_id`, `permission_id`, `create_time`)

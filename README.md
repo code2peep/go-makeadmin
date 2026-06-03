@@ -86,7 +86,7 @@ python3 scripts/p1-smoke.py
 
 P3 最终状态见 `docs/P3_FINAL_STATUS.md`。
 
-P4 状态见 `docs/P4_STATUS.md`。P4.1 可见后台工作台见 `docs/P4_VISIBLE_ADMIN_WORKBENCH.md`。
+P4 状态见 `docs/P4_STATUS.md`。P4.1 可见后台工作台见 `docs/P4_VISIBLE_ADMIN_WORKBENCH.md`。P4.2 模块中心见 `docs/P4_MODULE_CENTER.md`。
 
 ## 授权
 
