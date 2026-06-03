@@ -861,4 +861,32 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 
 ## 下一步
 
-P3.25：P3 阶段冻结验收与最终状态文档。建议汇总 P3.1-P3.24 的能力边界、验证结果和后续 P4 入口，不改代码、不新增接口、不写库。
+## P3.25 当前落地
+
+P3 阶段冻结验收与最终状态文档已补齐：
+
+- 新增 `docs/P3_FINAL_STATUS.md`。
+- 汇总 P3.1-P3.24 的脚手架、codegen、manifest 后台闭环、管理端结果视图和审计 dry-run 范围。
+- 明确 P3 冻结验收命令、保留边界、不覆盖范围和 P4 入口。
+- README 已补充 P3 最终状态入口，并把当前阶段从 P2 更新为 P4 入口前状态。
+
+## P3.25 验收标准
+
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- `git diff --check` 通过。
+- `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache` 通过。
+- 不改后端、不改前端运行逻辑、不新增接口、不写库、不创建 schema、不读取或修改 `.env`、不新增权限 SQL。
+
+## P3.25 验收结果
+
+- 已通过 `scripts/check-module-tools-no-db.sh`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 本阶段没有改后端、没有改前端运行逻辑、没有新增接口、没有写库、没有创建 schema、没有读取或修改 `.env`、没有新增权限 SQL。
+
+## 下一步
+
+P4.1：可见后台与人工测试闭环。建议启动本地 API 和管理端，确认登录、工作台、菜单、系统管理、代码生成器和模块 manifest 预览页面能被人工打开和操作。
