@@ -457,8 +457,8 @@ def build_legacy_columns(manifest: dict[str, Any]) -> list[dict[str, Any]]:
                 "isList": 1,
                 "isQuery": 1,
                 "queryType": "=",
-                "htmlType": "input",
-                "dictType": "",
+                "htmlType": "radio",
+                "dictType": "common_status",
                 "sort": 3,
             },
         ]

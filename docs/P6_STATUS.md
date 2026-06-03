@@ -124,3 +124,36 @@ P6.3 停止继续扩展模块市场，把工作台重新校准为通用后台框
 ## 下一步
 
 P6.4：生成器业务模块模板体验校准。建议检查代码生成器和 manifest 脚手架输出，让 AI 后续生成具体业务功能时默认得到可用的列表、搜索、编辑、状态字段和 API 文件。
+
+## P6.4：生成器业务模块模板体验校准
+
+P6.4 把 P6 主线从复杂模块市场继续收敛到通用后台框架的业务生成底座。
+
+## P6.4 当前落地
+
+- 前端生成模板 contract 明确覆盖列表、搜索、重置、新增、编辑、删除、分页、字典展示和弹窗表单。
+- 生成器前端 smoke 使用独立 `codegen_template_smoke` 临时模块，不再和仓库已有 `article` 示例模块冲突。
+- 默认 manifest codegen 字段仍保持 `id/title/status`，但 `status` 改为 `common_status` 字典单选，符合常见后台业务起步形态。
+- 新增 `scripts/check-codegen-business-template-contract.sh`，验证模板关键能力和默认 codegen 字段。
+- `scripts/check-module-tools-no-db.sh` 接入业务模板 contract 和生成前端 type-check。
+
+## P6.4 验收标准
+
+- `scripts/check-codegen-business-template-contract.sh` 通过。
+- `scripts/check-codegen-frontend.sh` 通过。
+- `scripts/check-module-codegen-plan.sh` 通过。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+
+## P6.4 验收结果
+
+- 已通过 `scripts/check-codegen-business-template-contract.sh`。
+- 已通过 `scripts/check-codegen-frontend.sh`。
+- 已通过 `scripts/check-module-codegen-plan.sh`。
+- 已通过 `scripts/check-module-tools-no-db.sh`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 全量验证里的前端 build 仍有 Rolldown 对 `@vueuse/core` pure annotation 的已知 warning，命令退出码为 0。
+
+## 下一步
+
+P6.5：通用后台人工可见链路验收。建议启动本地 API 和管理端，按“登录、工作台、系统管理、设置、字典、文件、日志、代码生成器”顺序做一次真实浏览器验收，重点找阻塞后台第一眼可用的问题。

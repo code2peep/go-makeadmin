@@ -52,7 +52,7 @@ func TestGeneratedCrudFrontendCodeTypeChecks(t *testing.T) {
 	if os.Getenv("MAKEADMIN_CODEGEN_FRONTEND_CHECK") != "1" {
 		t.Skip("set MAKEADMIN_CODEGEN_FRONTEND_CHECK=1 to type-check generated frontend code")
 	}
-	table, _, vars := demoCrudFixture()
+	table, _, vars := codegenTemplateSmokeFixture()
 	repoRoot := filepath.Dir(config.Config.RootPath)
 	adminRoot := filepath.Join(repoRoot, "admin")
 	apiPath := filepath.Join(adminRoot, "src", "api", table.ModuleName+".ts")
@@ -145,6 +145,15 @@ func demoCrudFixture() (gen.GenTable, []gen.GenTableColumn, TplVars) {
 	return crudFixture("ma_demo_article", "DemoArticle", "article", "Demo article")
 }
 
+func codegenTemplateSmokeFixture() (gen.GenTable, []gen.GenTableColumn, TplVars) {
+	return crudFixture(
+		"ma_codegen_template_smoke",
+		"CodegenTemplateSmoke",
+		"codegen_template_smoke",
+		"Codegen template smoke",
+	)
+}
+
 func crudFixture(tableName string, entityName string, moduleName string, functionName string) (gen.GenTable, []gen.GenTableColumn, TplVars) {
 	table := gen.GenTable{
 		ID:           1,
@@ -197,7 +206,8 @@ func crudFixture(tableName string, entityName string, moduleName string, functio
 			IsList:        1,
 			IsQuery:       1,
 			QueryType:     GenConstants.QueryEq,
-			HtmlType:      HtmlConstants.HtmlInput,
+			HtmlType:      HtmlConstants.HtmlRadio,
+			DictType:      "common_status",
 			Sort:          3,
 		},
 	}
@@ -206,10 +216,10 @@ func crudFixture(tableName string, entityName string, moduleName string, functio
 }
 
 type moduleManifest struct {
-	Module      string `json:"module"`
-	Entity      string `json:"entity"`
-	Table       string `json:"table"`
-	Menu        struct {
+	Module string `json:"module"`
+	Entity string `json:"entity"`
+	Table  string `json:"table"`
+	Menu   struct {
 		Name string `json:"name"`
 	} `json:"menu"`
 	Backend struct {

@@ -42,6 +42,9 @@ if [column["columnName"] for column in columns] != ["id", "title", "status"]:
 title = next(column for column in columns if column["columnName"] == "title")
 if title["queryType"] != "LIKE" or title["htmlType"] != "input":
     raise SystemExit("unexpected title column config")
+status = next(column for column in columns if column["columnName"] == "status")
+if status["queryType"] != "=" or status["htmlType"] != "radio" or status["dictType"] != "common_status":
+    raise SystemExit("unexpected status column config")
 PY
 
 python3 - "$TMP_DIR/manifest.json" "$TMP_DIR/configured-manifest.json" <<'PY'
