@@ -1,4 +1,5 @@
 import {
+    buildModuleRuntimeStatus,
     buildRegistryAcceptanceRows,
     buildRegistryManualChecklistRows,
     countRegistryFailures,
@@ -8,6 +9,7 @@ import {
     registryTableEmptyTextFromState,
     type RegistryAcceptanceRow,
     type RegistryManualChecklistRow,
+    type ModuleRuntimeStatusView,
     type RegistryStateInput,
     type RegistryStateModule
 } from './registry-state'
@@ -74,6 +76,16 @@ const emptyStateMatched: boolean = isRegistryEmptyState(emptyRegistryState)
 const emptyText: string = registryTableEmptyTextFromState(emptyRegistryState)
 const failedText: string = registryTableEmptyTextFromState(failedRegistryState)
 const failedDetail: string = registryErrorDetailText(failedRegistryState.registryError)
+const demoNoticeRuntimeStatus: ModuleRuntimeStatusView = buildModuleRuntimeStatus({
+    runtimeRegistered: false,
+    runtimeHint: 'No runtime env gate is defined for this module yet.'
+})
+const demoArticleRuntimeStatus: ModuleRuntimeStatusView = buildModuleRuntimeStatus({
+    runtimeRegistered: true,
+    runtimeEnv: 'MAKEADMIN_ENABLE_DEMO_MODULE',
+    runtimeEnabled: true,
+    runtimeHint: 'MAKEADMIN_ENABLE_DEMO_MODULE=1'
+})
 
 export const registryStateFixture = {
     defaultRows,
@@ -87,5 +99,7 @@ export const registryStateFixture = {
     emptyStateMatched,
     emptyText,
     failedText,
-    failedDetail
+    failedDetail,
+    demoNoticeRuntimeStatus,
+    demoArticleRuntimeStatus
 }

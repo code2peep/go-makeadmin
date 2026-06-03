@@ -19,7 +19,7 @@ DOC="$ROOT/docs/P5_MODULE_CENTER_UI_CONTRACT.md"
 REGISTRY="$ROOT/server/generator/service/gen/module_registry.go"
 NOTICE_MANIFEST="$ROOT/examples/demo_notice/manifest.json"
 
-assert_contains "$PAGE" "P5.21"
+assert_contains "$PAGE" "P5.22"
 assert_contains "$PAGE" "registry-manual-checklist"
 assert_contains "$HELPER" "buildRegistryManualChecklistRows"
 assert_contains "$HELPER" "默认 Registry"

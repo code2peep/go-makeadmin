@@ -730,3 +730,38 @@ P5.21：第二个示例模块安装计划和页面入口验收。建议验证 `D
 ## 下一步
 
 P5.22：第二个示例模块模块中心状态回读说明。建议把 `Demo Notice` 在未注册运行时和未安装状态下的模块中心状态文案整理成稳定契约，避免后续多模块状态显示混乱。
+
+## P5.22 当前落地
+
+`Demo Notice` 模块中心状态回读契约已建立：
+
+- 新增 `buildModuleRuntimeStatus()` helper。
+- 模块中心运行时状态判断从页面内联逻辑迁入 helper。
+- helper 覆盖 `未注册`、`未开启` 和 `已开启` 三种状态。
+- `registry-state.fixture.ts` 增加 `demoNoticeRuntimeStatus` 和 `demoArticleRuntimeStatus`。
+- `scripts/check-demo-notice-module.sh` 增加 helper、未注册文案和 fixture 检查。
+- 模块中心阶段标识更新为 `P5.22`。
+- README 和 registry 文档索引增加 P5.22 入口。
+
+详见 `docs/P5_DEMO_NOTICE_STATUS_CONTRACT.md`。
+
+## P5.22 验收标准
+
+- `scripts/check-demo-notice-module.sh` 通过。
+- `scripts/check-module-center-ui-contract.sh` 通过。
+- `cd admin && npm run type-check` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+
+## P5.22 验收结果
+
+- 已通过 `scripts/check-demo-notice-module.sh`。
+- 已通过 `scripts/check-module-center-ui-contract.sh`。
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 全量验证里的前端 build 已生成 `demo_notice` chunk。
+- 全量验证里的前端 build 仍有 Rolldown 对 `@vueuse/core` pure annotation 的已知 warning，命令退出码为 0。
+- 浏览器当前位于登录页，旧 token 已过期；本机未设置 `ADMIN_PASSWORD` 或 `P1_SMOKE_ADMIN_PASSWORD`，因此登录后页面截图验收需要你重新登录后执行。
+
+## 下一步
+
+P5.23：模块中心多模块筛选验收。建议验证 `Demo Article` 与 `Demo Notice` 同时存在时，全部、未安装、异常筛选和验收状态条的数量统计保持稳定。

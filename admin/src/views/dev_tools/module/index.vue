@@ -237,7 +237,7 @@
                 <div class="section-header">
                     <span class="card-title">内置模块清单</span>
                     <div class="section-actions">
-                        <el-tag type="success" size="small">P5.21</el-tag>
+                        <el-tag type="success" size="small">P5.22</el-tag>
                         <el-button
                             type="primary"
                             link
@@ -459,6 +459,7 @@ import CodePreview from '../components/code-preview.vue'
 import ModuleManifestApplyResultView from '../components/module-manifest-apply-result.vue'
 import feedback from '@/utils/feedback'
 import {
+    buildModuleRuntimeStatus,
     buildRegistryAcceptanceRows,
     buildRegistryManualChecklistRows,
     isRegistryEmptyState,
@@ -950,31 +951,9 @@ const moduleSnapshotText = (status: ModuleManifestInstallStatusResult) => {
     ].join(' · ')
 }
 
-const runtimeStatusFrom = (status: ModuleManifestInstallStatusResult) => {
-    if (!status.runtimeRegistered) {
-        return {
-            label: '未注册',
-            type: 'warning',
-            detail: status.runtimeHint || '-'
-        }
-    }
-    if (status.runtimeEnv && !status.runtimeEnabled) {
-        return {
-            label: '未开启',
-            type: 'warning',
-            detail: `${status.runtimeEnv}=1`
-        }
-    }
-    return {
-        label: '已开启',
-        type: 'success',
-        detail: status.runtimeEnv ? `${status.runtimeEnv}=1` : status.runtimeHint || '-'
-    }
-}
-
 const applyModuleStatusToRow = (row: ModuleCenterModule, status: ModuleManifestInstallStatusResult) => {
     const rawStatus = status.status || 'failed'
-    const runtimeStatus = runtimeStatusFrom(status)
+    const runtimeStatus = buildModuleRuntimeStatus(status)
     row.installStatusCode = rawStatus
     row.installStatus = statusLabelMap[rawStatus] || rawStatus
     row.installStatusType = statusTypeMap[rawStatus] || 'info'

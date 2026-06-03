@@ -29,6 +29,19 @@ export type RegistryManualChecklistRow = {
     detail: string
 }
 
+export type ModuleRuntimeStatusInput = {
+    runtimeRegistered?: boolean
+    runtimeEnv?: string
+    runtimeEnabled?: boolean
+    runtimeHint?: string
+}
+
+export type ModuleRuntimeStatusView = {
+    label: string
+    type: ElementTagType
+    detail: string
+}
+
 export const registrySmokeCommand = 'scripts/check-module-registry-smoke.sh'
 
 export const countRegistryFailures = (modules: ReadonlyArray<RegistryStateModule>) =>
@@ -158,4 +171,28 @@ export const buildRegistryManualChecklistRows = (
             detail: articleModule?.entry || '/demo/article'
         }
     ]
+}
+
+export const buildModuleRuntimeStatus = (
+    status: ModuleRuntimeStatusInput
+): ModuleRuntimeStatusView => {
+    if (!status.runtimeRegistered) {
+        return {
+            label: '未注册',
+            type: 'warning',
+            detail: status.runtimeHint || '-'
+        }
+    }
+    if (status.runtimeEnv && !status.runtimeEnabled) {
+        return {
+            label: '未开启',
+            type: 'warning',
+            detail: `${status.runtimeEnv}=1`
+        }
+    }
+    return {
+        label: '已开启',
+        type: 'success',
+        detail: status.runtimeEnv ? `${status.runtimeEnv}=1` : status.runtimeHint || '-'
+    }
 }
