@@ -121,122 +121,16 @@
                 <div v-if="installResult || uninstallResult" class="apply-result">
                     <el-tabs v-model="resultTab">
                         <el-tab-pane v-if="installResult" label="安装结果" name="install">
-                            <el-alert
-                                :title="resultTitle(installResult, '安装写入已阻断')"
-                                :type="resultAlertType(installResult)"
-                                show-icon
-                                :closable="false"
+                            <module-manifest-apply-result-view
+                                :result="installResult"
+                                fallback-title="安装写入已阻断"
                             />
-                            <el-descriptions class="mt-3" :column="4" border>
-                                <el-descriptions-item label="状态">
-                                    {{ installResult.status || '-' }}
-                                </el-descriptions-item>
-                                <el-descriptions-item label="模块">
-                                    {{ installResult.manifest?.module || '-' }}
-                                </el-descriptions-item>
-                                <el-descriptions-item label="来源">
-                                    {{ installResult.source || '-' }}
-                                </el-descriptions-item>
-                                <el-descriptions-item label="环境变量">
-                                    {{ installResult.requiredEnv || '-' }}
-                                </el-descriptions-item>
-                                <el-descriptions-item label="操作">
-                                    {{ installResult.summary?.operation || '-' }}
-                                </el-descriptions-item>
-                                <el-descriptions-item label="路由">
-                                    {{ installResult.summary?.routeName || '-' }}
-                                </el-descriptions-item>
-                                <el-descriptions-item label="权限" :span="2">
-                                    <div class="permission-tags">
-                                        <el-tag
-                                            v-for="code in permissionCodes(installResult)"
-                                            :key="code"
-                                            size="small"
-                                        >
-                                            {{ code }}
-                                        </el-tag>
-                                    </div>
-                                </el-descriptions-item>
-                            </el-descriptions>
-                            <el-table
-                                v-if="hasSnapshot(installResult)"
-                                class="mt-3"
-                                :data="snapshotRows(installResult)"
-                                size="large"
-                            >
-                                <el-table-column label="对象" prop="name" min-width="130" />
-                                <el-table-column label="执行前" prop="before" min-width="100" />
-                                <el-table-column label="执行后" prop="after" min-width="100" />
-                            </el-table>
-                            <el-table
-                                v-if="installResult.checks?.length"
-                                class="mt-3"
-                                :data="installResult.checks"
-                                size="large"
-                            >
-                                <el-table-column label="检查项" prop="name" min-width="140" />
-                                <el-table-column label="状态" prop="status" min-width="120" />
-                                <el-table-column label="说明" prop="message" min-width="280" />
-                            </el-table>
                         </el-tab-pane>
                         <el-tab-pane v-if="uninstallResult" label="卸载结果" name="uninstall">
-                            <el-alert
-                                :title="resultTitle(uninstallResult, '卸载写入已阻断')"
-                                :type="resultAlertType(uninstallResult)"
-                                show-icon
-                                :closable="false"
+                            <module-manifest-apply-result-view
+                                :result="uninstallResult"
+                                fallback-title="卸载写入已阻断"
                             />
-                            <el-descriptions class="mt-3" :column="4" border>
-                                <el-descriptions-item label="状态">
-                                    {{ uninstallResult.status || '-' }}
-                                </el-descriptions-item>
-                                <el-descriptions-item label="模块">
-                                    {{ uninstallResult.manifest?.module || '-' }}
-                                </el-descriptions-item>
-                                <el-descriptions-item label="来源">
-                                    {{ uninstallResult.source || '-' }}
-                                </el-descriptions-item>
-                                <el-descriptions-item label="环境变量">
-                                    {{ uninstallResult.requiredEnv || '-' }}
-                                </el-descriptions-item>
-                                <el-descriptions-item label="操作">
-                                    {{ uninstallResult.summary?.operation || '-' }}
-                                </el-descriptions-item>
-                                <el-descriptions-item label="路由">
-                                    {{ uninstallResult.summary?.routeName || '-' }}
-                                </el-descriptions-item>
-                                <el-descriptions-item label="权限" :span="2">
-                                    <div class="permission-tags">
-                                        <el-tag
-                                            v-for="code in permissionCodes(uninstallResult)"
-                                            :key="code"
-                                            size="small"
-                                        >
-                                            {{ code }}
-                                        </el-tag>
-                                    </div>
-                                </el-descriptions-item>
-                            </el-descriptions>
-                            <el-table
-                                v-if="hasSnapshot(uninstallResult)"
-                                class="mt-3"
-                                :data="snapshotRows(uninstallResult)"
-                                size="large"
-                            >
-                                <el-table-column label="对象" prop="name" min-width="130" />
-                                <el-table-column label="执行前" prop="before" min-width="100" />
-                                <el-table-column label="执行后" prop="after" min-width="100" />
-                            </el-table>
-                            <el-table
-                                v-if="uninstallResult.checks?.length"
-                                class="mt-3"
-                                :data="uninstallResult.checks"
-                                size="large"
-                            >
-                                <el-table-column label="检查项" prop="name" min-width="140" />
-                                <el-table-column label="状态" prop="status" min-width="120" />
-                                <el-table-column label="说明" prop="message" min-width="280" />
-                            </el-table>
                         </el-tab-pane>
                     </el-tabs>
                 </div>
@@ -306,6 +200,7 @@
 <script lang="ts" setup>
 import Popup from '@/components/popup/index.vue'
 import CodePreview from './code-preview.vue'
+import ModuleManifestApplyResultView from './module-manifest-apply-result.vue'
 import {
     applyModuleManifestInstall,
     applyModuleManifestUninstall,
@@ -318,12 +213,6 @@ import {
     type ModuleManifestUninstallApplyParams
 } from '@/api/tools/code'
 import feedback from '@/utils/feedback'
-
-interface SnapshotRow {
-    name: string
-    before: number
-    after: number
-}
 
 const popupRef = shallowRef<InstanceType<typeof Popup>>()
 const inputMode = ref<'path' | 'body'>('path')
@@ -527,46 +416,6 @@ const handleUninstallGate = async () => {
     }
     resultTab.value = 'uninstall'
 }
-
-const resultTitle = (result: ModuleManifestApplyResult | undefined, fallback: string) =>
-    result?.message || fallback
-
-const resultAlertType = (result: ModuleManifestApplyResult | undefined) =>
-    result?.status === 'applied' ? 'success' : 'warning'
-
-const permissionCodes = (result: ModuleManifestApplyResult | undefined) =>
-    result?.summary?.permissionCodes || []
-
-const hasSnapshot = (result: ModuleManifestApplyResult | undefined) =>
-    result?.status === 'applied' ||
-    snapshotRows(result).some((row) => Number(row.before) > 0 || Number(row.after) > 0)
-
-const snapshotRows = (result: ModuleManifestApplyResult | undefined): SnapshotRow[] => {
-    const before = result?.before || {}
-    const after = result?.after || {}
-    return [
-        {
-            name: '权限',
-            before: before.permissions || 0,
-            after: after.permissions || 0
-        },
-        {
-            name: '菜单',
-            before: before.menus || 0,
-            after: after.menus || 0
-        },
-        {
-            name: '菜单权限',
-            before: before.menuPermissions || 0,
-            after: after.menuPermissions || 0
-        },
-        {
-            name: '角色授权',
-            before: before.rolePermissions || 0,
-            after: after.rolePermissions || 0
-        }
-    ]
-}
 </script>
 
 <style scoped lang="scss">
@@ -581,11 +430,5 @@ const snapshotRows = (result: ModuleManifestApplyResult | undefined): SnapshotRo
 .install-gate-form,
 .apply-result {
     margin-top: 16px;
-}
-
-.permission-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
 }
 </style>

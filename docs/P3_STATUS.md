@@ -675,6 +675,36 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 - 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
 - 本阶段没有修改请求 URL、method 或字段名，没有修改后端响应结构，没有修改后端写入门禁，没有创建业务 schema，没有读取或修改 `.env`，没有新增权限 SQL。
 
+## P3.19 当前落地
+
+模块 manifest apply 前端结果视图已提取：
+
+- 新增 `admin/src/views/dev_tools/components/module-manifest-apply-result.vue`。
+- 新组件接收 `ModuleManifestApplyResult` 和 `fallbackTitle`。
+- 新组件负责渲染结果 alert、状态摘要、操作摘要、权限编码、执行前后快照和门禁检查列表。
+- `module-manifest-preview.vue` 只保留安装结果 tab、卸载结果 tab、apply 请求和状态管理。
+- 安装、卸载结果重复模板已移入局部组件。
+- 父组件中由本次提取产生的快照 helper 和权限标签样式已清理。
+
+详见 `docs/P3_MODULE_APPLY_RESULT_VIEW.md`。
+
+## P3.19 验收标准
+
+- `cd admin && npm run type-check` 通过。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不改变按钮状态规则，不改变错误归一化规则，不修改请求 URL、method 或字段名，不修改后端响应结构，不修改后端写入门禁，不创建业务 schema，不读取或修改 `.env`，不新增权限 SQL。
+
+## P3.19 验收结果
+
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `scripts/check-module-tools-no-db.sh`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
+- 本阶段没有改变按钮状态规则，没有改变错误归一化规则，没有修改请求 URL、method 或字段名，没有修改后端响应结构，没有修改后端写入门禁，没有创建业务 schema，没有读取或修改 `.env`，没有新增权限 SQL。
+
 ## 下一步
 
-P3.19：模块 manifest apply 前端结果视图提取。建议把安装/卸载结果 tab 的重复渲染提取为局部组件，保持页面行为不变，为后续审计结果展示留扩展点。
+P3.20：模块 manifest apply 审计事件 DTO 预研。建议只做 Go/TS 文档和接口草图，不创建审计表，不接入写库，为后续真实审计表确认做准备。
