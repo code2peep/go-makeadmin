@@ -237,7 +237,7 @@
                 <div class="section-header">
                     <span class="card-title">内置模块清单</span>
                     <div class="section-actions">
-                        <el-tag type="success" size="small">P5.15</el-tag>
+                        <el-tag type="success" size="small">P5.17</el-tag>
                         <el-button
                             type="primary"
                             link
@@ -276,6 +276,21 @@
                     <el-tag :type="item.type" size="small">
                         {{ item.value }}
                     </el-tag>
+                </div>
+            </div>
+            <div class="registry-manual-checklist">
+                <div
+                    v-for="item in registryManualChecklistRows"
+                    :key="item.key"
+                    class="registry-manual-item"
+                >
+                    <div class="registry-manual-head">
+                        <span class="registry-manual-label">{{ item.label }}</span>
+                        <el-tag :type="item.statusType" size="small">
+                            {{ item.status }}
+                        </el-tag>
+                    </div>
+                    <div class="registry-manual-detail">{{ item.detail }}</div>
                 </div>
             </div>
             <el-alert
@@ -445,11 +460,13 @@ import ModuleManifestApplyResultView from '../components/module-manifest-apply-r
 import feedback from '@/utils/feedback'
 import {
     buildRegistryAcceptanceRows,
+    buildRegistryManualChecklistRows,
     isRegistryEmptyState,
     registryErrorDetailText,
     registryTableEmptyTextFromState,
     type ElementTagType,
     type RegistryAcceptanceRow,
+    type RegistryManualChecklistRow,
     type RegistryStateInput,
     type RegistryStateModule
 } from './registry-state'
@@ -700,6 +717,22 @@ const registryTableEmptyText = computed(() =>
 
 const registryAcceptanceRows = computed<RegistryAcceptanceRow[]>(() =>
     buildRegistryAcceptanceRows(modules)
+)
+
+const registryManualChecklistStateInput = computed<RegistryStateInput>(() => ({
+    modules: modules.map((item) => ({
+        module: item.module,
+        registryStatusCode: item.registryStatusCode,
+        entry: item.entry,
+        registryCheckCount: item.registryChecks.length
+    })),
+    registryLoaded: registryLoaded.value,
+    registryLoading: registryLoading.value,
+    registryError: registryError.value
+}))
+
+const registryManualChecklistRows = computed<RegistryManualChecklistRow[]>(() =>
+    buildRegistryManualChecklistRows(registryManualChecklistStateInput.value)
 )
 
 const registryCheckRows = computed(() => registryCheckDialog.row?.registryChecks || [])
@@ -1273,6 +1306,44 @@ onMounted(() => {
     margin-bottom: 14px;
 }
 
+.registry-manual-checklist {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    margin-bottom: 14px;
+}
+
+.registry-manual-item {
+    border: 1px solid #eaecf0;
+    border-radius: 8px;
+    min-width: 0;
+    padding: 10px 12px;
+}
+
+.registry-manual-head {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    justify-content: space-between;
+    min-width: 0;
+}
+
+.registry-manual-label {
+    color: #111827;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 20px;
+    min-width: 0;
+}
+
+.registry-manual-detail {
+    color: #667085;
+    font-size: 12px;
+    line-height: 18px;
+    margin-top: 8px;
+    overflow-wrap: anywhere;
+}
+
 .section-label {
     color: #111827;
     font-size: 15px;
@@ -1349,6 +1420,10 @@ onMounted(() => {
     .registry-acceptance {
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
+
+    .registry-manual-checklist {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 @media (max-width: 640px) {
@@ -1362,6 +1437,10 @@ onMounted(() => {
     }
 
     .registry-acceptance {
+        grid-template-columns: 1fr;
+    }
+
+    .registry-manual-checklist {
         grid-template-columns: 1fr;
     }
 

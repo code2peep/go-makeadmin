@@ -1,11 +1,13 @@
 import {
     buildRegistryAcceptanceRows,
+    buildRegistryManualChecklistRows,
     countRegistryFailures,
     hasBrokenRegistryFixture,
     isRegistryEmptyState,
     registryErrorDetailText,
     registryTableEmptyTextFromState,
     type RegistryAcceptanceRow,
+    type RegistryManualChecklistRow,
     type RegistryStateInput,
     type RegistryStateModule
 } from './registry-state'
@@ -13,7 +15,9 @@ import {
 const defaultModules = [
     {
         module: 'article',
-        registryStatusCode: 'passed'
+        registryStatusCode: 'passed',
+        entry: '/demo/article',
+        registryCheckCount: 7
     }
 ] satisfies RegistryStateModule[]
 
@@ -21,9 +25,25 @@ const brokenFixtureModules = [
     ...defaultModules,
     {
         module: 'broken_fixture',
-        registryStatusCode: 'failed'
+        registryStatusCode: 'failed',
+        entry: '/broken-fixture',
+        registryCheckCount: 7
     }
 ] satisfies RegistryStateModule[]
+
+const defaultRegistryState = {
+    modules: defaultModules,
+    registryLoaded: true,
+    registryLoading: false,
+    registryError: ''
+} satisfies RegistryStateInput
+
+const brokenRegistryState = {
+    modules: brokenFixtureModules,
+    registryLoaded: true,
+    registryLoading: false,
+    registryError: ''
+} satisfies RegistryStateInput
 
 const emptyRegistryState = {
     modules: [],
@@ -41,6 +61,12 @@ const failedRegistryState = {
 
 const defaultRows: RegistryAcceptanceRow[] = buildRegistryAcceptanceRows(defaultModules)
 const brokenRows: RegistryAcceptanceRow[] = buildRegistryAcceptanceRows(brokenFixtureModules)
+const defaultChecklistRows: RegistryManualChecklistRow[] =
+    buildRegistryManualChecklistRows(defaultRegistryState)
+const brokenChecklistRows: RegistryManualChecklistRow[] =
+    buildRegistryManualChecklistRows(brokenRegistryState)
+const emptyChecklistRows: RegistryManualChecklistRow[] =
+    buildRegistryManualChecklistRows(emptyRegistryState)
 const defaultFailureCount: number = countRegistryFailures(defaultModules)
 const brokenFailureCount: number = countRegistryFailures(brokenFixtureModules)
 const brokenEnabled: boolean = hasBrokenRegistryFixture(brokenFixtureModules)
@@ -52,6 +78,9 @@ const failedDetail: string = registryErrorDetailText(failedRegistryState.registr
 export const registryStateFixture = {
     defaultRows,
     brokenRows,
+    defaultChecklistRows,
+    brokenChecklistRows,
+    emptyChecklistRows,
     defaultFailureCount,
     brokenFailureCount,
     brokenEnabled,

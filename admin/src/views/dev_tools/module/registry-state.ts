@@ -3,6 +3,8 @@ export type ElementTagType = 'primary' | 'success' | 'warning' | 'danger' | 'inf
 export type RegistryStateModule = {
     module: string
     registryStatusCode: string
+    entry?: string
+    registryCheckCount?: number
 }
 
 export type RegistryStateInput = {
@@ -17,6 +19,14 @@ export type RegistryAcceptanceRow = {
     label: string
     value: string
     type: ElementTagType
+}
+
+export type RegistryManualChecklistRow = {
+    key: string
+    label: string
+    status: string
+    statusType: ElementTagType
+    detail: string
 }
 
 export const registrySmokeCommand = 'scripts/check-module-registry-smoke.sh'
@@ -84,6 +94,68 @@ export const buildRegistryAcceptanceRows = (
             label: '人工入口',
             value: '/module',
             type: 'warning'
+        }
+    ]
+}
+
+export const buildRegistryManualChecklistRows = (
+    state: RegistryStateInput
+): RegistryManualChecklistRow[] => {
+    const failedCount = countRegistryFailures(state.modules)
+    const brokenFixtureEnabled = hasBrokenRegistryFixture(state.modules)
+    const articleModule = state.modules.find((item) => item.module === 'article')
+    const hasCheckDetail = state.modules.some((item) => (item.registryCheckCount || 0) > 0)
+    const registryReady = state.registryLoaded && !state.registryLoading && !state.registryError
+
+    const registryStatus = () => {
+        if (state.registryError) {
+            return { label: '读取失败', type: 'danger' as ElementTagType }
+        }
+        if (state.registryLoading || !state.registryLoaded) {
+            return { label: '读取中', type: 'info' as ElementTagType }
+        }
+        if (!state.modules.length) {
+            return { label: '空清单', type: 'warning' as ElementTagType }
+        }
+        return { label: '已就绪', type: 'success' as ElementTagType }
+    }
+
+    const registry = registryStatus()
+    return [
+        {
+            key: 'registry',
+            label: '默认 Registry',
+            status: registry.label,
+            statusType: registry.type,
+            detail: '/api/gen/moduleRegistry'
+        },
+        {
+            key: 'fixture',
+            label: 'Broken Fixture',
+            status: brokenFixtureEnabled ? '已开启' : '未开启',
+            statusType: brokenFixtureEnabled ? 'warning' : 'info',
+            detail: 'MAKEADMIN_ENABLE_BROKEN_MODULE_REGISTRY_FIXTURE=1'
+        },
+        {
+            key: 'failed_filter',
+            label: '异常筛选',
+            status: failedCount ? '可验收' : '无异常',
+            statusType: failedCount ? 'warning' : 'success',
+            detail: `failed=${failedCount}`
+        },
+        {
+            key: 'check_detail',
+            label: '校验明细',
+            status: hasCheckDetail ? '可打开' : '待返回',
+            statusType: hasCheckDetail ? 'success' : 'info',
+            detail: 'manifestChecks'
+        },
+        {
+            key: 'demo_entry',
+            label: 'Demo 入口',
+            status: articleModule?.entry ? '可打开' : registryReady ? '未配置' : '待加载',
+            statusType: articleModule?.entry ? 'success' : registryReady ? 'warning' : 'info',
+            detail: articleModule?.entry || '/demo/article'
         }
     ]
 }

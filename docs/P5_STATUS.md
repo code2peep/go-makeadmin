@@ -565,3 +565,33 @@ P5.16：模块中心 registry 文档索引收敛。建议把 P5.5-P5.15 的 regi
 ## 下一步
 
 P5.17：模块中心登录后人工验收清单压缩。建议把当前反复出现的登录后复验项整理成一份短 checklist，后续用户登录后可以按一个入口完成默认 registry、broken fixture、异常筛选和明细弹窗复验。
+
+## P5.17 当前落地
+
+模块中心登录后人工验收清单已压缩到页面：
+
+- 模块中心内置模块清单区域新增 registry checklist。
+- checklist 覆盖默认 registry、broken fixture、异常筛选、校验明细和 Demo 入口。
+- 新增 `buildRegistryManualChecklistRows()` helper。
+- `registry-state.fixture.ts` 覆盖默认、broken fixture 和空 registry checklist。
+- 模块中心阶段标识更新为 `P5.17`。
+- README 和 registry 文档索引增加 P5.17 入口。
+
+详见 `docs/P5_MODULE_CENTER_MANUAL_CHECKLIST.md`。
+
+## P5.17 验收标准
+
+- `cd admin && npm run type-check` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 登录后模块中心显示 `P5.17` 和 registry checklist。
+
+## P5.17 验收结果
+
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 全量验证里的前端 build 仍有 Rolldown 对 `@vueuse/core` pure annotation 的已知 warning，命令退出码为 0。
+- 浏览器当前位于登录页，旧 token 已过期；本机未设置 `ADMIN_PASSWORD` 或 `P1_SMOKE_ADMIN_PASSWORD`，因此登录后页面截图验收需要你重新登录后执行。
+
+## 下一步
+
+P5.18：模块中心 registry UI 截图验收准备。建议补一个本地浏览器验收说明或脚本输出，明确默认 registry 和 broken fixture 两种启动方式下页面应出现的关键文字，等你登录后就能一次性人工确认。
