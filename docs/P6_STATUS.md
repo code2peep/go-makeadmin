@@ -89,3 +89,38 @@ P6.1 和 P6.2 已经让模块中心具备模块市场、模块详情和安装向
 ## 下一步
 
 P6.3：通用后台框架交付面校准。建议停止继续扩展模块市场，转而整理后台首页、基础菜单、核心 CRUD 页面、代码生成器入口和 AI 业务模块生成约定，确保这个框架适合后续 vibe coding 具体业务功能。
+
+## P6.3：通用后台框架交付面校准
+
+P6.3 停止继续扩展模块市场，把工作台重新校准为通用后台框架首页。
+
+## P6.3 当前落地
+
+- 工作台阶段从 `P4.10 P4 冻结验收` 更新为 `P6.3 通用后台框架交付面`。
+- 工作台顶部标签更新为 `P5 已冻结` + 当前 P6 阶段。
+- 工作台能力卡把 `模块闭环` 收敛为 `AI CRUD scaffold + codegen`。
+- 验收状态把 `模块中心` 降级为 `开发工具`，主线强调 `核心页面入口` 和 `通用框架交付`。
+- 人工测试入口优先展示代码生成器、菜单、角色、管理员、组织、设置、缓存和日志；模块中心保留为最后的开发工具入口。
+- 后端 `GET /api/common/index/console` 返回同样的 P6.3 工作台数据，避免刷新后回到旧 P4 文案。
+- 新增 `scripts/check-framework-workbench-contract.sh` 并接入 `scripts/verify-no-db.sh`。
+
+## P6.3 验收标准
+
+- `scripts/check-framework-workbench-contract.sh` 通过。
+- `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./admin/service/common ./admin/routers/common` 通过。
+- `cd admin && npm run type-check` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+
+## P6.3 验收结果
+
+- 已通过 `scripts/check-framework-workbench-contract.sh`。
+- 已通过 `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./admin/service/common ./admin/routers/common`。
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 全量验证里的前端 build 已生成更新后的 `workbench` chunk。
+- 全量验证里的前端 build 仍有 Rolldown 对 `@vueuse/core` pure annotation 的已知 warning，命令退出码为 0。
+- 浏览器人工复验仍受登录态限制；当前不修改 `.env` 或管理员密码。
+
+## 下一步
+
+P6.4：生成器业务模块模板体验校准。建议检查代码生成器和 manifest 脚手架输出，让 AI 后续生成具体业务功能时默认得到可用的列表、搜索、编辑、状态字段和 API 文件。

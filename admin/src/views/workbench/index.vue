@@ -9,7 +9,7 @@
                     </div>
                 </div>
                 <div class="hero-tags">
-                    <el-tag type="success" effect="plain">P3 已冻结</el-tag>
+                    <el-tag type="success" effect="plain">P5 已冻结</el-tag>
                     <el-tag type="primary" effect="plain">{{ workbenchData.framework.stage }}</el-tag>
                     <el-tag effect="plain">{{ workbenchData.framework.database }}</el-tag>
                 </div>
@@ -79,8 +79,8 @@
         <el-card class="!border-none mb-4" shadow="never">
             <template #header>
                 <div class="section-header">
-                    <span class="card-title">核心页面验收</span>
-                    <el-tag size="small" type="success">P4.10</el-tag>
+                    <span class="card-title">通用后台页面</span>
+                    <el-tag size="small" type="success">P6.3</el-tag>
                 </div>
             </template>
             <el-table :data="workbenchData.corePages" size="large">
@@ -162,11 +162,11 @@ const defaultWorkbench = {
         based: 'Go、Gin、Gorm、Vue3、Element Plus、MySQL、Redis'
     } as ConsoleVersion,
     framework: {
-        stage: 'P4.10 P4 冻结验收',
+        stage: 'P6.3 通用后台框架交付面',
         database: 'go_makeadmin',
         tables: 'ma_*',
         auth: 'JWT + Redis session',
-        moduleLifecycle: 'manifest + codegen + install/uninstall apply'
+        moduleLifecycle: 'AI CRUD scaffold + codegen'
     } as ConsoleFramework,
     milestones: [
         {
@@ -188,6 +188,16 @@ const defaultWorkbench = {
             name: 'P4 可见后台',
             status: '已冻结',
             summary: '工作台、模块中心、核心页面入口、空态和失败态完成可见验收。'
+        },
+        {
+            name: 'P5 多模块验收',
+            status: '已冻结',
+            summary: 'Demo Article、Demo Notice、registry smoke 和 no-db 验收完成。'
+        },
+        {
+            name: 'P6 通用框架交付',
+            status: '进行中',
+            summary: '回到基础后台框架，优先保证可见后台、生成器和 AI 业务扩展约定。'
         }
     ] as ConsoleMilestone[],
     validation: [
@@ -197,14 +207,14 @@ const defaultWorkbench = {
             scope: 'runtime residue、Go test、type-check、build、npm audit'
         },
         {
-            name: '模块工具链',
+            name: 'AI 生成底座',
             status: '通过',
-            scope: 'manifest、脚手架、codegen、安装卸载计划、写入门禁'
+            scope: 'manifest、脚手架、codegen、CRUD 模板、写入门禁'
         },
         {
-            name: '模块中心',
+            name: '开发工具',
             status: '通过',
-            scope: '内嵌预览、apply 结果、状态清单'
+            scope: '代码生成器、模块中心、manifest 预览'
         },
         {
             name: '核心页面入口',
@@ -212,9 +222,9 @@ const defaultWorkbench = {
             scope: '菜单、角色、管理员、部门、网站信息、缓存、日志'
         },
         {
-            name: 'P4 冻结验收',
+            name: '通用框架交付',
             status: '通过',
-            scope: 'P4 完成面、人工测试入口、P5 进入条件已收敛'
+            scope: '后台首页、核心页面入口、AI 业务生成底座'
         },
         {
             name: '本地 API',
@@ -291,29 +301,23 @@ const capabilityCards = computed(() => [
     {
         name: '模块闭环',
         value: workbenchData.framework.moduleLifecycle,
-        desc: '脚手架、代码生成、安装、卸载、回读',
+        desc: '脚手架、代码生成、CRUD 模板、业务模块约定',
         icon: 'el-icon-Tools'
     },
     {
         name: '当前版本',
         value: workbenchData.version.version,
-        desc: 'P4 已冻结，下一步进入 P5',
+        desc: 'P6 回到通用后台框架交付面',
         icon: 'el-icon-Flag'
     }
 ])
 
 const quickActions = [
     {
-        name: '模块中心',
-        url: '/module',
-        icon: 'el-icon-Box',
-        scope: 'manifest、安装计划、安装卸载、审计预览'
-    },
-    {
         name: '代码生成器',
         url: '/code',
         icon: 'el-icon-Tools',
-        scope: 'manifest 预览、生成配置、安装卸载 apply'
+        scope: '数据表导入、CRUD 模板、AI 业务生成入口'
     },
     {
         name: '菜单权限',
@@ -356,6 +360,12 @@ const quickActions = [
         url: '/journal',
         icon: 'el-icon-Document',
         scope: '管理员操作日志、登录日志'
+    },
+    {
+        name: '模块中心',
+        url: '/module',
+        icon: 'el-icon-Box',
+        scope: '开发工具：manifest、registry、安装卸载验收'
     }
 ]
 

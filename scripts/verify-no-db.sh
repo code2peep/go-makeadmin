@@ -6,6 +6,9 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 echo "==> Runtime residue guard"
 "$ROOT_DIR/scripts/check-runtime-residue.sh"
 
+echo "==> Framework workbench contract"
+"$ROOT_DIR/scripts/check-framework-workbench-contract.sh"
+
 echo "==> Module tools no-db guard"
 "$ROOT_DIR/scripts/check-module-tools-no-db.sh"
 
