@@ -16,7 +16,7 @@ scripts/check-module-center-ui-contract.sh
 
 脚本检查：
 
-- 模块中心页面阶段标识为 `P5.18`。
+- 模块中心页面阶段标识为 `P5.21`。
 - 页面包含 `registry-manual-checklist`。
 - helper 保留 `buildRegistryManualChecklistRows()`。
 - helper 保留 `默认 Registry`、`Broken Fixture`、`异常筛选`、`校验明细`、`Demo 入口`。
@@ -37,7 +37,7 @@ Module tools: module center UI contract
 
 默认 registry 页面应能看到：
 
-- `P5.18`
+- `P5.21`
 - `默认 Registry`
 - `未开启`
 - `Demo 入口`
@@ -45,7 +45,7 @@ Module tools: module center UI contract
 
 broken fixture 页面应能看到：
 
-- `P5.18`
+- `P5.21`
 - `Broken Fixture`
 - `已开启`
 - `异常筛选`

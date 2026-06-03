@@ -7,7 +7,7 @@
                     <div class="module-subtitle">demo_notice / ma_demo_notice</div>
                 </div>
                 <div class="module-tags">
-                    <el-tag type="success" effect="plain">P5.20</el-tag>
+                    <el-tag type="success" effect="plain">P5.21</el-tag>
                     <el-tag type="warning" effect="plain">前端只读示例</el-tag>
                 </div>
             </div>

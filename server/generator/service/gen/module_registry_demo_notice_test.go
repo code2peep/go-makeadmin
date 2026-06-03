@@ -1,6 +1,7 @@
 package gen
 
 import (
+	"strings"
 	"testing"
 
 	"go-makeadmin/generator/schemas/req"
@@ -40,5 +41,39 @@ func TestDemoNoticeManifestUsesNoRuntimeGate(t *testing.T) {
 	}
 	if moduleRuntimeHint(manifest) != moduleRuntimeNoGate {
 		t.Fatalf("unexpected demo notice runtime hint: %s", moduleRuntimeHint(manifest))
+	}
+}
+
+func TestPreviewDemoNoticeManifestIncludesInstallPlan(t *testing.T) {
+	srv := generateService{}
+	res, err := srv.PreviewModuleManifest(req.ModuleManifestPreviewReq{
+		ManifestPath: "examples/demo_notice/manifest.json",
+		TenantID:     0,
+		RoleID:       2,
+	})
+	if err != nil {
+		t.Fatalf("preview demo notice manifest: %v", err)
+	}
+	if res.Manifest.Module != "demo_notice" ||
+		res.Manifest.Table != "ma_demo_notice" ||
+		res.Manifest.MenuName != "Demo Notice" {
+		t.Fatalf("unexpected demo notice preview summary: %+v", res.Manifest)
+	}
+	if res.Plan.RuntimeHint != moduleRuntimeNoGate {
+		t.Fatalf("unexpected demo notice runtime hint: %s", res.Plan.RuntimeHint)
+	}
+	if res.Plan.TenantID != 0 || res.Plan.RoleID != 2 {
+		t.Fatalf("unexpected demo notice plan ids: %+v", res.Plan)
+	}
+	for _, needle := range []string{
+		"SET @parent_route_name = 'dev_tools';",
+		"`route_name` = 'demo.notice'",
+		"demo_notice:list",
+		"demo_notice:detail",
+		"DELETE FROM `ma_menu`",
+	} {
+		if !strings.Contains(res.Plan.InstallSQL+res.Plan.RegistrySQL+res.Plan.UninstallSQL, needle) {
+			t.Fatalf("demo notice plan missing %q: %+v", needle, res.Plan)
+		}
 	}
 }
