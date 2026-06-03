@@ -76,6 +76,30 @@
             </el-card>
         </div>
 
+        <el-card class="!border-none mb-4" shadow="never">
+            <template #header>
+                <div class="section-header">
+                    <span class="card-title">核心页面验收</span>
+                    <el-tag size="small" type="primary">P4.6</el-tag>
+                </div>
+            </template>
+            <el-table :data="workbenchData.corePages" size="large">
+                <el-table-column label="页面" prop="name" min-width="120" />
+                <el-table-column label="状态" min-width="120">
+                    <template #default="{ row }">
+                        <el-tag size="small" type="success">{{ row.status }}</el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column label="范围" prop="scope" min-width="220" />
+                <el-table-column label="路由" prop="route" min-width="140" />
+                <el-table-column label="入口" width="120" fixed="right">
+                    <template #default="{ row }">
+                        <el-button type="primary" link @click="goTo(row.route)">打开</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </el-card>
+
         <el-card class="!border-none" shadow="never">
             <template #header>
                 <span class="card-title">人工测试入口</span>
@@ -125,13 +149,20 @@ type ConsoleValidation = {
     scope: string
 }
 
+type ConsoleCorePage = {
+    name: string
+    route: string
+    status: string
+    scope: string
+}
+
 const defaultWorkbench = {
     version: {
         version: 'v0.1.0',
         based: 'Go、Gin、Gorm、Vue3、Element Plus、MySQL、Redis'
     } as ConsoleVersion,
     framework: {
-        stage: 'P4.1 可见后台与人工测试闭环',
+        stage: 'P4.6 核心管理页可见验收',
         database: 'go_makeadmin',
         tables: 'ma_*',
         auth: 'JWT + Redis session',
@@ -171,6 +202,16 @@ const defaultWorkbench = {
             scope: 'manifest、脚手架、codegen、安装卸载计划、写入门禁'
         },
         {
+            name: '模块中心',
+            status: '通过',
+            scope: '内嵌预览、apply 结果、状态清单'
+        },
+        {
+            name: '核心页面入口',
+            status: '就绪',
+            scope: '菜单、角色、管理员、部门、网站信息'
+        },
+        {
             name: '本地 API',
             status: '可用',
             scope: 'http://127.0.0.1:18000/api'
@@ -180,7 +221,51 @@ const defaultWorkbench = {
             status: '可用',
             scope: 'http://127.0.0.1:5173'
         }
-    ] as ConsoleValidation[]
+    ] as ConsoleValidation[],
+    corePages: [
+        {
+            name: '菜单权限',
+            route: '/menu',
+            status: '入口就绪',
+            scope: '菜单树、权限字符、路由显隐'
+        },
+        {
+            name: '角色管理',
+            route: '/role',
+            status: '入口就绪',
+            scope: '角色列表、授权入口、数据权限'
+        },
+        {
+            name: '管理员',
+            route: '/admin',
+            status: '入口就绪',
+            scope: '账号列表、组织岗位、启停'
+        },
+        {
+            name: '组织部门',
+            route: '/department',
+            status: '入口就绪',
+            scope: '部门树、负责人、状态'
+        },
+        {
+            name: '网站信息',
+            route: '/information',
+            status: '入口就绪',
+            scope: '站点名称、Logo、备案基础信息'
+        },
+        {
+            name: '系统缓存',
+            route: '/cache',
+            status: '入口就绪',
+            scope: '缓存清理、本地运行状态'
+        },
+        {
+            name: '系统日志',
+            route: '/journal',
+            status: '入口就绪',
+            scope: '管理员操作日志、登录日志'
+        }
+    ] as ConsoleCorePage[]
 }
 
 const workbenchData = reactive({ ...defaultWorkbench })
@@ -263,6 +348,7 @@ const getData = async () => {
     workbenchData.framework = res.framework || defaultWorkbench.framework
     workbenchData.milestones = res.milestones || defaultWorkbench.milestones
     workbenchData.validation = res.validation || defaultWorkbench.validation
+    workbenchData.corePages = res.corePages || defaultWorkbench.corePages
 }
 
 const goTo = (url: string) => {
@@ -406,6 +492,10 @@ getData()
 .validation-item:last-child {
     border-bottom: 0;
     padding-bottom: 0;
+}
+
+.workbench :deep(.el-table .cell) {
+    overflow-wrap: anywhere;
 }
 
 .quick-grid {

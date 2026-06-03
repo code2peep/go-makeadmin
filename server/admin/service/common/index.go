@@ -42,7 +42,7 @@ func (iSrv indexService) Console() (res map[string]interface{}, e error) {
 	return map[string]interface{}{
 		"version": version,
 		"framework": map[string]interface{}{
-			"stage":           "P4.1 可见后台与人工测试闭环",
+			"stage":           "P4.6 核心管理页可见验收",
 			"database":        "go_makeadmin",
 			"tables":          "ma_*",
 			"auth":            "JWT + Redis session",
@@ -57,8 +57,19 @@ func (iSrv indexService) Console() (res map[string]interface{}, e error) {
 		"validation": []map[string]string{
 			{"name": "无库验证", "status": "通过", "scope": "runtime residue、Go test、type-check、build、npm audit"},
 			{"name": "模块工具链", "status": "通过", "scope": "manifest、脚手架、codegen、安装卸载计划、写入门禁"},
+			{"name": "模块中心", "status": "通过", "scope": "内嵌预览、apply 结果、状态清单"},
+			{"name": "核心页面入口", "status": "就绪", "scope": "菜单、角色、管理员、部门、网站信息"},
 			{"name": "本地 API", "status": "可用", "scope": "http://127.0.0.1:18000/api"},
 			{"name": "管理端", "status": "可用", "scope": "http://127.0.0.1:5173"},
+		},
+		"corePages": []map[string]string{
+			{"name": "菜单权限", "route": "/menu", "status": "入口就绪", "scope": "菜单树、权限字符、路由显隐"},
+			{"name": "角色管理", "route": "/role", "status": "入口就绪", "scope": "角色列表、授权入口、数据权限"},
+			{"name": "管理员", "route": "/admin", "status": "入口就绪", "scope": "账号列表、组织岗位、启停"},
+			{"name": "组织部门", "route": "/department", "status": "入口就绪", "scope": "部门树、负责人、状态"},
+			{"name": "网站信息", "route": "/information", "status": "入口就绪", "scope": "站点名称、Logo、备案基础信息"},
+			{"name": "系统缓存", "route": "/cache", "status": "入口就绪", "scope": "缓存清理、本地运行状态"},
+			{"name": "系统日志", "route": "/journal", "status": "入口就绪", "scope": "管理员操作日志、登录日志"},
 		},
 	}, nil
 }
