@@ -237,7 +237,7 @@
                 <div class="section-header">
                     <span class="card-title">内置模块清单</span>
                     <div class="section-actions">
-                        <el-tag type="success" size="small">P5.13</el-tag>
+                        <el-tag type="success" size="small">P5.14</el-tag>
                         <el-button
                             type="primary"
                             link
@@ -443,6 +443,16 @@ import {
 import CodePreview from '../components/code-preview.vue'
 import ModuleManifestApplyResultView from '../components/module-manifest-apply-result.vue'
 import feedback from '@/utils/feedback'
+import {
+    buildRegistryAcceptanceRows,
+    isRegistryEmptyState,
+    registryErrorDetailText,
+    registryTableEmptyTextFromState,
+    type ElementTagType,
+    type RegistryAcceptanceRow,
+    type RegistryStateInput,
+    type RegistryStateModule
+} from './registry-state'
 
 const router = useRouter()
 const inputMode = ref<'path' | 'body'>('path')
@@ -503,9 +513,8 @@ const capabilityCards = [
     }
 ]
 
-type ModuleCenterModule = {
+type ModuleCenterModule = RegistryStateModule & {
     name: string
-    module: string
     manifest: string
     table: string
     runtime: string
@@ -525,15 +534,6 @@ type ModuleCenterModule = {
     runtimeStatus: string
     runtimeStatusType: string
     runtimeDetail: string
-}
-
-type ElementTagType = 'primary' | 'success' | 'warning' | 'danger' | 'info'
-
-type RegistryAcceptanceRow = {
-    key: string
-    label: string
-    value: string
-    type: ElementTagType
 }
 
 const modules = reactive<ModuleCenterModule[]>([])
@@ -683,72 +683,24 @@ const moduleStatusSummary = computed(() => {
     ]
 })
 
-const registryFailedCount = computed(
-    () => modules.filter((item) => item.registryStatusCode === 'failed').length
+const registryStateInput = computed<RegistryStateInput>(() => ({
+    modules,
+    registryLoaded: registryLoaded.value,
+    registryLoading: registryLoading.value,
+    registryError: registryError.value
+}))
+
+const isRegistryEmpty = computed(() => isRegistryEmptyState(registryStateInput.value))
+
+const registryErrorDetail = computed(() => registryErrorDetailText(registryError.value))
+
+const registryTableEmptyText = computed(() =>
+    registryTableEmptyTextFromState(registryStateInput.value)
 )
 
-const registrySmokeCommand = 'scripts/check-module-registry-smoke.sh'
-
-const hasBrokenRegistryFixture = computed(() =>
-    modules.some((item) => item.module === 'broken_fixture')
+const registryAcceptanceRows = computed<RegistryAcceptanceRow[]>(() =>
+    buildRegistryAcceptanceRows(modules)
 )
-
-const isRegistryEmpty = computed(
-    () => registryLoaded.value && !registryLoading.value && !registryError.value && modules.length === 0
-)
-
-const registryErrorDetail = computed(() =>
-    registryError.value ? `${registryError.value} · ${registrySmokeCommand}` : registrySmokeCommand
-)
-
-const registryTableEmptyText = computed(() => {
-    if (registryError.value) {
-        return 'registry 读取失败'
-    }
-    if (isRegistryEmpty.value) {
-        return 'registry 暂无模块'
-    }
-    return '暂无匹配模块'
-})
-
-const registryAcceptanceRows = computed<RegistryAcceptanceRow[]>(() => [
-    {
-        key: 'source',
-        label: '来源',
-        value: '/api/gen/moduleRegistry',
-        type: 'info'
-    },
-    {
-        key: 'total',
-        label: '模块',
-        value: `${modules.length}`,
-        type: modules.length ? 'primary' : 'info'
-    },
-    {
-        key: 'failed',
-        label: '校验异常',
-        value: `${registryFailedCount.value}`,
-        type: registryFailedCount.value ? 'danger' : 'success'
-    },
-    {
-        key: 'fixture',
-        label: 'Broken Fixture',
-        value: hasBrokenRegistryFixture.value ? '已开启' : '未开启',
-        type: hasBrokenRegistryFixture.value ? 'warning' : 'info'
-    },
-    {
-        key: 'smoke',
-        label: 'Smoke',
-        value: registrySmokeCommand,
-        type: 'success'
-    },
-    {
-        key: 'manual',
-        label: '人工入口',
-        value: '/module',
-        type: 'warning'
-    }
-])
 
 const registryCheckRows = computed(() => registryCheckDialog.row?.registryChecks || [])
 const registryDialogStatusType = computed<ElementTagType>(() =>

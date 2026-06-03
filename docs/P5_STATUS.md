@@ -468,3 +468,38 @@ P5.13：模块中心 registry 状态空态与错误态收敛。建议给 registr
 ## 下一步
 
 P5.14：模块中心 registry 状态单元测试。建议把 registry 错误态、空态、broken fixture 状态条等前端纯逻辑抽成可测试函数，降低后续页面调整时的回归风险。
+
+## P5.14 当前落地
+
+模块中心 registry 状态纯逻辑已抽出：
+
+- 新增 `admin/src/views/dev_tools/module/registry-state.ts`。
+- 抽出 registry 失败数量计算。
+- 抽出 broken fixture 是否存在判断。
+- 抽出 registry 空态判断。
+- 抽出 registry 错误详情文案。
+- 抽出表格 empty text 选择。
+- 抽出验收辅助状态条 rows 构造。
+- `admin/src/views/dev_tools/module/index.vue` 改为只负责请求、状态持有和渲染。
+- 模块中心阶段标识更新为 `P5.14`。
+
+当前前端没有 Vitest/Jest 等单测框架，P5.14 不新增测试依赖，先用现有 `vue-tsc` 和 no-db 全量验证覆盖 helper 类型契约。
+
+详见 `docs/P5_MODULE_CENTER_REGISTRY_STATE_HELPER.md`。
+
+## P5.14 验收标准
+
+- `cd admin && npm run type-check` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- registry 状态计算从页面内联逻辑收敛到独立 helper。
+
+## P5.14 验收结果
+
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 全量验证里的前端 build 仍有 Rolldown 对 `@vueuse/core` pure annotation 的已知 warning，命令退出码为 0。
+- 浏览器当前位于登录页，旧 token 已过期；本机未设置 `ADMIN_PASSWORD` 或 `P1_SMOKE_ADMIN_PASSWORD`，因此登录后页面截图验收需要你重新登录后执行。
+
+## 下一步
+
+P5.15：模块中心 registry 状态 helper smoke。建议增加一个不依赖测试框架的 TypeScript 编译期 fixture 文件，覆盖 helper 的默认、broken fixture、错误态和空态输入输出形状。
