@@ -705,6 +705,39 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 - 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
 - 本阶段没有改变按钮状态规则，没有改变错误归一化规则，没有修改请求 URL、method 或字段名，没有修改后端响应结构，没有修改后端写入门禁，没有创建业务 schema，没有读取或修改 `.env`，没有新增权限 SQL。
 
+## P3.20 当前落地
+
+模块 manifest apply 审计事件 DTO 草图已建立：
+
+- 新增 `server/generator/schemas/resp/module_manifest_audit.go`。
+- Go DTO 覆盖审计操作人、审计范围和审计事件。
+- 审计事件草图包含事件 ID、操作类型、manifest 来源、manifest 摘要、操作摘要、执行范围、执行状态、门禁环境变量、检查结果、执行前后快照、操作人、请求时间和完成时间。
+- `admin/src/api/tools/code.ts` 新增对应 TypeScript DTO。
+- TypeScript DTO 字段按后端 JSON 命名，供后续审计页面、接口草图和结果详情复用。
+- 当前 DTO 不接入 `PUT /gen/previewCode` 或 `DELETE /gen/previewCode`。
+- 当前 DTO 不接入数据库模型、数据库迁移、审计写入服务或菜单权限 SQL。
+
+详见 `docs/P3_MODULE_APPLY_AUDIT_DTO.md`。
+
+## P3.20 验收标准
+
+- `gofmt -w server/generator/schemas/resp/module_manifest_audit.go` 通过。
+- `cd admin && npm run type-check` 通过。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不创建审计表、不修改数据库 schema、不接入写库、不修改接口响应、不读取或修改 `.env`、不新增权限 SQL。
+
+## P3.20 验收结果
+
+- 已通过 `gofmt -w server/generator/schemas/resp/module_manifest_audit.go`。
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `scripts/check-module-tools-no-db.sh`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
+- 本阶段没有创建审计表、没有修改数据库 schema、没有接入写库、没有修改接口响应、没有读取或修改 `.env`、没有新增权限 SQL。
+
 ## 下一步
 
-P3.20：模块 manifest apply 审计事件 DTO 预研。建议只做 Go/TS 文档和接口草图，不创建审计表，不接入写库，为后续真实审计表确认做准备。
+P3.21：模块 manifest apply 审计事件构造器 dry-run。建议只做纯函数把现有 apply result 组合成审计事件 DTO，并配套单测；不创建审计表、不写库、不接接口。

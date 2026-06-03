@@ -138,6 +138,37 @@ export interface ModuleManifestApplyResult {
     after?: ModuleManifestApplySnapshotResult
 }
 
+export interface ModuleManifestApplyAuditActorResult {
+    id?: number
+    name?: string
+    type?: string
+}
+
+export interface ModuleManifestApplyAuditScopeResult {
+    tenantId?: number
+    roleId?: number
+    databaseScope?: string
+    requiresSchema?: boolean
+}
+
+export interface ModuleManifestApplyAuditEventResult {
+    eventId?: string
+    operation?: 'install' | 'uninstall' | string
+    source?: string
+    manifest?: ModuleManifestSummaryResult
+    summary?: ModuleManifestApplySummaryResult
+    scope?: ModuleManifestApplyAuditScopeResult
+    status?: string
+    message?: string
+    requiredEnv?: string
+    checks?: ModuleManifestApplyCheckResult[]
+    before?: ModuleManifestApplySnapshotResult
+    after?: ModuleManifestApplySnapshotResult
+    actor?: ModuleManifestApplyAuditActorResult
+    requestedAt?: string
+    completedAt?: string
+}
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
     typeof value === 'object' && value !== null
 
