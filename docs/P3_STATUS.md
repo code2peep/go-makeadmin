@@ -643,6 +643,38 @@ P3 从 P2 冻结面继续推进，重点是把 codegen、manifest、模块安装
 - 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
 - 本阶段没有修改请求 URL、method 或字段名，没有修改 request 封装，没有修改后端响应结构，没有创建业务 schema，没有读取或修改 `.env`，没有新增权限 SQL。
 
+## P3.18 当前落地
+
+模块 manifest apply 错误响应已归一化：
+
+- `admin/src/api/tools/code.ts` 新增 `normalizeModuleManifestApplyError`。
+- 后端业务失败返回的 apply result 会保留 `summary`、`checks`、`before`、`after` 等结构化字段。
+- 后端 result 缺少 `message` 时使用当前操作 fallback message。
+- 后端 result 缺少 `checks` 时补为空数组。
+- `Error` 对象会转换为 `{ message, checks: [] }`。
+- 字符串错误会转换为 `{ message, checks: [] }`。
+- 其他未知错误会使用 fallback message。
+- `Manifest 预览` 弹窗安装、卸载 catch 统一调用归一化 helper，不再直接强转 `unknown error`。
+
+详见 `docs/P3_MODULE_MANIFEST_APPLY_ERROR.md`。
+
+## P3.18 验收标准
+
+- `cd admin && npm run type-check` 通过。
+- `scripts/check-module-tools-no-db.sh` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 不修改请求 URL、method 或字段名，不修改后端响应结构，不修改后端写入门禁，不创建业务 schema，不读取或修改 `.env`，不新增权限 SQL。
+
+## P3.18 验收结果
+
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `scripts/check-module-tools-no-db.sh`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- `verify-no-db` 中前端 build 仍输出 Rolldown 对 `node_modules/@vueuse/core/dist/index.js` 的 `/* #__PURE__ */` annotation warning；当前退出码为 0，不影响验收。
+- 已通过 `git diff --check`。
+- 已通过 `git check-ignore server/.env admin/.env.development admin/node_modules admin/dist frontend public/admin public/assets .cache`。
+- 本阶段没有修改请求 URL、method 或字段名，没有修改后端响应结构，没有修改后端写入门禁，没有创建业务 schema，没有读取或修改 `.env`，没有新增权限 SQL。
+
 ## 下一步
 
-P3.18：模块 manifest apply 错误响应归一化。建议把安装/卸载 catch 中的后端业务失败、网络错误和兜底结果统一为可渲染结构，不改变接口协议和后端写入逻辑。
+P3.19：模块 manifest apply 前端结果视图提取。建议把安装/卸载结果 tab 的重复渲染提取为局部组件，保持页面行为不变，为后续审计结果展示留扩展点。

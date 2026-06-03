@@ -138,6 +138,59 @@ export interface ModuleManifestApplyResult {
     after?: ModuleManifestApplySnapshotResult
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null
+
+const isModuleManifestApplyResult = (value: unknown): value is ModuleManifestApplyResult => {
+    if (!isRecord(value)) {
+        return false
+    }
+    return Boolean(
+        value.source ||
+            value.manifest ||
+            value.status ||
+            value.message ||
+            value.requiredEnv ||
+            value.plan ||
+            value.summary ||
+            value.checks ||
+            value.before ||
+            value.after
+    )
+}
+
+export function normalizeModuleManifestApplyError(
+    error: unknown,
+    fallbackMessage: string
+): ModuleManifestApplyResult {
+    if (isModuleManifestApplyResult(error)) {
+        return {
+            ...error,
+            message: error.message || fallbackMessage,
+            checks: error.checks || []
+        }
+    }
+
+    if (error instanceof Error && error.message) {
+        return {
+            message: error.message,
+            checks: []
+        }
+    }
+
+    if (typeof error === 'string' && error) {
+        return {
+            message: error,
+            checks: []
+        }
+    }
+
+    return {
+        message: fallbackMessage,
+        checks: []
+    }
+}
+
 // 代码生成已选数据表列表接口
 export function generateTable(params: any) {
     return request.get({ url: '/gen/list', params })

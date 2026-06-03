@@ -309,6 +309,7 @@ import CodePreview from './code-preview.vue'
 import {
     applyModuleManifestInstall,
     applyModuleManifestUninstall,
+    normalizeModuleManifestApplyError,
     previewModuleManifest,
     type ModuleManifestApplyResult,
     type ModuleManifestInstallApplyParams,
@@ -498,10 +499,7 @@ const handleInstallGate = async () => {
         installResult.value = await applyModuleManifestInstall(params)
         feedback.msgSuccess('安装执行完成')
     } catch (error) {
-        installResult.value = (error as ModuleManifestApplyResult) || {
-            message: '安装写入已阻断',
-            checks: []
-        }
+        installResult.value = normalizeModuleManifestApplyError(error, '安装写入已阻断')
     } finally {
         installApplyLoading.value = false
     }
@@ -523,10 +521,7 @@ const handleUninstallGate = async () => {
         uninstallResult.value = await applyModuleManifestUninstall(params)
         feedback.msgSuccess('卸载执行完成')
     } catch (error) {
-        uninstallResult.value = (error as ModuleManifestApplyResult) || {
-            message: '卸载写入已阻断',
-            checks: []
-        }
+        uninstallResult.value = normalizeModuleManifestApplyError(error, '卸载写入已阻断')
     } finally {
         uninstallApplyLoading.value = false
     }
