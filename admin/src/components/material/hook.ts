@@ -20,7 +20,7 @@ export function useCate(type: number) {
     const cateLists = ref<any[]>([])
 
     // 选中的分组id
-    const cateId = ref<number | string>('')
+    const cateId = ref<number>(-1)
 
     // 获取分组列表
     const getCateLists = async () => {
@@ -28,14 +28,14 @@ export function useCate(type: number) {
             type
         })
         const item: any[] = [
-            // {
-            //     name: '全部',
-            //     id: ''
-            // },
-            // {
-            //     name: '未分组',
-            //     id: 0
-            // }
+            {
+                name: '全部',
+                id: -1
+            },
+            {
+                name: '未分组',
+                id: 0
+            }
         ]
         cateLists.value = data
         cateLists.value.unshift(...item)
@@ -67,7 +67,7 @@ export function useCate(type: number) {
     const handleDeleteCate = async (id: number) => {
         await feedback.confirm('确定要删除？')
         await fileCateDelete({ id })
-        cateId.value = ''
+        cateId.value = -1
         getCateLists()
     }
 

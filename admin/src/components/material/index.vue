@@ -1,6 +1,7 @@
 <template>
     <div class="material" v-loading="pager.loading">
         <div class="material__left">
+            <div class="material-left__header">分组</div>
             <div class="flex-1 min-h-0">
                 <el-scrollbar>
                     <div class="material-left__content pt-4 p-b-4">
@@ -84,26 +85,19 @@
             <div class="operate-btn flex">
                 <div class="flex-1 flex">
                     <upload
-                        v-if="type == 'image'"
-                        v-perms="['common:upload:image']"
+                        v-perms="[uploadPermission]"
                         class="mr-3"
-                        :data="{ cid: cateId }"
+                        :data="uploadData"
                         :type="type"
                         :show-progress="true"
                         @change="refresh"
                     >
-                        <el-button type="primary">本地上传</el-button>
-                    </upload>
-                    <upload
-                        v-if="type == 'video'"
-                        v-perms="['common:upload:video']"
-                        class="mr-3"
-                        :data="{ cid: cateId }"
-                        :type="type"
-                        :show-progress="true"
-                        @change="refresh"
-                    >
-                        <el-button type="primary">本地上传</el-button>
+                        <el-button type="primary">
+                            <template #icon>
+                                <icon name="el-icon-Upload" />
+                            </template>
+                            {{ uploadButtonText }}
+                        </el-button>
                     </upload>
                     <el-button
                         v-perms="['common:album:albumDel']"
@@ -131,7 +125,7 @@
                             <el-select v-model="moveId" placeholder="请选择">
                                 <template v-for="item in cateLists" :key="item.id">
                                     <el-option
-                                        v-if="item.id !== ''"
+                                        v-if="item.id >= 0"
                                         :label="item.name"
                                         :value="item.id"
                                     ></el-option>
@@ -295,10 +289,26 @@
                 </el-table>
 
                 <div
-                    class="flex flex-1 justify-center items-center"
+                    class="material-empty flex flex-1 justify-center items-center"
                     v-if="!pager.loading && !pager.lists.length"
                 >
-                    暂无数据~
+                    <el-empty :description="emptyDescription" :image-size="96">
+                        <upload
+                            v-if="mode == 'page'"
+                            v-perms="[uploadPermission]"
+                            :data="uploadData"
+                            :type="type"
+                            :show-progress="true"
+                            @change="refresh"
+                        >
+                            <el-button type="primary">
+                                <template #icon>
+                                    <icon name="el-icon-Upload" />
+                                </template>
+                                {{ uploadButtonText }}
+                            </el-button>
+                        </upload>
+                    </el-empty>
                 </div>
             </div>
             <div class="material-center__footer flex justify-between items-center mt-2">
@@ -337,7 +347,7 @@
                                 <el-select v-model="moveId" placeholder="请选择">
                                     <template v-for="item in cateLists" :key="item.id">
                                         <el-option
-                                            v-if="item.id !== ''"
+                                            v-if="item.id >= 0"
                                             :label="item.name"
                                             :value="item.id"
                                         ></el-option>
@@ -460,6 +470,36 @@ const {
     handleFileRename
 } = useFile(cateId, typeValue, limit, props.pageSize)
 
+const materialTypeText = computed(() => {
+    switch (props.type) {
+        case 'video':
+            return '视频'
+        case 'file':
+            return '文件'
+        default:
+            return '图片'
+    }
+})
+const uploadButtonText = computed(() => `上传${materialTypeText.value}`)
+const uploadPermission = computed(() =>
+    props.type == 'video' ? 'common:upload:video' : 'common:upload:image'
+)
+const uploadData = computed(() => ({
+    cid: cateId.value > 0 ? cateId.value : 0
+}))
+const emptyDescription = computed(() => {
+    if (fileParams.name) {
+        return `没有匹配的${materialTypeText.value}`
+    }
+    if (cateId.value == -1) {
+        return `暂无${materialTypeText.value}，上传后会显示在这里`
+    }
+    if (cateId.value == 0) {
+        return `未分组暂无${materialTypeText.value}`
+    }
+    return `当前分组暂无${materialTypeText.value}`
+})
+
 const getData = async () => {
     await getCateLists()
     treeRef.value?.setCurrentKey(cateId.value)
@@ -521,6 +561,15 @@ defineExpose({
     @apply h-full min-h-0 flex flex-1;
     &__left {
         @apply border-r border-br flex flex-col w-[200px];
+        .material-left__header {
+            height: 44px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            border-bottom: 1px solid var(--el-border-color-light);
+            font-weight: 500;
+            color: var(--el-text-color-primary);
+        }
         :deep(.el-tree-node__content) {
             height: 36px;
         }
@@ -537,6 +586,12 @@ defineExpose({
             cursor: pointer;
             &.select {
                 @apply text-primary bg-primary-light-8;
+            }
+        }
+        .material-empty {
+            min-height: 260px;
+            :deep(.el-empty__bottom) {
+                margin-top: 8px;
             }
         }
         .file-list {

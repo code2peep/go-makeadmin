@@ -263,3 +263,37 @@ P6.7 把“菜单能点开”从单点修复推进到核心菜单全量可见验
 ## 下一步
 
 P6.8：素材管理空态和上传入口体验修整。建议把素材页从“空数据能打开”继续调整到更像通用后台的文件管理入口，包括空态提示、上传入口、分组默认态和失败态说明。
+
+## P6.8：素材管理空态和上传入口体验修整
+
+P6.8 把素材管理从“空数据可打开”推进到更明确的文件管理入口，避免用户看到一大片空白区域误判为菜单或组件问题。
+
+## P6.8 当前落地
+
+- 素材分组恢复默认 `全部` 和 `未分组` 两个入口。
+- 素材列表使用轻量分组契约：`cid=-1` 表示全部，`cid=0` 表示未分组，`cid>0` 表示具体分组。
+- 素材页顶部上传按钮改为 `上传图片` / `上传视频`，并增加上传图标。
+- 空数据区域改为 `el-empty`，按全部、未分组、具体分组和搜索结果显示明确空态，并在页面模式下提供上传按钮。
+- 新增 `scripts/check-material-empty-state-contract.sh`，验证素材空态、默认分组和未分组过滤契约。
+- `scripts/verify-no-db.sh` 已接入素材空态契约检查。
+
+## P6.8 验收标准
+
+- `scripts/check-material-empty-state-contract.sh` 通过。
+- `cd admin && npm run type-check` 通过。
+- `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./admin/service/common ./...` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 浏览器打开 `/material/index` 可见分组默认态、明确空态和上传入口。
+
+## P6.8 验收结果
+
+- 已通过 `scripts/check-material-empty-state-contract.sh`。
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./admin/service/common`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过浏览器打开 `/material/index` 验收，可见 `分组`、`全部`、`未分组`、`上传图片`、`暂无图片，上传后会显示在这里`。
+- 修复后截图保存到 `/tmp/go-makeadmin-p68-material-empty.png`。
+
+## 下一步
+
+P6 收尾冻结：不继续扩展模块市场或上传写入 smoke，把当前轻量通用后台作为首版可用底座冻结。

@@ -18,6 +18,9 @@ echo "==> Menu tree contract"
 echo "==> Admin route component contract"
 "$ROOT_DIR/scripts/check-admin-route-components.py"
 
+echo "==> Material empty state contract"
+"$ROOT_DIR/scripts/check-material-empty-state-contract.sh"
+
 echo "==> Module tools no-db guard"
 "$ROOT_DIR/scripts/check-module-tools-no-db.sh"
 

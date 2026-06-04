@@ -42,7 +42,7 @@ func (albSrv albumService) AlbumList(page request.PageReq, listReq req.CommonAlb
 	offset := page.PageSize * (page.PageNo - 1)
 	// 查询
 	albumModel := albSrv.db.Model(&common.Album{}).Where("is_delete = ?", 0)
-	if listReq.Cid > 0 {
+	if listReq.Cid >= 0 {
 		albumModel = albumModel.Where("cid = ?", listReq.Cid)
 	}
 	if listReq.Name != "" {
