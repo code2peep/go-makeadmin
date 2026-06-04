@@ -150,7 +150,9 @@ export function getRoutePath(perms: string) {
 
 // 重置路由
 export function resetRouter() {
-    router.removeRoute(INDEX_ROUTE_NAME)
+    if (router.hasRoute(INDEX_ROUTE_NAME)) {
+        router.removeRoute(INDEX_ROUTE_NAME)
+    }
     const { routes } = useUserStore()
     routes.forEach((route) => {
         const name = route.name

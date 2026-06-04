@@ -15,6 +15,9 @@ echo "==> Local dev login contract"
 echo "==> Menu tree contract"
 "$ROOT_DIR/scripts/check-menu-tree-contract.sh"
 
+echo "==> Admin route component contract"
+"$ROOT_DIR/scripts/check-admin-route-components.py"
+
 echo "==> Module tools no-db guard"
 "$ROOT_DIR/scripts/check-module-tools-no-db.sh"
 
