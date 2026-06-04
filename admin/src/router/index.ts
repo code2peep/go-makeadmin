@@ -26,18 +26,19 @@ export function getModulesKey() {
 }
 
 // 过滤路由所需要的数据
-export function filterAsyncRoutes(routes: any[], firstRoute = true) {
+export function filterAsyncRoutes(routes: any[], firstRoute = true, parentPath = '') {
     return routes.map((route) => {
-        const routeRecord = createRouteRecord(route, firstRoute)
+        const fullPath = buildFullRoutePath(parentPath, route.paths)
+        const routeRecord = createRouteRecord(route, firstRoute, fullPath)
         if (route.children != null && route.children && route.children.length) {
-            routeRecord.children = filterAsyncRoutes(route.children, false)
+            routeRecord.children = filterAsyncRoutes(route.children, false, fullPath)
         }
         return routeRecord
     })
 }
 
 // 创建一条路由记录
-export function createRouteRecord(route: any, firstRoute: boolean): RouteRecordRaw {
+export function createRouteRecord(route: any, firstRoute: boolean, fullPath = ''): RouteRecordRaw {
     //@ts-ignore
     const routeRecord: RouteRecordRaw = {
         path: isExternal(route.paths) ? route.paths : firstRoute ? `/${route.paths}` : route.paths,
@@ -59,12 +60,56 @@ export function createRouteRecord(route: any, firstRoute: boolean): RouteRecordR
             if (!route.children) {
                 routeRecord.component = markRaw(RouterView)
             }
+            routeRecord.redirect = createCatalogueRedirect(route, fullPath)
             break
         case MenuEnum.MENU:
             routeRecord.component = loadRouteView(route.component)
             break
     }
     return routeRecord
+}
+
+function createCatalogueRedirect(route: any, fullPath: string) {
+    if (!route.children || isExternal(route.paths)) {
+        return undefined
+    }
+    const childPath = findFirstChildRoutePath(route)
+    if (!childPath) {
+        return undefined
+    }
+    return joinRoutePaths(fullPath, childPath)
+}
+
+function findFirstChildRoutePath(route: any): string | undefined {
+    for (const child of route.children || []) {
+        if (!child?.isShow || isExternal(child.paths)) {
+            continue
+        }
+        const childPath = trimRoutePath(child.paths)
+        if (child.menuType == MenuEnum.MENU && childPath) {
+            return childPath
+        }
+        const nestedPath = findFirstChildRoutePath(child)
+        if (nestedPath) {
+            return childPath ? `${childPath}/${nestedPath}` : nestedPath
+        }
+    }
+}
+
+function joinRoutePaths(...paths: string[]) {
+    const path = paths.map(trimRoutePath).filter(Boolean).join('/')
+    return path ? `/${path}` : '/'
+}
+
+function buildFullRoutePath(parentPath: string, path: string) {
+    if (isExternal(path)) {
+        return path
+    }
+    return joinRoutePaths(parentPath, path)
+}
+
+function trimRoutePath(path: string) {
+    return String(path || '').replace(/^\/+|\/+$/g, '')
 }
 
 // 动态加载组件

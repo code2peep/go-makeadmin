@@ -12,6 +12,9 @@ echo "==> Framework workbench contract"
 echo "==> Local dev login contract"
 "$ROOT_DIR/scripts/check-local-dev-login-contract.sh"
 
+echo "==> Menu tree contract"
+"$ROOT_DIR/scripts/check-menu-tree-contract.sh"
+
 echo "==> Module tools no-db guard"
 "$ROOT_DIR/scripts/check-module-tools-no-db.sh"
 

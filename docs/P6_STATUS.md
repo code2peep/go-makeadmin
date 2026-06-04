@@ -200,3 +200,37 @@ P6.5 从“框架能不能被真实打开”出发，验收本地服务、P1 种
 ## 下一步
 
 P6.6：菜单层级与工作台入口体验修整。建议把当前扁平化实际路由和菜单层级展示校准清楚，让后台侧边栏更像通用管理系统，而不是一串顶级页面。
+
+## P6.6：菜单层级与目录空白页修整
+
+P6.6 修复核心后台菜单被拍平成顶级页面的问题，并让目录路由自动进入第一个真实子页面。
+
+## P6.6 当前落地
+
+- 修复 `util.ArrayUtil.ListToTree`：父节点没有预置 `children` 字段时也会正确挂载子节点。
+- `GET /api/system/menu/route` 返回的权限管理、组织管理、系统设置、开发工具等菜单恢复层级结构。
+- 前端目录路由增加 redirect：直接访问 `/setting`、`/permission`、`/dev_tools` 等目录路径时，会跳到第一个可见子页面；嵌套目录使用完整绝对路径，避免 `/setting/website` 被错误跳到 `/information`。
+- 新增 `scripts/check-menu-tree-contract.sh`，验证菜单树结构和目录 redirect 契约。
+- `scripts/verify-no-db.sh` 已接入菜单树契约检查。
+
+## P6.6 验收标准
+
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/check-menu-tree-contract.sh` 通过。
+- `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./util ./makeadmin/adapter` 通过。
+- `cd admin && npm run type-check` 通过。
+- `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh` 通过。
+- 浏览器打开 `/setting` 不再停留在空白目录页。
+
+## P6.6 验收结果
+
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/check-menu-tree-contract.sh`。
+- 已通过 `cd server && GOCACHE=/private/tmp/go-makeadmin-gocache go test ./util ./makeadmin/adapter`。
+- 已通过 `cd admin && npm run type-check`。
+- 已通过 `GOCACHE=/private/tmp/go-makeadmin-gocache ./scripts/verify-no-db.sh`。
+- 已通过本地菜单接口检查：`/api/system/menu/route` 顶层菜单为 `6` 个，`系统设置` 子菜单为 `3` 个，`开发工具` 子菜单为 `4` 个。
+- 已通过浏览器目录路由检查：`/setting` -> `/setting/website/information`，`/permission` -> `/permission/admin`，`/organization` -> `/organization/department`，`/dev_tools` -> `/dev_tools/dict`，`/setting/website` -> `/setting/website/information`。
+- 修复后截图保存到 `/tmp/go-makeadmin-p66-setting-fixed.png`。
+
+## 下一步
+
+P6.7：后台第一屏和侧边栏人工体验验收。建议继续用浏览器走一遍登录、展开菜单、点击目录和子页面、刷新目录路径，修掉真实使用中还会看到的空白页、缺组件页或入口命名问题。
